@@ -1,0 +1,94 @@
+import { MapPin, Star, Plus, ChevronRight, Users } from "lucide-react";
+
+interface GymsListProps {
+  onGymSelect: (gymId: number) => void;
+}
+
+export function GymsList({ onGymSelect }: GymsListProps) {
+  const gyms = [
+    {
+      id: 1,
+      name: "Main Branch",
+      address: "Indiranagar, Bangalore",
+      location: "Indiranagar, Bangalore",
+      rating: 4.8,
+      status: "Active",
+      members: 450,
+    },
+    {
+      id: 2,
+      name: "Downtown Gym",
+      address: "Koramangala, Bangalore",
+      location: "Koramangala, Bangalore",
+      rating: 4.5,
+      status: "Active",
+      members: 320,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm px-6 py-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">My Gyms</h1>
+              <p className="text-gray-500 text-sm mt-1">Manage your gym listings</p>
+            </div>
+            <button className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+              <Plus className="w-4 h-4" />
+              Add Gym
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-6 py-6 max-w-4xl mx-auto">
+        <div className="grid gap-4">
+          {gyms.map((gym) => (
+            <div
+              key={gym.id}
+              onClick={() => onGymSelect(gym.id)}
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 hover:shadow-md transition-shadow cursor-pointer"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-bold text-gray-900">{gym.name}</h3>
+                  <div className="flex items-center text-gray-500 text-sm mt-1">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {gym.address || gym.location}
+                  </div>
+                </div>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${gym.status === 'active' || gym.status === 'Active'
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                  {gym.status}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
+                <div className="flex gap-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Users className="w-4 h-4 mr-1.5 text-blue-500" />
+                    <span className="font-semibold">{gym.members}</span>
+                    <span className="text-xs ml-1 text-gray-400">Members</span>
+                  </div>
+                  {gym.status === 'Active' && (
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Star className="w-4 h-4 mr-1.5 text-yellow-500" />
+                      <span className="font-semibold">{gym.rating}</span>
+                    </div>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-300" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
