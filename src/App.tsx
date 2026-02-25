@@ -50,11 +50,11 @@ const FEATURED_GYMS = [
 ];
 
 // Configuration for URLs - Final Verified Ports
-const IS_DEV = true;
+const IS_DEV = import.meta.env.DEV;
 const URLS = {
-    MARKETPLACE: "http://localhost:10001",
-    OWNER: "http://localhost:10002",
-    API: "http://localhost:5000/api",
+    MARKETPLACE: import.meta.env.VITE_MARKETPLACE_URL || "http://localhost:10001",
+    OWNER: import.meta.env.VITE_OWNER_URL || "http://localhost:10002",
+    API: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 };
 
 export default function App() {
