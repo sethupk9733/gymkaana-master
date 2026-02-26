@@ -18,7 +18,7 @@ export default function ActivityHistory() {
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'join': return <UserPlus className="w-5 h-5 text-blue-600" />;
+            case 'join': return <UserPlus className="w-5 h-5 text-primary" />;
             case 'payment': return <ShoppingBag className="w-5 h-5 text-green-600" />;
             case 'review': return <Star className="w-5 h-5 text-yellow-500 fill-current" />;
             case 'alert': return <AlertCircle className="w-5 h-5 text-red-600" />;
@@ -28,7 +28,7 @@ export default function ActivityHistory() {
 
     const getBg = (type: string) => {
         switch (type) {
-            case 'join': return 'bg-blue-50';
+            case 'join': return 'bg-primary/10';
             case 'payment': return 'bg-green-50';
             case 'review': return 'bg-yellow-50';
             case 'alert': return 'bg-red-50';
@@ -63,7 +63,7 @@ export default function ActivityHistory() {
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-blue-600 font-semibold">{item.gym}</span>
+                                    <span className="text-xs text-primary font-semibold">{item.gym}</span>
                                     <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                     <span className="text-[10px] text-gray-400 capitalize">{item.type}</span>
                                 </div>

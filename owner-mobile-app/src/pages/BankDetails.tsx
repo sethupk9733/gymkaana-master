@@ -37,8 +37,8 @@ export default function BankDetails() {
             </div>
 
             <div className="p-4 max-w-md mx-auto">
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-3">
-                    <Landmark className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+                    <Landmark className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-blue-800">
                         These details will be used for your weekly payouts. Please ensure they are correct to avoid delays.
                     </p>
@@ -51,7 +51,7 @@ export default function BankDetails() {
                             <input
                                 id="accountHolder"
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 value={formData.accountHolder}
                                 onChange={e => setFormData({ ...formData, accountHolder: e.target.value })}
                             />
@@ -61,7 +61,7 @@ export default function BankDetails() {
                             <input
                                 id="bankName"
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 value={formData.bankName}
                                 onChange={e => setFormData({ ...formData, bankName: e.target.value })}
                             />
@@ -71,7 +71,7 @@ export default function BankDetails() {
                             <input
                                 id="accountNumber"
                                 type="password"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 value={formData.accountNumber}
                                 onChange={e => setFormData({ ...formData, accountNumber: e.target.value })}
                             />
@@ -81,7 +81,7 @@ export default function BankDetails() {
                             <input
                                 id="ifsc"
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none uppercase"
                                 value={formData.ifsc}
                                 onChange={e => setFormData({ ...formData, ifsc: e.target.value })}
                             />
@@ -98,7 +98,7 @@ export default function BankDetails() {
                             <input
                                 id="upiId"
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 value={formData.upiId}
                                 onChange={e => setFormData({ ...formData, upiId: e.target.value })}
                                 placeholder="name@upi"
@@ -110,7 +110,7 @@ export default function BankDetails() {
                         type="submit"
                         disabled={loading}
                         className={cn(
-                            "w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all flex items-center justify-center gap-2",
+                            "w-full bg-primary text-white font-semibold py-3 rounded-lg shadow-md hover:bg-secondary transition-all flex items-center justify-center gap-2",
                             loading && "opacity-70 cursor-not-allowed"
                         )}
                     >

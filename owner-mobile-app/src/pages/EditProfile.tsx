@@ -39,7 +39,7 @@ export default function EditProfile() {
                 {/* Avatar */}
                 <div className="flex justify-center">
                     <div className="relative">
-                        <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-md">
+                        <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-md">
                             K
                         </div>
                         <button
@@ -60,7 +60,7 @@ export default function EditProfile() {
                                 <input
                                     id="fullName"
                                     type="text"
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
@@ -72,7 +72,7 @@ export default function EditProfile() {
                             <input
                                 id="bizName"
                                 type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 value={formData.businessName}
                                 onChange={e => setFormData({ ...formData, businessName: e.target.value })}
                             />
@@ -85,7 +85,7 @@ export default function EditProfile() {
                                 <input
                                     id="email"
                                     type="email"
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
@@ -99,7 +99,7 @@ export default function EditProfile() {
                                 <input
                                     id="phone"
                                     type="tel"
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                 />
@@ -110,7 +110,7 @@ export default function EditProfile() {
                             <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
                             <textarea
                                 id="address"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none resize-none"
                                 rows={3}
                                 value={formData.address}
                                 onChange={e => setFormData({ ...formData, address: e.target.value })}
@@ -122,7 +122,7 @@ export default function EditProfile() {
                         type="submit"
                         disabled={loading}
                         className={cn(
-                            "w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all flex items-center justify-center gap-2",
+                            "w-full bg-primary text-white font-semibold py-3 rounded-lg shadow-md hover:bg-secondary transition-all flex items-center justify-center gap-2",
                             loading && "opacity-70 cursor-not-allowed"
                         )}
                     >

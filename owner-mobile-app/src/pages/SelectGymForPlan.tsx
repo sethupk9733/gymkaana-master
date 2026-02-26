@@ -1,9 +1,26 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
-import { MOCK_GYMS } from '../lib/api'; // Ensure Gyms.tsx exports MOCK_GYMS
+import { useEffect, useState } from 'react';
+import { fetchGyms } from '../lib/api';
 
 export default function SelectGymForPlan() {
     const navigate = useNavigate();
+    const [gyms, setGyms] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchGyms()
+            .then(data => {
+                setGyms(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) return <div className="p-4 text-center">Loading gyms...</div>;
 
     return (
         <div className="p-4 max-w-2xl mx-auto min-h-screen bg-gray-50 pb-20">
@@ -17,18 +34,18 @@ export default function SelectGymForPlan() {
             <p className="text-gray-500 mb-4 text-sm">Choose a gym to add a new membership plan.</p>
 
             <div className="space-y-3">
-                {MOCK_GYMS.map((gym) => (
-                    gym.status === 'Active' ? (
+                {gyms.map((gym) => (
+                    gym.status === 'Active' || gym.status === 'active' ? (
                         <button
-                            key={gym.id}
-                            onClick={() => navigate(`/plans/create?gymId=${gym.id}`)}
-                            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-blue-500 transition-all group"
+                            key={gym._id}
+                            onClick={() => navigate(`/plans/create?gymId=${gym._id}`)}
+                            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-primary/100 transition-all group"
                         >
                             <div className="text-left">
-                                <h3 className="font-semibold text-gray-900 group-hover:text-blue-700">{gym.name}</h3>
+                                <h3 className="font-semibold text-gray-900 group-hover:text-secondary">{gym.name}</h3>
                                 <p className="text-xs text-gray-500">{gym.location}</p>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500" />
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary/100" />
                         </button>
                     ) : null
                 ))}
