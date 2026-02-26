@@ -52,7 +52,7 @@ const FEATURED_GYMS = [
 // Configuration for URLs - Final Verified Ports
 const IS_DEV = import.meta.env.DEV;
 const URLS = {
-    MARKETPLACE: import.meta.env.VITE_MARKETPLACE_URL || "https://gymkaana.com",
+    MARKETPLACE: import.meta.env.VITE_MARKETPLACE_URL || "https://app.gymkaana.com",
     OWNER: import.meta.env.VITE_OWNER_URL || "https://owner.gymkaana.com",
     API: import.meta.env.VITE_API_URL || "https://api.gymkaana.com/api",
 };
