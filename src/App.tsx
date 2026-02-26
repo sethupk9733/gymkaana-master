@@ -62,9 +62,10 @@ export default function App() {
     const [loadingGyms, setLoadingGyms] = useState(true);
     const [liveStats, setLiveStats] = useState<any>(null);
 
-    const onExplore = () => { window.location.href = `${URLS.MARKETPLACE}?screen=home`; };
+    const onExplore = () => { window.location.href = URLS.MARKETPLACE; };
     const onLogin = () => { window.location.href = `${URLS.MARKETPLACE}?action=login`; };
     const onListGym = () => { window.location.href = `${URLS.MARKETPLACE}?screen=partner`; };
+    const onOwnerPortal = () => { window.location.href = URLS.OWNER; };
 
     // Specific screen links for Footer/About
     const goToMarketplaceScreen = (screen: string) => {
@@ -138,8 +139,9 @@ export default function App() {
                     </nav>
 
                     <div className="flex items-center gap-4">
+                        <Button variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden lg:flex" onClick={onOwnerPortal}>Owner Portal</Button>
                         <Button variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden sm:flex" onClick={onLogin}>Sign In</Button>
-                        <Button className="rounded-full px-6 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" onClick={onExplore}>Get Started</Button>
+                        <Button className="rounded-full px-6 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" onClick={onExplore}>Explore</Button>
                     </div>
                 </div>
             </header>
@@ -497,6 +499,7 @@ export default function App() {
                                 { label: 'About Us', action: () => goToMarketplaceScreen('about') },
                                 { label: 'Explore Venues', action: onExplore },
                                 { label: 'Partner Program', action: onListGym },
+                                { label: 'Owner Portal', action: onOwnerPortal },
                                 { label: 'Privacy & Security', action: () => goToMarketplaceScreen('privacy') },
                                 { label: 'Terms of Service', action: () => goToMarketplaceScreen('terms') },
                                 { label: 'Help & FAQs', action: () => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }) },
