@@ -40,6 +40,11 @@ export const googleLogin = async (googleData: { idToken: string; role?: string }
         //@ts-ignore
         credentials: 'include'
     });
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Google Login API Error:', response.status, error);
+        throw new Error(`API Error: ${response.status}`);
+    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -77,11 +82,6 @@ export const verifyOTP = async (email: string, otp: string) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Verify OTP API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -178,16 +178,6 @@ export const updateProfile = async (profileData: any) => {
     return await response.json();
 };
 
-export const fetchDashboardStats = async (gymId?: string) => {
-    let url = `${BASE_URL}/dashboard/stats`;
-    if (gymId && gymId !== 'all') url += `?gymId=${gymId}`;
-    const response = await fetch(url, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
-    return await response.json();
-};
-
 export const fetchGyms = async () => {
     const response = await fetch(`${BASE_URL}/gyms?managed=true`, {
         headers: getAuthHeaders()
@@ -196,10 +186,26 @@ export const fetchGyms = async () => {
     return await response.json();
 };
 
-export const fetchGymById = async (id: string) => {
+export const fetchGymById = async (id: string | number) => {
     const response = await fetch(`${BASE_URL}/gyms/${id}`);
     if (!response.ok) throw new Error('Failed to fetch gym');
     return await response.json();
+};
+
+export const updateGym = async (id: string | number, gymData: any) => {
+    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify(gymData)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to update gym');
+    return data;
 };
 
 export const createGym = async (gymData: any) => {
@@ -213,52 +219,22 @@ export const createGym = async (gymData: any) => {
         credentials: 'include',
         body: JSON.stringify(gymData)
     });
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create gym');
+        throw new Error(data.message || 'Failed to create gym');
     }
-    return await response.json();
+    return data;
 };
 
-export const updateGym = async (id: string, gymData: any) => {
-    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-        },
-        //@ts-ignore
-        credentials: 'include',
-        body: JSON.stringify(gymData)
-    });
-    return await response.json();
-};
-
-export const updatePlan = async (id: string, planData: any) => {
-    const response = await fetch(`${BASE_URL}/plans/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders()
-        },
-        //@ts-ignore
-        credentials: 'include',
-        body: JSON.stringify(planData)
-    });
-    return await response.json();
-};
-
-export const deletePlan = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/plans/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-    });
-    return await response.json();
-};
-
-export const fetchPlansByGymId = async (gymId: string) => {
+export const fetchPlansByGymId = async (gymId: string | number) => {
     const response = await fetch(`${BASE_URL}/plans/gym/${gymId}`);
     if (!response.ok) throw new Error('Failed to fetch plans');
+    return await response.json();
+};
+
+export const fetchPlanById = async (id: string | number) => {
+    const response = await fetch(`${BASE_URL}/plans/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch plan');
     return await response.json();
 };
 
@@ -273,10 +249,75 @@ export const createPlan = async (planData: any) => {
         credentials: 'include',
         body: JSON.stringify(planData)
     });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to create plan');
+    return data;
+};
+
+export const updatePlan = async (id: string | number, planData: any) => {
+    const response = await fetch(`${BASE_URL}/plans/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify(planData)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to update plan');
+    return data;
+};
+
+export const deletePlan = async (id: string | number) => {
+    const response = await fetch(`${BASE_URL}/plans/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to delete plan');
+    return data;
+};
+
+export const fetchBookings = async () => {
+    const response = await fetch(`${BASE_URL}/bookings`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch bookings');
     return await response.json();
 };
 
+export const fetchBookingsByGymId = async (gymId: string | number) => {
+    const response = await fetch(`${BASE_URL}/bookings/gym/${gymId}`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return await response.json();
+};
 
+export const fetchBookingById = async (id: string | number) => {
+    const response = await fetch(`${BASE_URL}/bookings/${id}`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch booking');
+    return await response.json();
+};
+
+export const fetchDashboardStats = async (gymId?: string) => {
+    let url = `${BASE_URL}/dashboard/stats`;
+    if (gymId && gymId !== 'all') url += `?gymId=${gymId}`;
+
+    console.log('🌐 API Call: fetchDashboardStats | URL:', url, '| GymId:', gymId);
+
+    const response = await fetch(url, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+    const data = await response.json();
+    console.log('📥 API Response: fetchDashboardStats | Data:', data);
+    return data;
+};
 
 export const lookupQR = async (bookingId: string) => {
     const response = await fetch(`${BASE_URL}/bookings/lookup-qr`, {
@@ -289,10 +330,7 @@ export const lookupQR = async (bookingId: string) => {
         credentials: 'include',
         body: JSON.stringify({ bookingId })
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Lookup failed');
-    }
+    if (!response.ok) throw new Error('Booking not found or unauthorized');
     return await response.json();
 };
 
@@ -307,23 +345,12 @@ export const confirmQRCheckIn = async (bookingId: string, action: 'accept' | 're
         credentials: 'include',
         body: JSON.stringify({ bookingId, action, reason })
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Action failed');
-    }
+    if (!response.ok) throw new Error('Action failed');
     return await response.json();
 };
 
 export const verifyQR = async (bookingId: string) => {
     return lookupQR(bookingId);
-};
-
-export const fetchActivities = async () => {
-    const response = await fetch(`${BASE_URL}/activities`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch activities');
-    return await response.json();
 };
 
 export const fetchPayoutHistory = async (gymId?: string) => {
@@ -400,6 +427,14 @@ export const fetchUserTickets = async () => {
     return await response.json();
 };
 
+export const fetchAllTickets = async () => {
+    const response = await fetch(`${BASE_URL}/tickets/admin/all-tickets`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch tickets');
+    return await response.json();
+};
+
 export const fetchTicketById = async (id: string) => {
     const response = await fetch(`${BASE_URL}/tickets/${id}`, {
         headers: getAuthHeaders()
@@ -415,6 +450,25 @@ export const addTicketReply = async (ticketId: string, message: string) => {
         body: JSON.stringify({ message })
     });
     if (!response.ok) throw new Error('Failed to add reply');
+    return await response.json();
+};
+
+export const updateTicketStatus = async (ticketId: string, status: string) => {
+    const response = await fetch(`${BASE_URL}/tickets/${ticketId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error('Failed to update ticket status');
+    return await response.json();
+};
+
+export const deleteTicket = async (ticketId: string) => {
+    const response = await fetch(`${BASE_URL}/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to delete ticket');
     return await response.json();
 };
 
@@ -467,4 +521,10 @@ export const replyToReview = async (reviewId: string, reply: string) => {
     if (!response.ok) throw new Error('Failed to submit reply');
     return await response.json();
 };
-
+export const fetchActivities = async () => {
+    const response = await fetch(`${BASE_URL}/activities`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch activities');
+    return await response.json();
+};
