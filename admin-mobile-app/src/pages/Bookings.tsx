@@ -34,7 +34,7 @@ export default function Bookings() {
                     <select
                         value={selectedGym}
                         onChange={(e) => setSelectedGym(e.target.value)}
-                        className="text-sm font-medium text-blue-600 bg-blue-50 border-none rounded-lg px-2 py-1 outline-none"
+                        className="text-sm font-medium text-primary bg-primary/10 border-none rounded-lg px-2 py-1 outline-none"
                         title="Select Gym"
                     >
                         <option value="All Gyms">All Gyms</option>
@@ -51,7 +51,7 @@ export default function Bookings() {
                         <input
                             type="text"
                             placeholder="Search member..."
-                            className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/100 outline-none"
                         />
                     </div>
                     <button className="p-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200" title="Filter bookings">
@@ -68,7 +68,7 @@ export default function Bookings() {
                             className={cn(
                                 "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                                 filter === status
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-primary text-white"
                                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             )}
                         >
@@ -84,12 +84,12 @@ export default function Bookings() {
                     <div key={booking.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">
+                                <div className="w-10 h-10 bg-primary/20 text-primary rounded-full flex items-center justify-center font-bold text-sm">
                                     {booking.user.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-900">{booking.user}</h3>
-                                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">{booking.plan}</span>
+                                    <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded">{booking.plan}</span>
                                 </div>
                             </div>
                             <span className={cn(
@@ -97,7 +97,7 @@ export default function Bookings() {
                                 booking.status === 'Active' && "bg-green-100 text-green-700",
                                 booking.status === 'Completed' && "bg-gray-100 text-gray-700",
                                 booking.status === 'Cancelled' && "bg-red-100 text-red-700",
-                                booking.status === 'Upcoming' && "bg-blue-100 text-blue-700"
+                                booking.status === 'Upcoming' && "bg-primary/20 text-secondary"
                             )}>
                                 {booking.status}
                             </span>

@@ -3,22 +3,39 @@ import { Users, IndianRupee, QrCode, Building, TrendingUp, History, Dumbbell } f
 import { cn } from '../lib/utils';
 import { useEffect, useState } from 'react';
 import { fetchDashboardStats } from '../lib/api';
+import { API_URL } from '../config/api';
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [statsData, setStatsData] = useState<any>(null);
+    const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchDashboardStats()
-            .then(data => {
+        const loadDashboard = async () => {
+            try {
+                const data = await fetchDashboardStats();
                 setStatsData(data);
-                setLoading(false);
-            })
-            .catch(err => {
+
+                // Fetch recent bookings as activities
+                const response = await fetch(`${API_URL}/bookings`);
+                if (response.ok) {
+                    const bookings = await response.json();
+                    setActivities(bookings.slice(0, 5).map((b: any) => ({
+                        id: b._id,
+                        text: `New booking: ${b.planName || 'Plan'} by ${b.user || 'Member'}`,
+                        time: 'Just now',
+                        gym: b.gym || 'Venue'
+                    })));
+                }
+            } catch (err) {
                 console.error(err);
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        loadDashboard();
     }, []);
 
     if (loading) {
@@ -28,15 +45,15 @@ export default function Dashboard() {
     const stats = [
         {
             label: 'Active Members',
-            value: statsData?.activeMembers?.toLocaleString() || '0',
+            value: statsData?.totalMembers?.toLocaleString() || '0',
             icon: Users,
             change: '+12%',
-            color: 'text-blue-600',
-            bg: 'bg-blue-50'
+            color: 'text-primary',
+            bg: 'bg-primary/10'
         },
         {
             label: 'Total Revenue',
-            value: `₹${(statsData?.totalRevenue / 100000).toFixed(1)}L`,
+            value: `₹${((statsData?.totalRevenue || 0) / 100000).toFixed(1)}L`,
             icon: IndianRupee,
             change: '+8%',
             color: 'text-green-600',
@@ -44,7 +61,7 @@ export default function Dashboard() {
         },
         {
             label: 'Check-ins Today',
-            value: statsData?.checkInsToday?.toString() || '0',
+            value: statsData?.dailyCheckins?.toString() || '0',
             icon: QrCode,
             change: '+24%',
             color: 'text-purple-600',
@@ -53,17 +70,10 @@ export default function Dashboard() {
     ];
 
     const quickActions = [
-        { label: 'Add Gym', icon: Building, path: '/gyms/add', color: 'bg-blue-600' },
+        { label: 'Add Gym', icon: Building, path: '/gyms/add', color: 'bg-primary' },
         { label: 'Add Plan', icon: Dumbbell, path: '/plans/add', color: 'bg-indigo-600' }, // Requires select gym first
         { label: 'View Earnings', icon: TrendingUp, path: '/earnings', color: 'bg-emerald-600' }, // Default to all
         { label: 'QR Check-in', icon: QrCode, path: '/check-in', color: 'bg-orange-600' },
-    ];
-
-    const activities = [
-        { id: 1, text: 'New member joined Gold Plan', time: '2 mins ago', gym: 'Main Branch' },
-        { id: 2, text: 'Payment received ₹2,500', time: '15 mins ago', gym: 'Downtown Gym' },
-        { id: 3, text: 'New 5-star review received', time: '1 hour ago', gym: 'Main Branch' },
-        { id: 4, text: 'Equipment maintenance due', time: '3 hours ago', gym: 'CrossFit Zone' },
     ];
 
     return (
@@ -127,7 +137,7 @@ export default function Dashboard() {
                     <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
                     <button
                         onClick={() => navigate('/history')}
-                        className="text-sm font-bold text-blue-600 hover:text-blue-700 active:scale-95 transition-all"
+                        className="text-sm font-bold text-primary hover:text-secondary active:scale-95 transition-all"
                     >
                         View All
                     </button>
@@ -139,7 +149,7 @@ export default function Dashboard() {
                                 <p className="text-sm font-medium text-gray-900">{item.text}</p>
                                 <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{item.time}</span>
                             </div>
-                            <p className="text-xs text-blue-600 font-medium">{item.gym}</p>
+                            <p className="text-xs text-primary font-medium">{item.gym}</p>
                         </div>
                     ))}
                 </div>

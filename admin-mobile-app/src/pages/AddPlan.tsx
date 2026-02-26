@@ -43,7 +43,7 @@ export default function AddPlan() {
                     <input
                         type="text"
                         required
-                        className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/30"
+                        className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none bg-primary/10/30"
                         placeholder="e.g. Gold Membership"
                     />
                 </div>
@@ -56,7 +56,7 @@ export default function AddPlan() {
                             <input
                                 type="number"
                                 required
-                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 placeholder="2500"
                             />
                         </div>
@@ -65,7 +65,7 @@ export default function AddPlan() {
                         <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                         <div className="relative">
                             <Clock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                            <select id="duration" className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <select id="duration" className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none bg-white">
                                 <option>Daily</option>
                                 <option>Weekly (5 days)</option>
                                 <option>Weekend (Sat-Sun)</option>
@@ -84,7 +84,7 @@ export default function AddPlan() {
                         <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                         <textarea
                             rows={3}
-                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none resize-none"
                             placeholder="Includes access to all equipment..."
                         ></textarea>
                     </div>
@@ -94,7 +94,7 @@ export default function AddPlan() {
                     type="submit"
                     disabled={loading}
                     className={cn(
-                        "w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all mt-4",
+                        "w-full bg-primary text-white font-bold py-3 rounded-lg shadow-md hover:bg-secondary transition-all mt-4",
                         loading && "opacity-70"
                     )}
                 >

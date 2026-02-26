@@ -69,7 +69,7 @@ export default function GymDetails() {
                     </button>
                     <button
                         onClick={() => navigate(`/earnings?gymId=${gym._id}`)}
-                        className="flex items-center gap-1.5 text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
+                        className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
                     >
                         <TrendingUp className="w-4 h-4" />
                         Earnings
@@ -85,7 +85,7 @@ export default function GymDetails() {
                         onClick={() => setActiveTab(tab.id)}
                         className={cn(
                             "flex flex-col items-center gap-1 px-4 py-3 min-w-[80px] border-b-2 transition-colors",
-                            activeTab === tab.id ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                            activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700"
                         )}
                     >
                         <tab.icon className="w-5 h-5" />
@@ -121,16 +121,16 @@ export default function GymDetails() {
                             <h3 className="font-semibold text-gray-900">Map Location</h3>
                             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-blue-600" />
+                                    <MapPin className="w-4 h-4 text-primary" />
                                     <span className="text-sm font-medium">{gym.mapCoords || '12.9716, 77.5946'}</span>
                                 </div>
-                                <button className="text-blue-600 text-sm font-bold flex items-center gap-1">
+                                <button className="text-primary text-sm font-bold flex items-center gap-1">
                                     Open Map <ArrowUpRight className="w-3 h-3" />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <div className="bg-primary/10 p-4 rounded-xl border border-primary/20">
                             <h3 className="font-semibold text-blue-900 mb-2">Owner's Note</h3>
                             <p className="text-sm text-blue-800">
                                 {gym.members > 100 ? "This gym is performing well. Keep up the good work!" : "Start marketing campaigns to increase memberships."}
@@ -151,6 +151,19 @@ export default function GymDetails() {
                                 </div>
                             ))}
                         </div>
+
+                        {gym.specializations && gym.specializations.length > 0 && (
+                            <div className="mt-6 pt-6 border-t border-gray-100">
+                                <h3 className="text-lg font-bold mb-3">Specialized Disciplines</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {gym.specializations.map((spec: string, index: number) => (
+                                        <span key={index} className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold border border-primary/20">
+                                            {spec}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -161,7 +174,7 @@ export default function GymDetails() {
                         <div className="space-y-4">
                             {(gym.trainers || ['Rahul Dev', 'Sanjana M', 'Vikram Singh']).map((trainer: string) => (
                                 <div key={trainer} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
                                         {trainer[0]}
                                     </div>
                                     <div>
@@ -181,7 +194,7 @@ export default function GymDetails() {
                             <h3 className="text-lg font-bold">Membership Plans</h3>
                             <button
                                 onClick={() => navigate(`/plans/create?gymId=${gym._id}`)}
-                                className="text-sm text-blue-600 font-bold hover:bg-blue-50 px-3 py-1 rounded-lg transition-colors"
+                                className="text-sm text-primary font-bold hover:bg-primary/10 px-3 py-1 rounded-lg transition-colors"
                             >
                                 + Add Plan
                             </button>
@@ -193,10 +206,10 @@ export default function GymDetails() {
                                     <p className="text-sm text-gray-500">{plan.duration}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <span className="text-lg font-bold text-blue-600">₹{plan.price}</span>
+                                    <span className="text-lg font-bold text-primary">₹{plan.price}</span>
                                     <button
                                         onClick={() => navigate(`/plans/${plan._id}/edit?gymId=${gym._id}`)}
-                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                                        className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-all"
                                         title="Edit Plan"
                                     >
                                         <Edit className="w-4 h-4" />
@@ -212,7 +225,7 @@ export default function GymDetails() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-bold">Gallery</h3>
-                            <button className="flex items-center gap-1 text-sm text-blue-600 font-medium hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
+                            <button className="flex items-center gap-1 text-sm text-primary font-medium hover:bg-primary/10 px-3 py-1.5 rounded-full transition-colors">
                                 <Upload className="w-4 h-4" />
                                 Add Photo
                             </button>

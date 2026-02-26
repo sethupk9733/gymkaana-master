@@ -22,13 +22,13 @@ export default function SelectGymForPlan() {
                         <button
                             key={gym.id}
                             onClick={() => navigate(`/plans/create?gymId=${gym.id}`)}
-                            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-blue-500 transition-all group"
+                            className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:border-primary/100 transition-all group"
                         >
                             <div className="text-left">
-                                <h3 className="font-semibold text-gray-900 group-hover:text-blue-700">{gym.name}</h3>
+                                <h3 className="font-semibold text-gray-900 group-hover:text-secondary">{gym.name}</h3>
                                 <p className="text-xs text-gray-500">{gym.location}</p>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500" />
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary/100" />
                         </button>
                     ) : null
                 ))}

@@ -32,7 +32,7 @@ export default function Settings() {
                                 onClick={() => setNotifications(!notifications)}
                                 className={cn(
                                     "w-11 h-6 rounded-full transition-colors relative",
-                                    notifications ? "bg-blue-600" : "bg-gray-300"
+                                    notifications ? "bg-primary" : "bg-gray-300"
                                 )}
                                 title={notifications ? "Disable Notifications" : "Enable Notifications"}
                             >
@@ -51,7 +51,7 @@ export default function Settings() {
                                 onClick={() => setDarkMode(!darkMode)}
                                 className={cn(
                                     "w-11 h-6 rounded-full transition-colors relative",
-                                    darkMode ? "bg-blue-600" : "bg-gray-300"
+                                    darkMode ? "bg-primary" : "bg-gray-300"
                                 )}
                                 title={darkMode ? "Disable Dark Mode" : "Enable Dark Mode"}
                             >

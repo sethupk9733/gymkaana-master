@@ -88,7 +88,7 @@ export default function EditPlan() {
                         required
                         value={planData.name}
                         onChange={(e) => setPlanData({ ...planData, name: e.target.value })}
-                        className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/30"
+                        className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none bg-primary/10/30"
                         placeholder="e.g. Gold Membership"
                     />
                 </div>
@@ -103,7 +103,7 @@ export default function EditPlan() {
                                 required
                                 value={planData.price}
                                 onChange={(e) => setPlanData({ ...planData, price: e.target.value })}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 placeholder="2500"
                             />
                         </div>
@@ -116,7 +116,7 @@ export default function EditPlan() {
                                 id="duration"
                                 value={planData.duration}
                                 onChange={(e) => setPlanData({ ...planData, duration: e.target.value })}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none bg-white"
                             >
                                 <option>Daily</option>
                                 <option>Weekly (5 days)</option>
@@ -138,7 +138,7 @@ export default function EditPlan() {
                             rows={3}
                             value={planData.description}
                             onChange={(e) => setPlanData({ ...planData, description: e.target.value })}
-                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none resize-none"
                             placeholder="Includes access to all equipment..."
                         ></textarea>
                     </div>
@@ -148,7 +148,7 @@ export default function EditPlan() {
                     type="submit"
                     disabled={loading}
                     className={cn(
-                        "w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all mt-4",
+                        "w-full bg-primary text-white font-bold py-3 rounded-lg shadow-md hover:bg-secondary transition-all mt-4",
                         loading && "opacity-70"
                     )}
                 >

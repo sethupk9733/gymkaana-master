@@ -1,68 +1,199 @@
-// Dummy data for Owner Portal
-export const MOCK_GYMS = [
-    {
-        id: 1,
-        _id: '1',
-        name: 'Main Branch',
-        address: 'Indiranagar, Bangalore',
-        location: 'Indiranagar, Bangalore',
-        status: 'Active',
-        rating: 4.8,
-        members: 450,
-        revenues: '₹2.5L',
-        timings: '6:00 AM - 10:00 PM',
-        facilities: ['WiFi', 'AC', 'Showers', 'Lockers', 'Cardio', 'Weights', 'Parking'],
-        trainers: ['Rahul Dev', 'Sanjana M']
-    },
-    {
-        id: 2,
-        _id: '2',
-        name: 'Downtown Gym',
-        address: 'Koramangala, Bangalore',
-        location: 'Koramangala, Bangalore',
-        status: 'Active',
-        rating: 4.5,
-        members: 320,
-        revenues: '₹1.8L',
-        timings: '5:30 AM - 11:00 PM',
-        facilities: ['AC', 'Showers', 'Swimming Pool', 'Steam Room'],
-        trainers: ['Amit K', 'John Doe']
-    }
-];
+import { API_URL } from '../config/api';
 
-const DUMMY_PLANS = [
-    { _id: 'p1', name: 'Silver Membership', price: 1500, duration: '1 Month', features: ['Gym Access', 'Lockers'] },
-    { _id: 'p2', name: 'Gold Membership', price: 4000, duration: '3 Months', features: ['Gym Access', 'Lockers', '1 PT Session'] }
-];
+const BASE_URL = API_URL;
+let inMemoryToken: string | null = null;
+
+const getAuthHeaders = (): Record<string, string> => {
+    return inMemoryToken ? { 'Authorization': `Bearer ${inMemoryToken}` } : {};
+};
+
+export const setToken = (token: string | null) => {
+    inMemoryToken = token;
+};
+
+export const login = async (credentials: any) => {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.accessToken) {
+        setToken(data.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(data));
+    }
+    return data;
+};
+
+export const register = async (userData: any) => {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.accessToken) {
+        setToken(data.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(data));
+    }
+    return data;
+};
+
+export const verifyOTP = async (email: string, otp: string) => {
+    const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.accessToken) {
+        setToken(data.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(data));
+    }
+    return data;
+};
+
+export const resendOTP = async (email: string) => {
+    const response = await fetch(`${BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    return await response.json();
+};
+
+export const forgotPassword = async (email: string) => {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    return await response.json();
+};
+
+export const resetPassword = async (resetData: any) => {
+    const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resetData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    return await response.json();
+};
+
+export const googleLogin = async (googleData: { idToken: string; role?: string }) => {
+    const response = await fetch(`${BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(googleData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (data.accessToken) {
+        setToken(data.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(data));
+    }
+    return data;
+};
+
+export const logout = async () => {
+    await fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        //@ts-ignore
+        credentials: 'include'
+    });
+    setToken(null);
+    localStorage.removeItem('gymkaana_token');
+    localStorage.removeItem('gymkaana_user');
+};
+
+export const checkSession = async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            //@ts-ignore
+            credentials: 'include'
+        });
+        if (response.ok) {
+            const data = await response.json();
+            setToken(data.accessToken);
+            localStorage.setItem('gymkaana_user', JSON.stringify(data));
+            return data;
+        }
+    } catch (e) {
+        console.error('Session check failed', e);
+    }
+    return null;
+};
 
 export const fetchGyms = async () => {
-    return MOCK_GYMS;
+    const response = await fetch(`${BASE_URL}/gyms`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch gyms');
+    return await response.json();
 };
 
 export const fetchGymById = async (id: string) => {
-    const gym = MOCK_GYMS.find((g: any) => g._id === id);
-    return gym || MOCK_GYMS[0];
+    const response = await fetch(`${BASE_URL}/gyms/${id}`);
+    if (!response.ok) throw new Error('Failed to fetch gym');
+    return await response.json();
 };
 
 export const createGym = async (gymData: any) => {
-    console.log("Mock Gym Created:", gymData);
-    return { ...gymData, _id: Date.now().toString() };
+    const response = await fetch(`${BASE_URL}/gyms`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify(gymData)
+    });
+    return await response.json();
 };
 
 export const fetchPlansByGymId = async (gymId: string) => {
-    return DUMMY_PLANS;
+    const response = await fetch(`${BASE_URL}/plans/gym/${gymId}`);
+    if (!response.ok) throw new Error('Failed to fetch plans');
+    return await response.json();
 };
 
 export const createPlan = async (planData: any) => {
-    console.log("Mock Plan Created:", planData);
-    return { ...planData, _id: Date.now().toString() };
+    const response = await fetch(`${BASE_URL}/plans`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify(planData)
+    });
+    return await response.json();
 };
 
 export const fetchDashboardStats = async () => {
-    return {
-        activeMembers: 770,
-        totalRevenue: 430000,
-        checkInsToday: 142,
-        totalGyms: 2
-    };
+    const response = await fetch(`${BASE_URL}/dashboard/stats`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+    return await response.json();
 };

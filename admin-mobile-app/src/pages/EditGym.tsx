@@ -58,7 +58,7 @@ export default function EditGym() {
                             <input
                                 type="text"
                                 required
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none"
                                 placeholder="e.g. Golds Gym"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
@@ -73,7 +73,7 @@ export default function EditGym() {
                             <input
                                 type="text"
                                 required
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none"
                                 placeholder="Enter full address"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
@@ -85,7 +85,7 @@ export default function EditGym() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none"
                             placeholder="Tell us about your gym..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -101,11 +101,11 @@ export default function EditGym() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                            <input type="tel" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="+91 98765 43210" />
+                            <input type="tel" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none" placeholder="+91 98765 43210" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                            <input type="email" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="gym@example.com" />
+                            <input type="email" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none" placeholder="gym@example.com" />
                         </div>
                     </div>
 
@@ -115,7 +115,7 @@ export default function EditGym() {
                         <div className="grid grid-cols-2 gap-2">
                             {['WiFi', 'AC', 'Showers', 'Lockers', 'Cardio', 'Weights', 'Parking'].map(amenity => (
                                 <label key={amenity} className="flex items-center space-x-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="checkbox" className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                                    <input type="checkbox" className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary/100" />
                                     <span className="text-sm text-gray-700">{amenity}</span>
                                 </label>
                             ))}
@@ -125,7 +125,7 @@ export default function EditGym() {
                     {/* Trainer List */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Trainer List (Comma separated)</label>
-                        <textarea rows={2} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="Rahul Dev, Sanjana M..." defaultValue="Rahul Dev, Sanjana M"></textarea>
+                        <textarea rows={2} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none" placeholder="Rahul Dev, Sanjana M..." defaultValue="Rahul Dev, Sanjana M"></textarea>
                     </div>
 
                     {/* Map Location */}
@@ -133,7 +133,7 @@ export default function EditGym() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Map Location (Coordinates or Link)</label>
                         <div className="relative">
                             <MapPin className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                            <input type="text" className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="e.g. 12.9716, 77.5946" defaultValue="12.9716, 77.5946" />
+                            <input type="text" className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 focus:border-transparent outline-none" placeholder="e.g. 12.9716, 77.5946" defaultValue="12.9716, 77.5946" />
                         </div>
                     </div>
 
@@ -141,8 +141,8 @@ export default function EditGym() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
                         <div className="grid grid-cols-2 gap-4">
-                            <input type="text" placeholder="Open (e.g. 6:00 AM)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" defaultValue="6:00 AM" />
-                            <input type="text" placeholder="Close (e.g. 10:00 PM)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" defaultValue="10:00 PM" />
+                            <input type="text" placeholder="Open (e.g. 6:00 AM)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none" defaultValue="6:00 AM" />
+                            <input type="text" placeholder="Close (e.g. 10:00 PM)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none" defaultValue="10:00 PM" />
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@ export default function EditGym() {
                         type="submit"
                         disabled={loading}
                         className={cn(
-                            "w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all",
+                            "w-full bg-primary text-white font-semibold py-3 rounded-lg shadow-md hover:bg-secondary transition-all",
                             loading && "opacity-70 cursor-not-allowed"
                         )}
                     >

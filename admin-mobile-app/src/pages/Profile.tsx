@@ -20,7 +20,7 @@ export default function Profile() {
             {/* Header */}
             <div className="bg-white p-6 pb-8 sticky top-0 z-10 border-b border-gray-100">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold">
                         {MOCK_PROFILE.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
@@ -35,7 +35,7 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-3 mb-6">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div className="flex items-center gap-2 mb-2">
-                            <Building2 className="w-5 h-5 text-blue-500" />
+                            <Building2 className="w-5 h-5 text-primary/100" />
                             <span className="text-xs text-gray-500 font-medium">GYMS OWNED</span>
                         </div>
                         <p className="text-2xl font-bold text-gray-900">{MOCK_PROFILE.stats.totalGyms}</p>

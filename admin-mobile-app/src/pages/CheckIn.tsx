@@ -51,10 +51,10 @@ export default function CheckIn() {
                     </div>
 
                     {/* Corner Markers */}
-                    <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-blue-500 rounded-tl-xl"></div>
-                    <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-blue-500 rounded-tr-xl"></div>
-                    <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-blue-500 rounded-bl-xl"></div>
-                    <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-blue-500 rounded-br-xl"></div>
+                    <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-primary/100 rounded-tl-xl"></div>
+                    <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-primary/100 rounded-tr-xl"></div>
+                    <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-primary/100 rounded-bl-xl"></div>
+                    <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-primary/100 rounded-br-xl"></div>
                 </div>
 
                 {/* Manual Check-in */}
@@ -77,14 +77,14 @@ export default function CheckIn() {
                                     type="text"
                                     required
                                     placeholder="Enter Customer ID or Phone"
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                     value={manualId}
                                     onChange={(e) => setManualId(e.target.value)}
                                 />
                             </div>
                             <button
                                 type="submit"
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                                className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors"
                             >
                                 Check In
                             </button>

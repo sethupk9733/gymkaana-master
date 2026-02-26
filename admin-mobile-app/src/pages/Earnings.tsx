@@ -47,7 +47,7 @@ export default function Earnings() {
                         title="Select Gym"
                         value={selectedGymId}
                         onChange={(e) => setSelectedGymId(e.target.value)}
-                        className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-8 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-8 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary/100 shadow-sm"
                     >
                         <option value="all">All Gyms</option>
                         {MOCK_GYMS.filter(g => g.status === 'Active').map(g => (
@@ -60,10 +60,10 @@ export default function Earnings() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
-                    <p className="text-blue-100 font-medium mb-1">Total Earnings</p>
+                <div className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-6 text-white shadow-lg">
+                    <p className="text-primary/20 font-medium mb-1">Total Earnings</p>
                     <h2 className="text-3xl font-bold">{stats.total}</h2>
-                    <div className="mt-4 flex items-center text-sm text-blue-100 bg-blue-500/30 w-fit px-3 py-1 rounded-full">
+                    <div className="mt-4 flex items-center text-sm text-primary/20 bg-primary/100/30 w-fit px-3 py-1 rounded-full">
                         <TrendingUp className="w-4 h-4 mr-1" />
                         +12% vs last month
                     </div>

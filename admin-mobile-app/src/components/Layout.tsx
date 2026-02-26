@@ -31,7 +31,7 @@ export default function Layout() {
                             onClick={() => navigate(tab.path)}
                             className={cn(
                                 "flex flex-col items-center justify-center w-full space-y-1 transition-colors duration-200",
-                                isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+                                isActive ? "text-primary" : "text-gray-400 hover:text-gray-600"
                             )}
                         >
                             <tab.icon className={cn("w-6 h-6", isActive && "fill-current opacity-20")} strokeWidth={isActive ? 2.5 : 2} />

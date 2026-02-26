@@ -1,8 +1,26 @@
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, DollarSign, Settings as SettingsIcon, Search, X, Check, Eye, Ban, Award, AlertCircle, Globe, Inbox, MapPin, User as UserIcon, FileText, ShieldCheck, Landmark, Shield, Calendar, Megaphone, CheckSquare, Star, ArrowLeft, ChevronRight, PieChart, Target, Zap, Server, Database, LogOut, TrendingUp, Activity, Plus, ShieldAlert, CreditCard, MessageSquare, BarChart3, HelpCircle, Dumbbell } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LayoutDashboard, Building2, Users, Settings as SettingsIcon, X, Globe, Server, Database, LogOut, TrendingUp, Activity, Plus, CreditCard, HelpCircle, Dumbbell, Megaphone, Zap, PieChart, BarChart3, ChevronRight, Target, Star, UserIcon, FileText, ShieldCheck, Landmark, Shield, Calendar, MapPin, DollarSign, ShieldAlert } from 'lucide-react';
+
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { checkSession, logout } from './lib/api';
+
+// Import pages
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
+import Loading from './pages/Loading';
+import Welcome from './pages/Welcome';
+
+// Detailed Admin Dashboard for Mobile
+// ... existing AdminDashboard, PartnerNetwork, AdminUsers, SettingsPage, Promotions components ...
+// (I will keep the existing components but wrap them in the new App structure)
+
+// [Rest of existing components: AdminDashboard, MobileMetric, RankingRow, PartnerNetwork, DetailItem, AdminUsers, ActivityInfo, SettingsPage, MobileInput, TreasuryStat, MobileToggle, Promotions, NavButton]
+
+// I will only show the modified parts for brevity in the replacement chunk, but I need to make sure I don't delete them.
+// Actually, I'll just replace the end of the file where App is defined.
+
+// [EXISTING COMPONENTS GO HERE]
 
 // Detailed Admin Dashboard for Mobile
 function AdminDashboard() {
@@ -18,10 +36,14 @@ function AdminDashboard() {
 
   return (
     <div className="p-6 pb-24 bg-gray-50 min-h-screen font-sans">
-      <header className="mb-8 font-sans">
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 border-b-4 border-primary inline-block pb-2">Institutional</h1>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2 italic flex items-center gap-1">
-          <Zap className="w-3 h-3 text-primary" /> Market Intel & Yield Hub
+      <header className="mb-8 font-sans -skew-x-12">
+        <h1 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center">
+          <span className="text-secondary">GYM</span>
+          <span className="text-primary italic mx-0.5">KAA</span>
+          <span className="text-secondary">NA</span>
+        </h1>
+        <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-2 italic flex items-center gap-1">
+          <Zap className="w-3 h-3 text-primary" /> Command Center Hub
         </p>
       </header>
 
@@ -263,7 +285,7 @@ function AdminDashboard() {
 }
 
 function MobileMetric({ label, value, color }: any) {
-  const text = color === 'emerald' ? 'text-emerald-500' : color === 'blue' ? 'text-blue-500' : color === 'primary' ? 'text-primary' : 'text-gray-900';
+  const text = color === 'emerald' ? 'text-emerald-500' : color === 'blue' ? 'text-primary/100' : color === 'primary' ? 'text-primary' : 'text-gray-900';
   return (
     <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 h-28 flex flex-col justify-between">
       <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest leading-none">{label}</p>
@@ -573,7 +595,12 @@ function SettingsPage() {
           ))}
 
           <div className="pt-8">
-            <button className="w-full py-6 bg-red-50 text-red-500 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+            <button
+              onClick={async () => {
+                await logout();
+                window.location.href = '/login';
+              }}
+              className="w-full py-6 bg-red-50 text-red-500 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3">
               <LogOut className="w-5 h-5" /> Terminate Session
             </button>
           </div>
@@ -646,7 +673,7 @@ function SettingsPage() {
                   <h2 className="text-3xl font-black italic uppercase tracking-tighter">Telemetry</h2>
                   <div className="bg-gray-50 rounded-[32px] p-4 max-h-[60vh] overflow-y-auto font-mono text-[10px]">
                     <p className="mb-3 text-emerald-500 font-black tracking-widest">[SUCCESS] DB SNAPSHOT CAPTURED</p>
-                    <p className="mb-3 text-blue-500 font-black tracking-widest">[INFO] CACHE PURGED FOR /ASSETS</p>
+                    <p className="mb-3 text-primary/100 font-black tracking-widest">[INFO] CACHE PURGED FOR /ASSETS</p>
                     <p className="mb-3 text-orange-500 font-black tracking-widest">[WARN] SURGE IN BIOMETRIC SYNC (HUB #42)</p>
                     <p className="mb-3 text-emerald-500 font-black tracking-widest">[SUCCESS] PAYOUT BATCH #99 CLEARED</p>
                     <p className="text-gray-400">--- END OF LOGS (LAST 1H) ---</p>
@@ -749,6 +776,11 @@ function AdminLayout() {
         {activeTab === 'approvals' && <PartnerNetwork />}
         {activeTab === 'promotions' && <Promotions />}
         {activeTab === 'settings' && <SettingsPage />}
+        <div className="px-6 py-10 text-center opacity-20 mt-10 mb-20">
+          <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.3em]">
+            © {new Date().getFullYear()} VUEGAM SOLUTIONS. ALL RIGHTS RESERVED.
+          </p>
+        </div>
       </main>
 
       {/* Bottom Nav */}
@@ -772,11 +804,39 @@ function NavButton({ icon: Icon, label, active, onClick }: any) {
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      const user = await checkSession();
+      if (user && user.roles?.includes('admin')) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  if (loading) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center">
+      <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+      <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-4 animate-pulse">Initializing Command Center...</p>
+    </div>
+  );
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AdminLayout />}>
-          <Route path="/" element={<AdminDashboard />} />
+        <Route path="/" element={<Welcome />} />
+        <Route path="/loading" element={<Loading />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Authenticated Routes */}
+        <Route element={isAuthenticated ? <AdminLayout /> : <Navigate to="/login" />}>
           <Route path="/dashboard" element={<AdminDashboard />} />
           <Route path="/gyms" element={<PartnerNetwork />} />
           <Route path="/users" element={<AdminUsers />} />

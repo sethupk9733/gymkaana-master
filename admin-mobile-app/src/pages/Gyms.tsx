@@ -31,7 +31,7 @@ export default function Gyms() {
                 <h1 className="text-2xl font-bold text-gray-900">My Gyms</h1>
                 <button
                     onClick={() => navigate('/gyms/add')}
-                    className="flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors shadow-sm"
                 >
                     <Plus className="w-4 h-4" />
                     Add Gym
@@ -64,7 +64,7 @@ export default function Gyms() {
                         <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
                             <div className="flex gap-4">
                                 <div className="flex items-center text-sm text-gray-600">
-                                    <Users className="w-4 h-4 mr-1.5 text-blue-500" />
+                                    <Users className="w-4 h-4 mr-1.5 text-primary/100" />
                                     <span className="font-semibold">{gym.members}</span>
                                     <span className="text-xs ml-1 text-gray-400">Members</span>
                                 </div>

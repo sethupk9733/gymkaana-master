@@ -26,14 +26,14 @@ export default function HelpSupport() {
 
                 {/* Contact Options */}
                 <div className="grid grid-cols-2 gap-3">
-                    <button className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 transition-colors group">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 group-hover:bg-blue-200 transition-colors">
+                    <button className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 transition-colors group">
+                        <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary group-hover:bg-blue-200 transition-colors">
                             <Phone className="w-5 h-5" />
                         </div>
                         <span className="text-sm font-medium text-gray-900">Call Us</span>
                     </button>
-                    <button className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 transition-colors group">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 group-hover:bg-blue-200 transition-colors">
+                    <button className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 transition-colors group">
+                        <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary group-hover:bg-blue-200 transition-colors">
                             <Mail className="w-5 h-5" />
                         </div>
                         <span className="text-sm font-medium text-gray-900">Email Us</span>
@@ -78,7 +78,7 @@ export default function HelpSupport() {
                             <label className="text-sm font-medium text-gray-700">Subject</label>
                             <input
                                 type="text"
-                                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none"
                                 placeholder="What's the issue?"
                             />
                         </div>
@@ -86,7 +86,7 @@ export default function HelpSupport() {
                             <label className="text-sm font-medium text-gray-700">Description</label>
                             <textarea
                                 rows={4}
-                                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/100 outline-none resize-none"
                                 placeholder="Describe your problem in detail..."
                             ></textarea>
                         </div>
