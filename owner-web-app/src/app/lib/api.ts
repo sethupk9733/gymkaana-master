@@ -82,6 +82,11 @@ export const verifyOTP = async (email: string, otp: string) => {
         //@ts-ignore
         credentials: 'include'
     });
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Verify OTP API Error:', response.status, error);
+        throw new Error(`API Error: ${response.status}`);
+    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -98,6 +103,11 @@ export const resendOTP = async (email: string) => {
         //@ts-ignore
         credentials: 'include'
     });
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Resend OTP API Error:', response.status, error);
+        throw new Error(`API Error: ${response.status}`);
+    }
     return await response.json();
 };
 
@@ -109,6 +119,11 @@ export const forgotPassword = async (email: string) => {
         //@ts-ignore
         credentials: 'include'
     });
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Forgot Password API Error:', response.status, error);
+        throw new Error(`API Error: ${response.status}`);
+    }
     return await response.json();
 };
 
@@ -120,6 +135,11 @@ export const resetPassword = async (resetData: any) => {
         //@ts-ignore
         credentials: 'include'
     });
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('Reset Password API Error:', response.status, error);
+        throw new Error(`API Error: ${response.status}`);
+    }
     return await response.json();
 };
 
