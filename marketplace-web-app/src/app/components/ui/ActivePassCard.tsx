@@ -1,8 +1,8 @@
-import { QrCode, Calendar, ArrowRight } from "lucide-react";
+import { QrCode, Calendar, ArrowRight, ShieldCheck, User } from "lucide-react";
 import { motion } from "motion/react";
 import { ActivePass } from "../../types";
 
-export function ActivePassCard({ pass, onClick }: { pass: ActivePass; onClick: () => void }) {
+export function ActivePassCard({ pass, onClick, userPhoto }: { pass: ActivePass; onClick: () => void; userPhoto?: string | null }) {
     return (
         <motion.div
             whileHover={{ scale: 1.02 }}
@@ -16,13 +16,26 @@ export function ActivePassCard({ pass, onClick }: { pass: ActivePass; onClick: (
 
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-2xl p-2 shadow-lg group-hover:rotate-6 transition-transform">
+                    <div className="flex items-center gap-4 relative">
+                        <div className="w-12 h-12 bg-white rounded-2xl p-2 shadow-lg group-hover:rotate-6 transition-transform relative">
                             <img src={pass.gymLogo} alt={pass.gymName} className="w-full h-full object-contain" />
+                            {userPhoto && (
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg border-2 border-gray-900 overflow-hidden shadow-lg">
+                                    <img src={userPhoto} alt="User" className="w-full h-full object-cover" />
+                                </div>
+                            )}
                         </div>
                         <div>
                             <h4 className="font-black text-xl leading-tight italic uppercase tracking-tight">{pass.gymName}</h4>
-                            <p className="text-primary text-xs font-black uppercase tracking-widest mt-0.5">{pass.planName}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-primary text-xs font-black uppercase tracking-widest mt-0.5">{pass.planName}</p>
+                                {userPhoto && (
+                                    <div className="bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                        <ShieldCheck className="w-2.5 h-2.5" />
+                                        <span className="text-[7px] font-black uppercase">Verified</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className="p-3 bg-white/5 rounded-2xl border border-white/10 group-hover:bg-primary group-hover:border-primary transition-all">

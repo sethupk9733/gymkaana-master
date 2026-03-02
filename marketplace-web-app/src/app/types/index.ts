@@ -25,16 +25,25 @@ export interface Gym {
     logo: string;
     description: string;
     facilities: Facility[];
+    specializations?: string[];
     plans: Plan[];
 }
 
 export interface Booking {
     id: string;
+    gym: string;
     gymName: string;
+    plan: string;
     planName: string;
     date: string;
+    startDate: string;
+    endDate: string;
     amount: string;
+    gymId?: string;
+    planId?: string;
     status: "completed" | "cancelled" | "upcoming";
+    cancellationReason?: string;
+    cancelledBy?: string;
 }
 
 export interface ActivePass {
@@ -45,4 +54,6 @@ export interface ActivePass {
     validUntil: string;
     qrCode: string;
     remainingSessions?: number;
+    houseRules?: string[];
+    facilities?: string[];
 }

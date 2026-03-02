@@ -20,11 +20,6 @@ export const login = async (credentials: any) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Login API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -41,11 +36,6 @@ export const googleLogin = async (googleData: { idToken: string; role?: string }
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Google Login API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -62,11 +52,6 @@ export const register = async (userData: any) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Register API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -83,11 +68,6 @@ export const verifyOTP = async (email: string, otp: string) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Verify OTP API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     const data = await response.json();
     if (data.accessToken) {
         setToken(data.accessToken);
@@ -104,11 +84,6 @@ export const resendOTP = async (email: string) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Resend OTP API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     return await response.json();
 };
 
@@ -120,11 +95,6 @@ export const forgotPassword = async (email: string) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Forgot Password API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     return await response.json();
 };
 
@@ -136,11 +106,6 @@ export const resetPassword = async (resetData: any) => {
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Reset Password API Error:', response.status, error);
-        throw new Error(`API Error: ${response.status}`);
-    }
     return await response.json();
 };
 

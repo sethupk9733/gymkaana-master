@@ -1,9 +1,9 @@
-import { X, Info, Calendar, ShieldCheck, ArrowLeft, Dumbbell, Users, Bike, Droplets } from "lucide-react";
+import { X, Info, Calendar, ShieldCheck, ArrowLeft, Dumbbell, Users, Bike, Droplets, AlertCircle } from "lucide-react";
 import { ActivePass } from "../../types";
 import { useState } from "react";
 import { motion } from "motion/react";
 
-export function QRModal({ pass, onClose }: { pass: ActivePass; onClose: () => void }) {
+export function QRModal({ pass, onClose, userPhoto }: { pass: ActivePass; onClose: () => void; userPhoto: string | null }) {
     const [isFlipped, setIsFlipped] = useState(false);
 
     const handleFlip = (e: React.MouseEvent) => {
@@ -40,9 +40,34 @@ export function QRModal({ pass, onClose }: { pass: ActivePass; onClose: () => vo
                                 <img src={pass.gymLogo} alt={pass.gymName} className="w-12 h-12 object-contain" />
                             </div>
                             <h3 className="text-xl font-black italic tracking-tighter uppercase">{pass.gymName}</h3>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-8">{pass.planName} Access</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">{pass.planName} Access</p>
 
-                            <div className="bg-white p-6 rounded-3xl border-2 border-dashed border-gray-200 mb-8 inline-block shadow-inner">
+                            <div className="mb-6 flex flex-col items-center">
+                                <div className="relative group/photo">
+                                    <div className="w-20 h-20 bg-white p-1 rounded-2xl shadow-xl border border-gray-100 -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                                        <div className="w-full h-full rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
+                                            {userPhoto ? (
+                                                <>
+                                                    <img src={userPhoto} alt="User" className="w-full h-full object-cover grayscale-[0.2]" />
+                                                    <div className="absolute top-1 right-1 bg-emerald-500 text-white p-0.5 rounded-md shadow-lg">
+                                                        <ShieldCheck className="w-2.5 h-2.5" />
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <AlertCircle className="w-5 h-5 text-amber-500" />
+                                                    <span className="text-[6px] font-black text-amber-600 uppercase">UNVERIFIED</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="mt-2">
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Security Identification</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-3xl border-2 border-dashed border-gray-200 mb-6 inline-block shadow-inner">
                                 <motion.img
                                     initial={{ scale: 0.8, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
@@ -105,12 +130,12 @@ export function QRModal({ pass, onClose }: { pass: ActivePass; onClose: () => vo
                                 <section>
                                     <h4 className="text-[10px] font-black tracking-[0.2em] text-gray-400 mb-4 px-1">House Rules</h4>
                                     <div className="space-y-2">
-                                        {[
+                                        {(pass.houseRules && pass.houseRules.length > 0 ? pass.houseRules : [
                                             "Clean shoes required",
                                             "Wipe down equipment",
                                             "No outside training",
                                             "Re-rack weights"
-                                        ].map((rule, i) => (
+                                        ]).map((rule, i) => (
                                             <div key={i} className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                                                 <div className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] font-black shrink-0">
                                                     {i + 1}
@@ -124,17 +149,26 @@ export function QRModal({ pass, onClose }: { pass: ActivePass; onClose: () => vo
                                 <section>
                                     <h4 className="text-[10px] font-black tracking-[0.2em] text-gray-400 mb-4 px-1">Amenities</h4>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { icon: Dumbbell, label: "Weights" },
-                                            { icon: Users, label: "Coaches" },
-                                            { icon: Bike, label: "Cardio" },
-                                            { icon: Droplets, label: "Showers" },
-                                        ].map((amenity, i) => (
-                                            <div key={i} className="flex items-center gap-2.5 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                                                <amenity.icon className="w-3.5 h-3.5 text-primary" />
-                                                <span className="text-[10px] font-black text-gray-600">{amenity.label}</span>
-                                            </div>
-                                        ))}
+                                        {(pass.facilities && pass.facilities.length > 0 ? pass.facilities : [
+                                            "Weights", "Coaches", "Cardio", "Showers"
+                                        ]).map((amenity, i) => {
+                                            const label = typeof amenity === 'string' ? amenity : (amenity as any).label;
+                                            const iconMap: Record<string, any> = {
+                                                "Weights": Dumbbell,
+                                                "Trainers": Users,
+                                                "Coaches": Users,
+                                                "Cardio": Bike,
+                                                "Shower": Droplets,
+                                                "Showers": Droplets,
+                                            };
+                                            const IconComponent = iconMap[label] || Dumbbell;
+                                            return (
+                                                <div key={i} className="flex items-center gap-2.5 p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
+                                                    <IconComponent className="w-3.5 h-3.5 text-primary" />
+                                                    <span className="text-[10px] font-black text-gray-600 capitalize">{label}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </section>
                             </div>

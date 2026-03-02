@@ -1,5 +1,6 @@
-import { ArrowLeft, Tag, ReceiptText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Tag, ReceiptText, ShieldCheck, Calendar } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 
 export function CheckoutScreen({
   onBack,
@@ -7,20 +8,37 @@ export function CheckoutScreen({
   selectedPlan
 }: {
   onBack: () => void;
-  onProceedToPayment: () => void;
-  selectedPlan: string;
+  onProceedToPayment: (date: string) => void;
+  selectedPlan: any;
 }) {
-  const planPrices: Record<string, { price: number; discount: number }> = {
-    Monthly: { price: 999, discount: 0 },
-    Quarterly: { price: 2699, discount: 200 },
-    Yearly: { price: 8999, discount: 1000 },
+  const [selectedDate, setSelectedDate] = useState(0); // Index of selected day
+
+  // Generate next 7 days
+  const getNextDays = () => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      days.push({
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: date.getDate(),
+        full: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      });
+    }
+    return days;
   };
 
-  const plan = planPrices[selectedPlan] || planPrices.Monthly;
-  const subtotal = plan.price;
-  const discount = plan.discount;
-  const tax = Math.round((subtotal - discount) * 0.18);
-  const total = subtotal - discount + tax;
+  const dates = getNextDays();
+
+  // Parse price from string like "₹1500" or just use number if it's already a number
+  const rawPrice = typeof selectedPlan?.price === 'string'
+    ? parseInt(selectedPlan.price.replace(/[^\d]/g, ''))
+    : (selectedPlan?.price || 0);
+
+  const subtotal = rawPrice;
+  const discount = 0;
+  const tax = Math.round(subtotal * 0.18);
+  const total = subtotal + tax;
 
   return (
     <motion.div
@@ -58,20 +76,54 @@ export function CheckoutScreen({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Venue</span>
-              <span className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">PowerHouse Fitness</span>
+              <span className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">Gymkaana Partner</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Plan Type</span>
-              <span className="text-sm font-black text-gray-900">{selectedPlan}</span>
+              <span className="text-sm font-black text-gray-900">{selectedPlan.name}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Duration</span>
               <span className="text-sm font-black text-gray-900">
-                {selectedPlan === 'Monthly' && '1 Month Access'}
-                {selectedPlan === 'Quarterly' && '3 Months Access'}
-                {selectedPlan === 'Yearly' && '12 Months Access'}
+                {selectedPlan.duration} Access
               </span>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Date Selection */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white border border-gray-100 rounded-[32px] p-6 mb-6 shadow-sm"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400">Select Start Date</h3>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
+            {dates.map((d, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedDate(i)}
+                className={`flex flex-col items-center min-w-[64px] p-4 rounded-2xl transition-all border ${selectedDate === i
+                  ? 'bg-black text-white border-black shadow-xl scale-105'
+                  : 'bg-gray-50 text-gray-400 border-gray-50 hover:bg-white hover:border-gray-200'
+                  }`}
+              >
+                <span className="text-[10px] font-black uppercase tracking-widest mb-1">{d.dayName}</span>
+                <span className="text-lg font-black italic">{d.date}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-gray-50">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Selected Activation Date</p>
+            <p className="text-sm font-black text-gray-900 mt-1">{dates[selectedDate].full}</p>
           </div>
         </motion.div>
 
@@ -142,7 +194,7 @@ export function CheckoutScreen({
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={onProceedToPayment}
+          onClick={() => onProceedToPayment(dates[selectedDate].full)}
           className="w-full bg-primary text-white py-5 rounded-[24px] font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3"
         >
           Proceed to Pay ₹{total}
