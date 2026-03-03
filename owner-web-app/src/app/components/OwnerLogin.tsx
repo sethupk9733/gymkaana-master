@@ -3,6 +3,8 @@ import { Mail, Lock, Chrome, User, Phone, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
+import { login, register } from "../lib/api";
+
 interface OwnerLoginProps {
   onLogin: () => void;
 }
@@ -10,15 +12,32 @@ interface OwnerLoginProps {
 export function OwnerLogin({ onLogin }: OwnerLoginProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '', name: '', phone: '' });
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API
-    setTimeout(() => {
+    setError(null);
+    try {
+      const res = isSignUp
+        ? await register({ ...formData, role: 'owner' })
+        : await login({ email: formData.email, password: formData.password });
+
+      if (res.accessToken) {
+        onLogin();
+      } else {
+        setError(res.message || "Authentication failed");
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during authentication");
+    } finally {
       setLoading(false);
-      onLogin(); // Proceed to app for both login and signup for now
-    }, 1500);
+    }
   };
 
   return (
@@ -41,6 +60,12 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
             {isSignUp ? "Create Account" : "Welcome Back"}
           </h2>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-medium text-center">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-300">
@@ -49,8 +74,11 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
                     <Input
+                      name="name"
                       type="text"
                       placeholder="John Doe"
+                      value={formData.name}
+                      onChange={handleInputChange}
                       className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50"
                       required
                     />
@@ -61,8 +89,11 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
                   <div className="relative group">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
                     <Input
+                      name="phone"
                       type="tel"
                       placeholder="98765 43210"
+                      value={formData.phone}
+                      onChange={handleInputChange}
                       className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50"
                       required
                     />
@@ -76,8 +107,11 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
               <div className="relative group">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
                 <Input
+                  name="email"
                   type="email"
                   placeholder="name@example.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50"
                   required
                 />
@@ -89,8 +123,11 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
               <div className="relative group">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
                 <Input
+                  name="password"
                   type="password"
                   placeholder="At least 6 characters"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50"
                   required
                 />
@@ -115,32 +152,13 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
             </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full h-11 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 font-medium transition-all"
-              >
-                <Chrome size={18} className="mr-2 text-gray-500" />
-                Google
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-gray-600">
             {isSignUp ? "Already have an account? " : "Don't have an account? "}
             <button
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError(null);
+              }}
               className="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
             >
               {isSignUp ? "Sign In" : "Sign Up"}
