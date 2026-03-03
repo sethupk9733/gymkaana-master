@@ -130,9 +130,16 @@ export function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <YieldCard label="Total Network GMV" value={stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0"} sub="Gross flow through platform" icon={Inbox} color="black" help="Combined revenue of all gyms" />
                         <YieldCard label="Gymkaana Income" value={stats?.totalRevenue ? `₹${(stats.totalRevenue * 0.15).toLocaleString()}` : "₹0"} sub="15% Transactional Yield" icon={Target} color="primary" help="Our net platform revenue" />
-                        <YieldCard label="Pending Onboarding" value={stats?.pendingGyms || "0"} sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
-                        <YieldCard label="Active User Reach" value={stats?.totalUsers || "0"} sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
-                        <YieldCard label="Yield per Member" value="₹0" sub="Avg. contribution/user" icon={Zap} color="orange" help="Revenue health per customer" />
+                        <YieldCard label="Pending Onboarding" value={stats?.pendingGyms?.toString() || "0"} sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
+                        <YieldCard label="Active User Reach" value={stats?.totalUsers?.toString() || "0"} sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
+                        <YieldCard
+                            label="Yield per Member"
+                            value={stats?.totalUsers > 0 ? `₹${Math.floor(stats.totalRevenue / stats.totalUsers).toLocaleString()}` : "₹0"}
+                            sub="Avg. contribution/user"
+                            icon={Zap}
+                            color="orange"
+                            help="Revenue health per customer"
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
