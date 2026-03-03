@@ -1,13 +1,14 @@
-import { Search, MoreHorizontal, User, ShieldAlert, Mail, MapPin, Calendar, Ban, CheckCircle, CreditCard, ChevronRight, X, Activity, Dumbbell, Clock, MessageSquare, AlertCircle, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { Search, MoreHorizontal, User as UserIcon, ShieldAlert, Mail, MapPin, Calendar, Ban, CheckCircle, CreditCard, ChevronRight, X, Activity, Dumbbell, Clock, MessageSquare, AlertCircle, TrendingUp, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { fetchUsers } from "../lib/api";
 
 interface UserDetail {
-    id: number;
+    id: string | number;
     name: string;
     email: string;
     phone: string;
-    role: "Customer" | "Gym Owner";
+    role: "Customer" | "Gym Owner" | "Admin";
     status: "Active" | "Blocked" | "Pending";
     joined: string;
     location: string;
@@ -24,71 +25,47 @@ export function UserManagement() {
     const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
     const [auditLogUser, setAuditLogUser] = useState<UserDetail | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [users, setUsers] = useState<UserDetail[]>([
-        {
-            id: 1,
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            phone: "+91 99999 11111",
-            role: "Customer",
-            status: "Active",
-            joined: "Jan 2, 2026",
-            location: "Indiranagar, Bangalore",
-            totalSpent: "₹4,500",
-            bookingsCount: 12,
-            lastActive: "2 hours ago",
-            frequency: "4x/week",
-            favoriteGym: "Iron Pump Gym",
-            activePasses: ["Monthly Pro Pass", "Yoga Trial"],
-            interactionLogs: [
-                { date: "Jan 5, 2026", action: "Booked Session at Iron Pump", type: "success" },
-                { date: "Jan 2, 2026", action: "Subscription Renewed", type: "info" },
-                { date: "Dec 28, 2025", action: "Support: Refund Requested", type: "warning" }
-            ]
-        },
-        {
-            id: 2,
-            name: "Bob Smith",
-            email: "bob@gym.com",
-            phone: "+91 88888 22222",
-            role: "Gym Owner",
-            status: "Active",
-            joined: "Dec 15, 2025",
-            location: "Koramangala, Bangalore",
-            totalSpent: "₹0 (Owner)",
-            bookingsCount: 0,
-            lastActive: "5 mins ago",
-            frequency: "Daily",
-            favoriteGym: "Elite CrossFit",
-            activePasses: ["Partner Access"],
-            interactionLogs: [
-                { date: "Jan 6, 2026", action: "New Plan Added: Power Blast", type: "success" },
-                { date: "Jan 5, 2026", action: "Payout Processed: ₹24,000", type: "info" }
-            ]
-        },
-        {
-            id: 3,
-            name: "Charlie Brown",
-            email: "charlie@fit.com",
-            phone: "+91 77777 33333",
-            role: "Customer",
-            status: "Blocked",
-            joined: "Nov 20, 2025",
-            location: "Whitefield, Bangalore",
-            totalSpent: "₹1,200",
-            bookingsCount: 3,
-            lastActive: "1 month ago",
-            frequency: "Rarely",
-            favoriteGym: "Yoga Zen Center",
-            activePasses: [],
-            interactionLogs: [
-                { date: "Dec 20, 2025", action: "Account Blocked: Unpaid Dues", type: "warning" },
-                { date: "Dec 18, 2025", action: "Missed 3 Bookings consecutively", type: "warning" }
-            ]
-        },
-    ]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [users, setUsers] = useState<UserDetail[]>([]);
 
-    const handleBlockUnblock = (id: number) => {
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    const loadUsers = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await fetchUsers();
+            const mappedUsers: UserDetail[] = data.map((u: any) => ({
+                id: u._id,
+                name: u.name,
+                email: u.email,
+                phone: u.phoneNumber || "N/A",
+                role: u.roles?.includes('admin') ? "Admin" : (u.roles?.includes('owner') ? "Gym Owner" : "Customer"),
+                status: u.isVerified ? "Active" : "Pending",
+                joined: new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                location: u.city || "Not specified",
+                totalSpent: "₹0", // Calculation would happen on backend
+                bookingsCount: 0, // Placeholder
+                lastActive: "Active now",
+                frequency: "N/A",
+                favoriteGym: "N/A",
+                activePasses: [],
+                interactionLogs: [
+                    { date: new Date(u.createdAt).toLocaleDateString(), action: "Account Created", type: "success" }
+                ]
+            }));
+            setUsers(mappedUsers);
+        } catch (err: any) {
+            setError(err.message || "Failed to load platform users");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBlockUnblock = (id: string | number) => {
         setUsers(users.map(u =>
             u.id === id
                 ? { ...u, status: u.status === 'Blocked' ? 'Active' : 'Blocked' }
@@ -127,66 +104,79 @@ export function UserManagement() {
 
             {/* Quick Insights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <UserInsight label="Total Active Clients" value="4,281" change="+12%" icon={Activity} />
+                <UserInsight label="Total Active Clients" value={users.length.toString()} change="+12%" icon={Activity} />
                 <UserInsight label="Churn Risk Level" value="low (2%)" change="-0.5%" icon={ShieldAlert} />
-                <UserInsight label="Avg. Order Value" value="₹1,840" change="+4%" icon={TrendingUp} />
+                <UserInsight label="Avg. Order Value" value="₹0" change="+0%" icon={TrendingUp} />
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-[48px] shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50/50 border-b border-gray-100 italic">
-                            <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Identity HUB</th>
-                            <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Activity Level</th>
-                            <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Account status</th>
-                            <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Ledger Detail</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {filteredUsers.map((user) => (
-                            <tr key={user.id} className="hover:bg-gray-50/30 transition-all cursor-pointer group" onClick={() => setSelectedUser(user)}>
-                                <td className="p-10">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-14 h-14 rounded-[24px] bg-black text-white flex items-center justify-center text-xl font-black italic shadow-lg group-hover:bg-primary transition-colors">
-                                            {user.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div className="font-black text-gray-900 uppercase italic tracking-tighter text-lg">{user.name}</div>
-                                            <div className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{user.email}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="p-10">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-gray-50 rounded-lg">
-                                            <Dumbbell className="w-4 h-4 text-gray-900" />
-                                        </div>
-                                        <span className="text-xs font-black uppercase tracking-widest">{user.frequency}</span>
-                                    </div>
-                                    <p className="text-[10px] font-bold text-gray-400 px-1">{user.bookingsCount} TOTAL BOOKINGS</p>
-                                </td>
-                                <td className="p-10">
-                                    <span className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border ${user.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                        user.status === 'Blocked' ? 'bg-red-50 text-red-600 border-red-100' :
-                                            'bg-yellow-50 text-yellow-600 border-yellow-100'
-                                        }`}>
-                                        {user.status}
-                                    </span>
-                                </td>
-                                <td className="p-10 text-right">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }}
-                                        className="p-4 bg-gray-50 hover:bg-black hover:text-white rounded-[20px] transition-all"
-                                        title="View Detailed Dossier"
-                                    >
-                                        <ChevronRight className="w-6 h-6" />
-                                    </button>
-                                </td>
+            {error && (
+                <div className="bg-red-50 border-2 border-red-100 p-6 rounded-[32px] text-red-600 font-bold uppercase tracking-widest text-xs text-center italic">
+                    SYSTEM ERROR: {error}
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="w-12 h-12 text-black animate-spin" />
+                    <p className="font-black uppercase tracking-[0.3em] text-[10px] text-gray-400">Synchronizing User Ecology...</p>
+                </div>
+            ) : (
+                <div className="bg-white border border-gray-100 rounded-[48px] shadow-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50/50 border-b border-gray-100 italic">
+                                <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Identity HUB</th>
+                                <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Activity Level</th>
+                                <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Account status</th>
+                                <th className="p-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Ledger Detail</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filteredUsers.map((user) => (
+                                <tr key={user.id} className="hover:bg-gray-50/30 transition-all cursor-pointer group" onClick={() => setSelectedUser(user)}>
+                                    <td className="p-10">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 rounded-[24px] bg-black text-white flex items-center justify-center text-xl font-black italic shadow-lg group-hover:bg-primary transition-colors">
+                                                {user.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <div className="font-black text-gray-900 uppercase italic tracking-tighter text-lg">{user.name}</div>
+                                                <div className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{user.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 bg-gray-50 rounded-lg">
+                                                <Dumbbell className="w-4 h-4 text-gray-900" />
+                                            </div>
+                                            <span className="text-xs font-black uppercase tracking-widest">{user.frequency}</span>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-gray-400 px-1">{user.bookingsCount} TOTAL BOOKINGS</p>
+                                    </td>
+                                    <td className="p-10">
+                                        <span className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border ${user.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                            user.status === 'Blocked' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                'bg-yellow-50 text-yellow-600 border-yellow-100'
+                                            }`}>
+                                            {user.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-10 text-right">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }}
+                                            className="p-4 bg-gray-50 hover:bg-black hover:text-white rounded-[20px] transition-all"
+                                            title="View Detailed Dossier"
+                                        >
+                                            <ChevronRight className="w-6 h-6" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Detailed User Dossier Modal */}
             <AnimatePresence>

@@ -229,7 +229,9 @@ export const updateGym = async (id: string | number, gymData: any) => {
 };
 
 export const createGym = async (gymData: any) => {
-    const response = await fetch(`${BASE_URL}/gyms`, {
+    const url = `${BASE_URL}/gyms`;
+    console.log(`🚀 POST ${url}`, gymData);
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -239,9 +241,19 @@ export const createGym = async (gymData: any) => {
         credentials: 'include',
         body: JSON.stringify(gymData)
     });
-    const data = await response.json();
+
+    let data;
+    const responseText = await response.text();
+    try {
+        data = JSON.parse(responseText);
+    } catch (e) {
+        console.error('❌ JSON Parse Error in createGym:', e);
+        console.log('📄 Raw Response:', responseText);
+        throw new Error(`Invalid response from server (HTML instead of JSON). Status: ${response.status}`);
+    }
+
     if (!response.ok) {
-        throw new Error(data.message || 'Failed to create gym');
+        throw new Error(data.message || `Failed to create gym (${response.status})`);
     }
     return data;
 };

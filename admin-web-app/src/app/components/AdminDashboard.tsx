@@ -1,6 +1,6 @@
-import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare } from "lucide-react";
+import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface GymMetric {
     id: string;
@@ -22,14 +22,52 @@ export function AdminDashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedPerfGym, setSelectedPerfGym] = useState<GymMetric | null>(null);
     const [activeView, setActiveView] = useState<'performance' | 'insights' | 'economics' | 'market_analysis'>('performance');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [gymsPerformance, setGymsPerformance] = useState<GymMetric[]>([]);
+    const [stats, setStats] = useState<any>(null);
 
-    const gymsPerformance: GymMetric[] = [
-        { id: "gym1", name: "PowerHouse Fitness", logo: "P", revenue: "₹3,82,000", platformIncome: "₹57,300", contributionScore: 28, growth: "+15.4%", members: 420, retention: "88%", status: "High", dailyActive: 156, marketCategory: 'Premium', yieldPerMember: "₹910" },
-        { id: "gym2", name: "Elite CrossFit", logo: "E", revenue: "₹95,000", platformIncome: "₹14,250", contributionScore: 7, growth: "-2.1%", members: 156, retention: "65%", status: "Critical", dailyActive: 42, marketCategory: 'Boutique', yieldPerMember: "₹610" },
-        { id: "gym3", name: "Yoga Zen Center", logo: "Y", revenue: "₹1,50,000", platformIncome: "₹22,500", contributionScore: 11, growth: "+8.7%", members: 210, retention: "72%", status: "Solid", dailyActive: 89, marketCategory: 'Boutique', yieldPerMember: "₹714" },
-        { id: "gym4", name: "Iron Pump Gym", logo: "I", revenue: "₹5,12,000", platformIncome: "₹76,800", contributionScore: 37, growth: "+22.5%", members: 580, retention: "92%", status: "High", dailyActive: 310, marketCategory: 'Premium', yieldPerMember: "₹882" },
-        { id: "gym5", name: "Muscle Factory", logo: "M", revenue: "₹2,10,000", platformIncome: "₹31,500", contributionScore: 17, growth: "+5.5%", members: 310, retention: "80%", status: "Solid", dailyActive: 120, marketCategory: 'Budget', yieldPerMember: "₹677" },
-    ];
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [gymsData, statsData] = await Promise.all([
+                import('../lib/api').then(m => m.fetchGyms()),
+                import('../lib/api').then(m => m.fetchDashboardStats('all'))
+            ]);
+
+            const mappedGyms: GymMetric[] = gymsData.map((g: any) => {
+                const revenueNum = Math.floor(Math.random() * 500000); // Placeholder revenue until backend logic is finalized
+                const platformIncomeNum = Math.floor(revenueNum * 0.15);
+                return {
+                    id: g._id,
+                    name: g.name,
+                    logo: g.name.charAt(0).toUpperCase(),
+                    revenue: `₹${revenueNum.toLocaleString()}`,
+                    platformIncome: `₹${platformIncomeNum.toLocaleString()}`,
+                    contributionScore: 20, // Average placeholder
+                    growth: "+0%",
+                    members: g.members || 0,
+                    retention: "85%",
+                    status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
+                    dailyActive: 0,
+                    marketCategory: 'Premium',
+                    yieldPerMember: "₹0"
+                };
+            });
+
+            setGymsPerformance(mappedGyms);
+            setStats(statsData);
+        } catch (err: any) {
+            setError(err.message || "Cloud link severed. Could not fetch live intelligence.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredGyms = gymsPerformance.filter(g =>
         g.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,15 +113,26 @@ export function AdminDashboard() {
                 </button>
             </div>
 
-            {activeView === 'performance' && (
+            {error && (
+                <div className="bg-red-50 border-2 border-red-100 p-8 rounded-[40px] text-red-600 font-black uppercase tracking-widest text-xs italic text-center">
+                    SYSTEM ALERT: {error}
+                </div>
+            )}
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-40 gap-6">
+                    <Loader2 className="w-16 h-16 text-black animate-spin" />
+                    <p className="font-black uppercase tracking-[0.4em] text-xs text-gray-400">Synchronizing Global Hub Intelligence...</p>
+                </div>
+            ) : activeView === 'performance' && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
                     {/* PLATFORM WIDE STATS - DETAILED */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        <YieldCard label="Total Network GMV" value="₹44.82L" sub="Gross flow through platform" icon={Inbox} color="black" help="Combined revenue of all gyms" />
-                        <YieldCard label="Gymkaana Income" value="₹6.72L" sub="15% Transactional Yield" icon={Target} color="primary" help="Our net platform revenue" />
-                        <YieldCard label="Pending Onboarding" value="08" sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
-                        <YieldCard label="Active User Reach" value="12,450" sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
-                        <YieldCard label="Yield per Member" value="₹892" sub="Avg. contribution/user" icon={Zap} color="orange" help="Revenue health per customer" />
+                        <YieldCard label="Total Network GMV" value={stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0"} sub="Gross flow through platform" icon={Inbox} color="black" help="Combined revenue of all gyms" />
+                        <YieldCard label="Gymkaana Income" value={stats?.totalRevenue ? `₹${(stats.totalRevenue * 0.15).toLocaleString()}` : "₹0"} sub="15% Transactional Yield" icon={Target} color="primary" help="Our net platform revenue" />
+                        <YieldCard label="Pending Onboarding" value={stats?.pendingGyms || "0"} sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
+                        <YieldCard label="Active User Reach" value={stats?.totalUsers || "0"} sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
+                        <YieldCard label="Yield per Member" value="₹0" sub="Avg. contribution/user" icon={Zap} color="orange" help="Revenue health per customer" />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

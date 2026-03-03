@@ -96,7 +96,7 @@ export default function AddGym() {
                 },
                 bankDetails: form.bankDetails,
                 plans: form.plans,
-                status: 'Pending'
+                status: 'pending'
             };
             await createGym(payload);
             navigate('/gyms');

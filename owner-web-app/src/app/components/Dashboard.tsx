@@ -1,4 +1,6 @@
-import { Bell, Users, Activity, DollarSign, Clock, Plus, TrendingUp, Eye, Building, QrCode, IndianRupee } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { fetchDashboardStats } from '../lib/api';
+import { Bell, Users, Activity, DollarSign, Clock, Plus, TrendingUp, Eye, Building, QrCode, IndianRupee, Loader2 } from "lucide-react";
 
 interface DashboardProps {
   onNavigateToNotifications: () => void;
@@ -9,28 +11,49 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNavigateToQR, onAddGym, onAddPlan }: DashboardProps) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statsData, setStatsData] = useState<any>(null);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchDashboardStats('all');
+      setStatsData(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to synchronize operational data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
     {
       label: 'Active Members',
-      value: '770',
+      value: statsData?.totalUsers?.toString() || '0',
       icon: Users,
-      change: '+12%',
+      change: '+0%',
       color: 'text-blue-600',
       bg: 'bg-blue-50'
     },
     {
       label: 'Total Revenue',
-      value: '₹4.3L',
+      value: statsData?.totalRevenue ? `₹${(statsData.totalRevenue * 0.85).toLocaleString()}` : '₹0', // Showing 85% for owner
       icon: IndianRupee,
-      change: '+8%',
+      change: '+0%',
       color: 'text-green-600',
       bg: 'bg-green-50'
     },
     {
       label: 'Check-ins Today',
-      value: '142',
+      value: '0', // Logic to be implemented in backend
       icon: QrCode,
-      change: '+24%',
+      change: '+0%',
       color: 'text-purple-600',
       bg: 'bg-purple-50'
     },
@@ -44,10 +67,7 @@ export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNa
   ];
 
   const activities = [
-    { id: 1, text: 'New member joined Gold Plan', time: '2 mins ago', gym: 'Main Branch' },
-    { id: 2, text: 'Payment received ₹2,500', time: '15 mins ago', gym: 'Downtown Gym' },
-    { id: 3, text: 'New 5-star review received', time: '1 hour ago', gym: 'Main Branch' },
-    { id: 4, text: 'Equipment maintenance due', time: '3 hours ago', gym: 'CrossFit Zone' },
+    { id: 1, text: 'System Online', time: 'Just now', gym: 'All Branches' },
   ];
 
   return (
@@ -76,66 +96,81 @@ export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNa
 
       {/* Content */}
       <div className="px-6 py-6 space-y-6 max-w-4xl mx-auto">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
-              <div className="flex justify-between items-start mb-2">
-                <div className={`p-2 rounded-lg ${stat.bg}`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+        {error && (
+          <div className="bg-red-50 border border-red-100 p-6 rounded-2xl text-red-600 text-xs font-bold uppercase tracking-widest text-center italic">
+            SYSTEM ALERT: {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-40 gap-6">
+            <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+            <p className="font-bold uppercase tracking-[0.4em] text-[10px] text-gray-400">Synchronizing Partner Infrastructure...</p>
+          </div>
+        ) : (
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {stats.map((stat, index) => (
+                <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className={`p-2 rounded-lg ${stat.bg}`}>
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{stat.change}</span>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+                  </div>
                 </div>
-                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{stat.change}</span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={action.onClick}
+                    className="group flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-gray-300 transition-all"
+                  >
+                    <div className={`p-3 rounded-full mb-2 text-white shadow-md group-hover:scale-110 transition-transform ${action.color}`}>
+                      <action.icon size={24} />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700">{action.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.onClick}
-                className="group flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-gray-300 transition-all"
-              >
-                <div className={`p-3 rounded-full mb-2 text-white shadow-md group-hover:scale-110 transition-transform ${action.color}`}>
-                  <action.icon className="w-6 h-6" />
-                </div>
-                <span className="text-sm font-medium text-gray-700">{action.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-all">
-              View All
-            </button>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {activities.map((item, index) => (
-              <div
-                key={item.id}
-                className={`p-4 flex flex-col space-y-1 hover:bg-gray-50 ${index !== activities.length - 1 && "border-b border-gray-100"}`}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="text-sm font-medium text-gray-900">{item.text}</p>
-                  <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{item.time}</span>
-                </div>
-                <p className="text-xs text-blue-600 font-medium">{item.gym}</p>
+            {/* Recent Activity */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                <button className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-all">
+                  View All
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {activities.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`p-4 flex flex-col space-y-1 hover:bg-gray-50 ${index !== activities.length - 1 && "border-b border-gray-100"}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <p className="text-sm font-medium text-gray-900">{item.text}</p>
+                      <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{item.time}</span>
+                    </div>
+                    <p className="text-xs text-blue-600 font-medium">{item.gym}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

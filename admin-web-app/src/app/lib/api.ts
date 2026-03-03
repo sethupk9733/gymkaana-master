@@ -124,13 +124,26 @@ export const googleLogin = async (googleData: { idToken: string; role?: string }
 };
 
 export const fetchUsers = async () => {
-    const response = await fetch(`${BASE_URL}/auth/users`, {
+    const url = `${BASE_URL}/auth/users`;
+    console.log(`🌐 GET ${url}`);
+    const response = await fetch(url, {
         headers: getAuthHeaders(),
         //@ts-ignore
         credentials: 'include'
     });
-    if (!response.ok) throw new Error('Failed to fetch users');
-    return await response.json();
+
+    const responseText = await response.text();
+    let data;
+    try {
+        data = JSON.parse(responseText);
+    } catch (e) {
+        console.error('❌ JSON Parse Error in fetchUsers:', e);
+        console.log('📄 Raw Response:', responseText);
+        throw new Error(`Invalid server response (HTML). Check API_URL and Backend Status.`);
+    }
+
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch users');
+    return data;
 };
 
 export const logout = async () => {
