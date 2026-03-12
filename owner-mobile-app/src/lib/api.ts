@@ -318,6 +318,26 @@ export const verifyQR = async (bookingId: string) => {
     return lookupQR(bookingId);
 };
 
+export const fetchBookings = async () => {
+    const response = await fetch(`${BASE_URL}/bookings`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return await response.json();
+};
+
+export const fetchBookingsByGymId = async (gymId: string) => {
+    const response = await fetch(`${BASE_URL}/bookings/gym/${gymId}`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch bookings');
+    return await response.json();
+};
+
 export const fetchActivities = async () => {
     const response = await fetch(`${BASE_URL}/activities`, {
         headers: getAuthHeaders()
