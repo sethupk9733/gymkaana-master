@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "./components/Layout";
 import { OwnerLogin } from "./components/OwnerLogin";
 import { Dashboard } from "./components/Dashboard";
@@ -15,13 +15,44 @@ import { QRCheckIn } from "./components/QRCheckIn";
 import { PayoutsEarnings } from "./components/PayoutsEarnings";
 import { Notifications } from "./components/Notifications";
 import { Profile } from "./components/Profile";
+import { checkSession } from "./lib/api";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentScreen, setCurrentScreen] = useState("main");
   const [selectedGymId, setSelectedGymId] = useState<number | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const user = await checkSession();
+        if (user) {
+          setIsLoggedIn(true);
+        } else {
+          // Fallback check to localStorage if cookie-based refresh fails
+          const savedUser = localStorage.getItem('gymkaana_owner_user');
+          if (savedUser) setIsLoggedIn(true);
+        }
+      } catch (err) {
+        console.error("Session check failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+        <p className="mt-4 text-sm font-bold text-gray-500 uppercase tracking-widest italic">Authenticating...</p>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <OwnerLogin onLogin={() => setIsLoggedIn(true)} />;

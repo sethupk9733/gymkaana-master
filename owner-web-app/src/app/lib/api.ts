@@ -3,6 +3,21 @@ import { API_URL } from '../config/api';
 const BASE_URL = API_URL;
 let inMemoryToken: string | null = null;
 
+// Auto-restore token from localStorage on page load/refresh
+(() => {
+    try {
+        const stored = localStorage.getItem('gymkaana_user');
+        if (stored) {
+            const user = JSON.parse(stored);
+            if (user?.accessToken) {
+                inMemoryToken = user.accessToken;
+            }
+        }
+    } catch (e) {
+        console.warn('Could not restore token from storage', e);
+    }
+})();
+
 const getAuthHeaders = (): Record<string, string> => {
     return inMemoryToken ? { 'Authorization': `Bearer ${inMemoryToken}` } : {};
 };
