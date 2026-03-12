@@ -1,10 +1,11 @@
-import { Clock, CheckCircle, XCircle, Calendar, MapPin, Search, Loader2 } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Calendar, MapPin, Search, Loader2, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "./ui/input";
 import { fetchBookings } from "../lib/api";
+import { cn } from "./ui/utils";
 
 interface BookingsListProps {
-  onBookingSelect: (bookingId: number) => void;
+  onBookingSelect: (bookingId: string) => void;
 }
 
 export function BookingsList({ onBookingSelect }: BookingsListProps) {
@@ -31,15 +32,15 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
   const filteredBookings = bookings.filter((booking) => {
     // 1. Text Search Filter
     const matchesSearch =
-      (booking.userId?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (booking.userId?.name || booking.memberName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (booking.gymId?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking._id.toString().includes(searchQuery);
 
     if (!matchesSearch) return false;
 
     // 2. Status Tab Filter
-    const status = booking.status.toLowerCase();
-    if (activeFilter === "upcoming") return status === "upcoming";
+    const status = booking.status?.toLowerCase();
+    if (activeFilter === "upcoming") return status === "upcoming" || status === "pending";
     if (activeFilter === "active") return status === "active" || status === "checked-in";
     if (activeFilter === "completed") return status === "completed";
     if (activeFilter === "cancelled") return status === "cancelled" || status === "rejected";
@@ -48,8 +49,9 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
   });
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case "upcoming":
+      case "pending":
         return "bg-blue-100 text-blue-700";
       case "active":
       case "checked-in":
@@ -64,13 +66,27 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
     }
   };
 
+  const getPaymentStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "paid":
+        return "bg-emerald-50 text-emerald-600 border-emerald-100";
+      case "unpaid":
+        return "bg-amber-50 text-amber-600 border-amber-100";
+      case "refunded":
+        return "bg-purple-50 text-purple-600 border-purple-100";
+      default:
+        return "bg-gray-50 text-gray-400 border-gray-100";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm px-6 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-black uppercase italic tracking-tighter">Client Deployments</h1>
+            <h1 className="text-2xl font-black uppercase italic tracking-tighter">Fleet Control</h1>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Live Deployment Feed</p>
           </div>
 
           <div className="relative">
@@ -132,11 +148,11 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
                       {booking.userId?.profileImage ? (
                         <img src={booking.userId.profileImage} alt="User" className="w-full h-full object-cover" />
                       ) : (
-                        (booking.userId?.name || "U").charAt(0).toUpperCase()
+                        (booking.userId?.name || booking.memberName || "U").charAt(0).toUpperCase()
                       )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tighter transition-colors">{booking.userId?.name || 'Anonymous Client'}</h3>
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tighter transition-colors">{booking.userId?.name || booking.memberName || 'Anonymous Client'}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-100">
                           {booking.planId?.name || "Tier: Standard"}
@@ -146,9 +162,18 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-md text-[9px] font-black border-2 ${getStatusColor(booking.status).replace('bg-', 'border-').replace('text-', 'text-')} bg-white shadow-sm uppercase tracking-[0.2em]`}>
-                      {booking.status.toUpperCase()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-[8px] font-black border uppercase tracking-widest flex items-center gap-1",
+                        getPaymentStatusColor(booking.paymentStatus)
+                      )}>
+                        <CreditCard size={10} />
+                        {booking.paymentStatus || 'UNPAID'}
+                      </span>
+                      <span className={`px-3 py-1 rounded-md text-[9px] font-black border-2 ${getStatusColor(booking.status).replace('bg-', 'border-').replace('text-', 'text-')} bg-white shadow-sm uppercase tracking-[0.2em]`}>
+                        {booking.status?.toUpperCase() || 'PENDING'}
+                      </span>
+                    </div>
                     <p className="text-sm font-black text-black">₹{booking.amount || 0}</p>
                   </div>
                 </div>

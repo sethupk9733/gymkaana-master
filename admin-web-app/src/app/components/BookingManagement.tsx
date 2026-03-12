@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { fetchBookings } from "../lib/api";
-import { Search, Activity, CheckCircle, XCircle, Clock, Calendar, Building2, User } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, Clock, Calendar, Building2, User, CreditCard } from "lucide-react";
 
 interface BookingDetail {
     id: string;
     transactionId?: string;
+    paymentId?: string;
+    orderId?: string;
+    paymentStatus?: string;
     memberName: string;
     memberEmail: string;
     gymName: string;
@@ -34,6 +37,9 @@ export function BookingManagement() {
             const mappedBookings = data.map((b: any) => ({
                 id: b._id,
                 transactionId: b.transactionId,
+                paymentId: b.paymentId,
+                orderId: b.orderId,
+                paymentStatus: b.paymentStatus || 'unpaid',
                 memberName: b.userId?.name || b.memberName || "Unknown",
                 memberEmail: b.userId?.email || b.memberEmail || "N/A",
                 gymName: b.gymId?.name || "Unknown Gym",
@@ -84,6 +90,15 @@ export function BookingManagement() {
             case 'completed': return 'bg-blue-50 text-blue-600 border-blue-100';
             case 'cancelled': return 'bg-red-50 text-red-600 border-red-100';
             default: return 'bg-gray-50 text-gray-600 border-gray-100';
+        }
+    };
+
+    const getPaymentStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case 'paid': return 'bg-emerald-500 text-white border-emerald-600';
+            case 'unpaid': return 'bg-amber-500 text-white border-amber-600';
+            case 'refunded': return 'bg-purple-500 text-white border-purple-600';
+            default: return 'bg-gray-400 text-white border-gray-500';
         }
     };
 
@@ -145,9 +160,9 @@ export function BookingManagement() {
                                 <tr>
                                     <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Member ID</th>
                                     <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Hub Detail</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Plan Terms</th>
+                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Finances</th>
                                     <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-center">Status</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Validity / Cancellation</th>
+                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Tenure / Cancellation</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -159,14 +174,16 @@ export function BookingManagement() {
                                     >
                                         <td className="p-8">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm group-hover:bg-primary group-hover:text-black transition-colors">
+                                                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm transition-colors group-hover:bg-primary group-hover:text-black">
                                                     {booking.memberName.charAt(0)}
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-gray-900 uppercase italic tracking-tighter">{booking.memberName}</p>
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{booking.memberEmail}</p>
-                                                    {booking.transactionId && (
-                                                        <p className="text-[9px] font-bold text-blue-600 mt-0.5">{booking.transactionId}</p>
+                                                    {(booking.transactionId || booking.paymentId) && (
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[7px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-1 rounded">PAY-ID: {booking.paymentId || booking.transactionId}</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
@@ -178,9 +195,15 @@ export function BookingManagement() {
                                             </div>
                                         </td>
                                         <td className="p-8">
-                                            <div className="flex flex-col">
-                                                <span className="font-black uppercase italic text-gray-900">{booking.planName}</span>
-                                                <span className="text-[10px] font-bold text-emerald-600">₹{booking.amount}</span>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-black uppercase italic text-gray-900 leading-none">{booking.planName}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-emerald-600">₹{booking.amount}</span>
+                                                    <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest flex items-center gap-1 ${getPaymentStatusColor(booking.paymentStatus || 'unpaid')}`}>
+                                                        <CreditCard size={8} />
+                                                        {booking.paymentStatus}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="p-8 text-center">
@@ -233,9 +256,21 @@ export function BookingManagement() {
                         <div className="space-y-8">
                             <div>
                                 <h3 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900">Protocol Assignment Detail</h3>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                    Transaction ID: {selectedBooking.transactionId || `#${selectedBooking.id.slice(-8)}`}
-                                </p>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        Booking ID: #{selectedBooking.id.slice(-8).toUpperCase()}
+                                    </p>
+                                    {selectedBooking.paymentId && (
+                                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                                            Payment Reference: {selectedBooking.paymentId}
+                                        </p>
+                                    )}
+                                    {selectedBooking.orderId && (
+                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
+                                            Gateway Order: {selectedBooking.orderId}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-8">
@@ -251,9 +286,12 @@ export function BookingManagement() {
                             </div>
 
                             <div className="p-8 bg-gray-50 rounded-[32px] border border-gray-100 flex justify-between items-center">
-                                <div className="space-y-1">
+                                <div className="space-y-1 flex flex-col">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Tier</p>
                                     <p className="font-black text-xl uppercase italic text-gray-900">{selectedBooking.planName}</p>
+                                    <span className={`mt-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border text-center ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
+                                        {selectedBooking.paymentStatus}
+                                    </span>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Settlement</p>
@@ -299,8 +337,8 @@ export function BookingManagement() {
                             )}
 
                             <div className="flex gap-4">
-                                <button className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-xl">Contact Client</button>
-                                <button className="flex-1 py-5 bg-gray-100 text-gray-900 rounded-[24px] font-black text-[10px] uppercase tracking-widest">Sync Permissions</button>
+                                <button className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-xl transition-transform active:scale-95">Contact Client</button>
+                                <button className="flex-1 py-5 bg-gray-100 text-gray-900 rounded-[24px] font-black text-[10px] uppercase tracking-widest transition-transform active:scale-95">Gateway Dashboard</button>
                             </div>
                         </div>
                     </div>
