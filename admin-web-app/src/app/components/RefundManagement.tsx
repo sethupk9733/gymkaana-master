@@ -1,6 +1,5 @@
-import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote } from "lucide-react";
+import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, X } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 
 interface Transaction {
     id: string;
@@ -90,7 +89,7 @@ export function RefundManagement() {
     });
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20">
+        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Financial Ledger</h2>
@@ -134,8 +133,8 @@ export function RefundManagement() {
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
                                 className={`px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${filterStatus === status
-                                        ? 'bg-black text-white'
-                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                    ? 'bg-black text-white'
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                                     }`}
                             >
                                 {status}
@@ -166,7 +165,7 @@ export function RefundManagement() {
                                     <td className="py-6 px-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[10px] font-black italic">
-                                                {txn.gym.charAt(0)}
+                                                {(txn.gym || "?")[0]}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900 text-sm">{txn.gym}</p>
@@ -198,77 +197,72 @@ export function RefundManagement() {
             </div>
 
             {/* Transaction Detail Panel */}
-            <AnimatePresence>
-                {selectedTxn && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 40 }}
-                            className="bg-white w-full max-w-2xl rounded-[48px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]"
+            {selectedTxn && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div
+                        className="bg-white w-full max-w-2xl rounded-[48px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]"
+                    >
+                        <button
+                            onClick={() => setSelectedTxn(null)}
+                            className="absolute top-8 right-8 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all z-10"
+                            title="Close"
                         >
-                            <button
-                                onClick={() => setSelectedTxn(null)}
-                                className="absolute top-8 right-8 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all z-10"
-                                title="Close"
-                            >
-                                <Printer className="w-5 h-5" />
-                            </button>
+                            <X className="w-5 h-5" />
+                        </button>
 
-                            <div className="p-12 overflow-y-auto custom-scrollbar">
-                                <div className="text-center mb-10">
-                                    <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                                        }`}>
-                                        <CreditCard className="w-10 h-10" />
-                                    </div>
-                                    <h3 className="text-3xl font-black italic uppercase tracking-tighter">Transaction Detail</h3>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn.id}</p>
+                        <div className="p-12 overflow-y-auto custom-scrollbar">
+                            <div className="text-center mb-10">
+                                <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                                    }`}>
+                                    <CreditCard className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-3xl font-black italic uppercase tracking-tighter">Transaction Detail</h3>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn.id}</p>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-100 grid grid-cols-2 gap-8">
+                                    <SummaryItem label="Customer" value={selectedTxn.user} sub={selectedTxn.email} />
+                                    <SummaryItem label="Gym Venue" value={selectedTxn.gym} sub="Primary Partner" />
+                                    <SummaryItem label="Payment Info" value={selectedTxn.method} sub={selectedTxn.type} />
+                                    <SummaryItem label="Timestamp" value={selectedTxn.date} sub={selectedTxn.time} />
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-100 grid grid-cols-2 gap-8">
-                                        <SummaryItem label="Customer" value={selectedTxn.user} sub={selectedTxn.email} />
-                                        <SummaryItem label="Gym Venue" value={selectedTxn.gym} sub="Primary Partner" />
-                                        <SummaryItem label="Payment Info" value={selectedTxn.method} sub={selectedTxn.type} />
-                                        <SummaryItem label="Timestamp" value={selectedTxn.date} sub={selectedTxn.time} />
+                                <div className="p-8 bg-black text-white rounded-[32px] space-y-4">
+                                    <div className="flex justify-between items-center text-white/40 font-black text-[10px] uppercase tracking-widest border-b border-white/5 pb-4">
+                                        <span>Ledger Breakdown</span>
+                                        <span>Amount (INR)</span>
                                     </div>
-
-                                    <div className="p-8 bg-black text-white rounded-[32px] space-y-4">
-                                        <div className="flex justify-between items-center text-white/40 font-black text-[10px] uppercase tracking-widest border-b border-white/5 pb-4">
-                                            <span>Ledger Breakdown</span>
-                                            <span>Amount (INR)</span>
+                                    <LedgerLine label="Order Amount" value={selectedTxn.amount} />
+                                    <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn.commission}`} color="text-primary" />
+                                    <LedgerLine label="GST @ 18%" value="- ₹89.00" />
+                                    <div className="pt-4 border-t border-white/10 flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase text-white/40">Net Partner Payout</p>
+                                            <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn.netPayout}</p>
                                         </div>
-                                        <LedgerLine label="Order Amount" value={selectedTxn.amount} />
-                                        <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn.commission}`} color="text-primary" />
-                                        <LedgerLine label="GST @ 18%" value="- ₹89.00" />
-                                        <div className="pt-4 border-t border-white/10 flex justify-between items-end">
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase text-white/40">Net Partner Payout</p>
-                                                <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn.netPayout}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black uppercase text-white/40">Settlement Code</p>
-                                                <p className="font-mono text-xs font-bold">SET-90129XP</p>
-                                            </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black uppercase text-white/40">Settlement Code</p>
+                                            <p className="font-mono text-xs font-bold">SET-90129XP</p>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="mt-10 flex gap-4">
-                                    {selectedTxn.status === 'Completed' && (
-                                        <button className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all flex items-center justify-center gap-3">
-                                            Reverse Payment (Refund)
-                                        </button>
-                                    )}
-                                    <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all">
-                                        Close Ledger
-                                    </button>
                                 </div>
                             </div>
-                        </motion.div>
+
+                            <div className="mt-10 flex gap-4">
+                                {selectedTxn.status === 'Completed' && (
+                                    <button className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all flex items-center justify-center gap-3">
+                                        Reverse Payment (Refund)
+                                    </button>
+                                )}
+                                <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all">
+                                    Close Ledger
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
         </div>
     );
 }

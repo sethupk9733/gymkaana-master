@@ -5,7 +5,7 @@ import {
     ChevronRight, FileCheck, AlertCircle, Trash2, Search, Filter,
     TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+
 
 interface GymDetail {
     id: number;
@@ -234,9 +234,9 @@ export function PartnerManagement() {
 
             {/* DIRECTORY LIST */}
             <div className="grid grid-cols-1 gap-4">
-                <AnimatePresence mode="popLayout">
+                <div mode="popLayout">
                     {filteredGyms.map((gym) => (
-                        <motion.div
+                        <div
                             key={gym.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -275,16 +275,16 @@ export function PartnerManagement() {
                                     <MoreHorizontal className="w-5 h-5" />
                                 </button>
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
-                </AnimatePresence>
+                </div>
             </div>
 
             {/* HUB INTELLIGENCE MODAL */}
-            <AnimatePresence>
+            <div>
                 {selectedGym && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl">
-                        <motion.div
+                        <div
                             initial={{ opacity: 0, scale: 0.9, y: 100 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 100 }}
@@ -341,28 +341,28 @@ export function PartnerManagement() {
                                         {/* DETAIL TABS */}
                                         <div className="flex gap-10 border-b border-gray-100 relative z-10 flex-shrink-0">
                                             <button onClick={() => setDetailTab('profile')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'profile' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Hub Profile {detailTab === 'profile' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Hub Profile {detailTab === 'profile' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('plans')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'plans' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Membership Plans {detailTab === 'plans' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Membership Plans {detailTab === 'plans' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('portfolio')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'portfolio' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Owner Portfolio {detailTab === 'portfolio' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Owner Portfolio {detailTab === 'portfolio' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('financials')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'financials' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Financials {detailTab === 'financials' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Financials {detailTab === 'financials' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('clients')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'clients' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Client Base {detailTab === 'clients' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Client Base {detailTab === 'clients' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('preview')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'preview' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
-                                                Live Preview {detailTab === 'preview' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
+                                                Live Preview {detailTab === 'preview' && <div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />}
                                             </button>
                                         </div>
 
                                         <div className="flex-1 space-y-12 relative z-10 overflow-y-auto pr-4 custom-scrollbar">
                                             {detailTab === 'profile' && (
-                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-16 pb-12">
+                                                <div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-16 pb-12">
                                                     <div className="grid grid-cols-3 gap-10">
                                                         <MetricBox label="Avg Quality Score" value="9.4" icon={Star} color="text-yellow-500" />
                                                         <MetricBox label="Revenue Yield" value={selectedGym.revenue} icon={TrendingUp} color="text-emerald-500" />
@@ -400,11 +400,11 @@ export function PartnerManagement() {
                                                             <AssetCard label="Insurance Desk" val={selectedGym.documentation.insurancePolicy} color="blue" />
                                                         </div>
                                                     </section>
-                                                </motion.div>
+                                                </div>
                                             )}
 
                                             {detailTab === 'plans' && (
-                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                                                <div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <h4 className="text-2xl font-black italic uppercase tracking-tighter">Live Membership Offerings</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                         {(selectedGym.plans || [
@@ -426,11 +426,11 @@ export function PartnerManagement() {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
 
                                             {detailTab === 'portfolio' && (
-                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                                                <div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <div className="bg-gray-50 p-10 rounded-[48px] border border-gray-100 space-y-8">
                                                         <h4 className="text-xl font-black italic uppercase tracking-tighter">Business Application Data</h4>
                                                         <div className="grid grid-cols-2 gap-x-12 gap-y-8">
@@ -447,11 +447,11 @@ export function PartnerManagement() {
                                                         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Hub Description</h4>
                                                         <p className="text-gray-600 italic font-medium leading-[1.8] text-lg">"{selectedGym.description}"</p>
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
 
                                             {detailTab === 'financials' && (
-                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                                                <div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <div className="grid grid-cols-2 gap-8">
                                                         <div className="bg-black text-white p-10 rounded-[48px] border border-white/10">
                                                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2">Platform Balance</p>
@@ -486,11 +486,11 @@ export function PartnerManagement() {
                                                             ))}
                                                         </div>
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
 
                                             {detailTab === 'clients' && (
-                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                                                <div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <div className="bg-white border border-gray-100 rounded-[40px] overflow-hidden">
                                                         <table className="w-full text-left">
                                                             <thead className="bg-gray-50">
@@ -520,11 +520,11 @@ export function PartnerManagement() {
                                                             </tbody>
                                                         </table>
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
 
                                             {detailTab === 'preview' && (
-                                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="h-[600px] flex items-center justify-center p-10 bg-gray-50 rounded-[48px] border border-gray-100 overflow-hidden relative">
+                                                <div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="h-[600px] flex items-center justify-center p-10 bg-gray-50 rounded-[48px] border border-gray-100 overflow-hidden relative">
                                                     <div className="absolute top-10 left-10">
                                                         <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Marketplace Simulation</h4>
                                                         <p className="text-xs font-bold text-gray-400 mt-1 uppercase">Visualizing {selectedGym.name} as seen by users</p>
@@ -567,7 +567,7 @@ export function PartnerManagement() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </motion.div>
+                                                </div>
                                             )}
                                         </div>
 
@@ -588,9 +588,9 @@ export function PartnerManagement() {
                                                         className="flex-1 py-5 bg-black text-white rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] hover:shadow-2xl hover:shadow-black/30 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
                                                     >
                                                         {isProcessing ? (
-                                                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+                                                            <div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
                                                                 <Activity className="w-6 h-6 text-primary" />
-                                                            </motion.div>
+                                                            </div>
                                                         ) : (
                                                             <><FileCheck className="w-6 h-6 text-primary" /> Authorize & Launch Hub</>
                                                         )}
@@ -620,16 +620,16 @@ export function PartnerManagement() {
                                     </div>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
                 )}
-            </AnimatePresence>
+            </div>
 
             {/* ONBOARDING MODAL */}
-            <AnimatePresence>
+            <div>
                 {showOnboardModal && (
                     <div className="fixed inset-0 z-[120] flex items-center justify-center p-8 bg-black/90 backdrop-blur-xl">
-                        <motion.div
+                        <div
                             initial={{ opacity: 0, scale: 0.9, y: 50 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 50 }}
@@ -687,10 +687,10 @@ export function PartnerManagement() {
                                     <FileCheck className="w-6 h-6 text-primary" /> Initialize Onboarding Request
                                 </button>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
                 )}
-            </AnimatePresence>
+            </div>
         </div>
     );
 }
@@ -754,7 +754,7 @@ function TabLink({ active, label, count, onClick }: any) {
             <span className={`text-xs font-black uppercase tracking-[0.2em] transition-all ${active ? 'text-black' : 'text-gray-400 group-hover:text-gray-600'}`}>{label}</span>
             <span className={`text-[9px] font-black p-1 px-2 rounded-lg transition-all ${active ? 'bg-primary text-black' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>{count}</span>
             {active && (
-                <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-1 bg-black rounded-full" />
+                <div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-1 bg-black rounded-full" />
             )}
         </button>
     )

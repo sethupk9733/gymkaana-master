@@ -1,1 +1,8 @@
-{}
+{
+  "name": "gymkaana-root",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm run build --prefix landing-page && mkdir -p dist && cp -r landing-page/dist/* dist/"
+  }
+}

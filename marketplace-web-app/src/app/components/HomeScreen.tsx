@@ -117,7 +117,9 @@ export function HomeScreen({
           gymSpecs.some((spec: string) => spec.toLowerCase() === selected.toLowerCase())
         );
 
-      return matchesSearch && matchesDistance && matchesDisciplines;
+      const matchesStatus = (gym.status || "").toLowerCase() === 'active';
+
+      return matchesSearch && matchesDistance && matchesDisciplines && matchesStatus;
     });
 
     return results;

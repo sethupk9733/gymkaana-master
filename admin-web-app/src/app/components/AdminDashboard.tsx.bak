@@ -1,4 +1,4 @@
-import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Loader2, Landmark, X } from "lucide-react";
+﻿import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Loader2, Landmark, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { fetchGyms, fetchDashboardStats } from "../lib/api";
 
@@ -29,7 +29,7 @@ export function AdminDashboard() {
     const [renderError, setRenderError] = useState<string | null>(null);
 
     useEffect(() => {
-        console.log("📊 AdminDashboard: Component mounted, initiating data sync...");
+        console.log("     AdminDashboard: Component mounted, initiating data sync...");
         loadData();
     }, []);
 
@@ -37,13 +37,13 @@ export function AdminDashboard() {
         setLoading(true);
         setError(null);
         try {
-            console.log("📊 AdminDashboard: Fetching live market intelligence...");
+            console.log("     AdminDashboard: Fetching live market intelligence...");
             const [gymsData, statsData] = await Promise.all([
                 fetchGyms().catch(e => { console.error("fetchGyms fail", e); return []; }),
                 fetchDashboardStats('all').catch(e => { console.error("fetchStats fail", e); return null; })
             ]);
 
-            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData });
+            console.log("     AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData });
 
             const dataArray = Array.isArray(gymsData) ? gymsData : [];
             const mappedGyms: GymMetric[] = dataArray.map((g: any) => {
@@ -73,9 +73,9 @@ export function AdminDashboard() {
 
             setGymsPerformance(mappedGyms);
             setStats(statsData || { totalRevenue: 0, activeGyms: 0, checkinsToday: 0 });
-            console.log("📊 AdminDashboard: State synchronization complete");
+            console.log("     AdminDashboard: State synchronization complete");
         } catch (err: any) {
-            console.error("📊 AdminDashboard: System Link Failure", err);
+            console.error("     AdminDashboard: System Link Failure", err);
             setError(err.message || "Cloud link severed. Could not fetch live intelligence.");
         } finally {
             setLoading(false);
@@ -119,7 +119,8 @@ export function AdminDashboard() {
         );
     }
 
-    return (
+    try {
+        return (
             <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
                 <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-2">
@@ -332,6 +333,11 @@ export function AdminDashboard() {
                 )}
             </div>
         );
+    } catch (e: any) {
+        console.error("     AdminDashboard: Render Crash caught!", e);
+        setRenderError(e.message || "Unknown Render Error");
+        return null;
+    }
 }
 
 function InsightCard({ label, value, sub, icon: Icon, type }: any) {
@@ -386,3 +392,5 @@ function TabButton({ active, onClick, label, icon: Icon }: any) {
         </button>
     )
 }
+
+

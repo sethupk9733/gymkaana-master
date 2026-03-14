@@ -175,7 +175,7 @@ export function BookingManagement() {
                                         <td className="p-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm transition-colors group-hover:bg-primary group-hover:text-black">
-                                                    {booking.memberName.charAt(0)}
+                                                    {(booking.memberName || "?")[0]}
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-gray-900 uppercase italic tracking-tighter">{booking.memberName}</p>

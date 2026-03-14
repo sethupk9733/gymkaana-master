@@ -56,6 +56,24 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
     );
   }
 
+  // CRITICAL SAFETY CHECK: If gym is null after loading, show error state instead of crashing
+  if (!gym) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-6">
+        <div className="w-20 h-20 bg-muted rounded-3xl flex items-center justify-center text-muted-foreground">
+          <Shield className="w-10 h-10" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black italic uppercase tracking-tighter">Intelligence Link Severed</h2>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2">The requested venue data is currently unavailable or restricted.</p>
+        </div>
+        <button onClick={onBack} className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">
+          Return to Base
+        </button>
+      </div>
+    );
+  }
+
   // Icons map for facilities
   const iconMap: Record<string, any> = {
     "Weights": Dumbbell,
@@ -69,7 +87,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
   };
 
   // Use dynamic facilities from gym data or fallback to defaults
-  const gymFacilities = gym.facilities && gym.facilities.length > 0
+  const gymFacilities = gym.facilities && Array.isArray(gym.facilities) && gym.facilities.length > 0
     ? gym.facilities.map((f: string) => ({
       icon: iconMap[f] || Dumbbell,
       label: f
@@ -89,8 +107,8 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
       className="w-full pb-20"
     >
       <SEO
-        title={gym.name}
-        description={`Experience elite training at ${gym.name} in ${gym.location}. Specialized in ${gym.specializations?.join(', ') || 'fitness'}. Book your membership now on Gymkaana.`}
+        title={gym.name || "Venue Details"}
+        description={`Experience elite training at ${gym.name || 'our venue'} in ${gym.location || 'your area'}. Specialized in ${gym.specializations?.join(', ') || 'fitness'}. Book your membership now on Gymkaana.`}
       />
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 px-6 max-w-7xl mx-auto pt-8">
 
@@ -109,7 +127,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
               transition={{ duration: 0.6 }}
               className="rounded-[32px] overflow-hidden shadow-2xl border border-border bg-muted aspect-[4/3] relative group"
             >
-              <ImageCarousel images={gym.images} altPrefix={gym.name} />
+              <ImageCarousel images={Array.isArray(gym.images) ? gym.images : (gym.image ? [gym.image] : [])} altPrefix={gym.name || "Venue"} />
               <div className="absolute inset-0 pointer-events-none border-[6px] border-primary/10 rounded-[32px] z-20" />
             </motion.div>
 
@@ -123,10 +141,10 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                 <span className="w-8 h-px bg-border"></span> About this Venue
               </h3>
               <p className="text-base leading-relaxed text-foreground/80 font-medium whitespace-pre-wrap">
-                {gym.description}
+                {gym.description || "No detailed dossier available for this sector."}
               </p>
 
-              {gym.specializations && gym.specializations.length > 0 && (
+              {gym.specializations && Array.isArray(gym.specializations) && gym.specializations.length > 0 && (
                 <div className="mt-8 pt-8 border-t border-border">
                   <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
                     <Shield className="w-4 h-4" /> Specialized Disciplines
@@ -142,9 +160,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
               )}
             </motion.div>
 
-            {/* Reviews Section at bottom of left column or new row? 
-                Let's put it here so it's visible. 
-            */}
+            {/* Reviews Section at bottom of left column */}
             <div className="mt-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -188,10 +204,10 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center font-black text-sm italic uppercase tracking-tighter">
-                            {review.userId?.name.charAt(0)}
+                            {(review.userId?.name || "?")[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-black uppercase italic tracking-tighter text-foreground">{review.userId?.name}</p>
+                            <p className="text-xs font-black uppercase italic tracking-tighter text-foreground">{review.userId?.name || "Unknown Agent"}</p>
                             <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">{new Date(review.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
@@ -229,7 +245,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
         <div className="lg:col-span-2 space-y-8">
           {/* Header Info */}
           <div>
-            <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter italic uppercase mb-4">{gym.name}</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter italic uppercase mb-4">{gym.name || "Target Venue"}</h1>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                 <Star className="w-3 h-3 fill-current text-primary-foreground stroke-none" />
@@ -244,7 +260,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-4">
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(gym.location)}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(gym.location || gym.address || "")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-4 rounded-2xl bg-muted border border-border hover:bg-muted/80 transition-colors block group cursor-pointer"
@@ -256,7 +272,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Location</span>
               </div>
               <p className="text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors underline decoration-dotted decoration-border underline-offset-2">
-                {gym.location}
+                {gym.location || gym.address || "Area Restricted"}
               </p>
             </a>
 
@@ -267,7 +283,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                 </div>
                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Open Hours</span>
               </div>
-              <p className="text-sm font-bold text-foreground leading-tight">06:00 AM - 10:00 PM</p>
+              <p className="text-sm font-bold text-foreground leading-tight">{gym.timings || "06:00 AM - 10:00 PM"}</p>
             </div>
           </div>
 
@@ -288,8 +304,6 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
               </motion.button>
             </div>
           </div>
-
-
 
           {/* Facilities */}
           <div>

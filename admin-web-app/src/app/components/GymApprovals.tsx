@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, X, Building2, MapPin, Eye, FileText, User, Phone, ShieldCheck, Dumbbell, Users, Landmark, Award, Shield, Mail, ArrowUpRight, ChevronRight, FileCheck, AlertCircle, Trash2, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { Check, X, Building2, FileText, User, Phone, ShieldCheck, Dumbbell, Users, Landmark, Award, Shield, Mail, FileCheck, AlertCircle, Trash2, Loader2, Eye } from "lucide-react";
 import { fetchGyms, updateGymStatus } from '../lib/api';
 
 interface GymDetail {
@@ -36,6 +35,7 @@ export function GymApprovals() {
     const [gyms, setGyms] = useState<GymDetail[]>([]);
 
     useEffect(() => {
+        console.log("🛡️ GymApprovals: Component mounted");
         loadGyms();
     }, []);
 
@@ -43,34 +43,60 @@ export function GymApprovals() {
         setLoading(true);
         setError(null);
         try {
+            console.log("🛡️ GymApprovals: Fetching gyms...");
             const data = await fetchGyms();
-            const mappedGyms: GymDetail[] = data.map((g: any) => ({
-                id: g._id,
-                name: g.name,
-                owner: g.ownerId?.name || "System Record",
-                ownerPhone: g.ownerId?.phoneNumber || "N/A",
-                ownerEmail: g.ownerId?.email || "N/A",
-                location: g.address?.split(',').pop()?.trim() || "N/A",
-                address: g.address,
-                joined: new Date(g.createdAt).toLocaleDateString(),
-                status: g.status,
-                gstNo: g.gstNo || "PENDING",
-                panNo: g.panNo || "PENDING",
-                description: g.description || "No description provided.",
-                facilities: g.facilities || [],
-                images: g.image ? [g.image] : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48"],
-                documentation: g.documentation || {
-                    tradingLicense: "PENDING",
-                    fireSafety: "PENDING",
-                    insurancePolicy: "PENDING",
-                    bankStatement: "PENDING"
-                },
-                staffCount: g.staffCount || 0,
-                areaSize: g.areaSize || "N/A",
-                establishedYear: g.establishedYear || "N/A"
-            }));
+            console.log("🛡️ GymApprovals: Data received", data);
+
+            if (!data) {
+                console.error("🛡️ GymApprovals: Received null/undefined data from API");
+                setGyms([]);
+                return;
+            }
+
+            const mappedGyms: GymDetail[] = Array.isArray(data) ? data.map((g: any) => {
+                try {
+                    const safeName = String(g.name || "Unknown Venue");
+                    const safeAddress = String(g.address || "");
+                    const addressParts = safeAddress.split(',');
+                    const location = addressParts.length > 0 ? addressParts.pop()?.trim() || "N/A" : "N/A";
+
+                    return {
+                        id: g._id || String(Math.random()),
+                        name: safeName,
+                        owner: g.ownerId?.name || "System Record",
+                        ownerPhone: g.ownerId?.phoneNumber || "N/A",
+                        ownerEmail: g.ownerId?.email || "N/A",
+                        location: location,
+                        address: safeAddress || "No address provided.",
+                        joined: g.createdAt ? new Date(g.createdAt).toLocaleDateString() : "N/A",
+                        status: g.status || 'pending',
+                        gstNo: g.gstNo || "PENDING",
+                        panNo: g.panNo || "PENDING",
+                        description: g.description || "No description provided.",
+                        facilities: Array.isArray(g.facilities) ? g.facilities : [],
+                        images: Array.isArray(g.images) && g.images.length > 0
+                            ? g.images
+                            : (g.image ? [g.image] : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48"]),
+                        documentation: g.documentation || {
+                            tradingLicense: "PENDING",
+                            fireSafety: "PENDING",
+                            insurancePolicy: "PENDING",
+                            bankStatement: "PENDING"
+                        },
+                        staffCount: g.staffCount || 0,
+                        areaSize: g.areaSize || "N/A",
+                        establishedYear: g.establishedYear || "N/A"
+                    };
+                } catch (mapErr: any) {
+                    console.error("🛡️ GymApprovals: Mapping error for gym", g, mapErr);
+                    return null;
+                }
+            }).filter(Boolean) as GymDetail[] : [];
+
+            console.log("🛡️ GymApprovals: Mapped gyms", mappedGyms);
             setGyms(mappedGyms);
         } catch (err: any) {
+            console.error("🛡️ GymApprovals: Error in loadGyms", err);
             setError(err.message || "Institutional link failed. Could not fetch vetting requests.");
         } finally {
             setLoading(false);
@@ -80,7 +106,7 @@ export function GymApprovals() {
     const handleAction = async (id: string | number, action: 'approve' | 'reject') => {
         try {
             const status = action === 'approve' ? 'active' : 'rejected';
-            await updateGymStatus(id.toString(), status);
+            await updateGymStatus(String(id), status);
             setGyms(gyms.map(g => g.id === id ? { ...g, status: status } : g));
             if (selectedGym?.id === id) {
                 setSelectedGym(null);
@@ -104,7 +130,7 @@ export function GymApprovals() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Requests</p>
-                            <p className="text-xl font-black italic tracking-tighter">{gyms.filter(g => g.status === 'pending').length}</p>
+                            <p className="text-xl font-black italic tracking-tighter">{(gyms || []).filter(g => g && (g.status || "").toLowerCase() === 'pending').length}</p>
                         </div>
                     </div>
                 </div>
@@ -123,15 +149,19 @@ export function GymApprovals() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
-                    {gyms.filter(g => g.status === 'pending').map((gym) => (
-                        <motion.div
+                    {(gyms || []).filter(g => g && (g.status || "").toLowerCase() === 'pending').map((gym) => (
+                        <div
                             key={gym.id}
-                            layoutId={`gym-${gym.id}`}
                             onClick={() => setSelectedGym(gym)}
                             className="bg-white border border-gray-100 rounded-[48px] p-8 shadow-sm hover:shadow-2xl transition-all cursor-pointer group flex flex-col md:flex-row gap-8 items-center"
                         >
                             <div className="w-40 h-40 rounded-3xl overflow-hidden bg-gray-50 flex-shrink-0 relative">
-                                <img src={gym.images[0]} alt={gym.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <img
+                                    src={Array.isArray(gym.images) && gym.images.length > 0 ? gym.images[0] : ""}
+                                    alt={gym.name}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }}
+                                />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                             </div>
 
@@ -142,9 +172,9 @@ export function GymApprovals() {
                                 </div>
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    <MiniStat label="Owner Name" value={gym.owner} icon={User} />
-                                    <MiniStat label="GST Number" value={gym.gstNo} icon={FileText} />
-                                    <MiniStat label="Area Size" value={gym.areaSize} icon={Building2} />
+                                    <MiniStat label="Owner Name" value={String(gym.owner)} icon={User} />
+                                    <MiniStat label="GST Number" value={String(gym.gstNo)} icon={FileText} />
+                                    <MiniStat label="Area Size" value={String(gym.areaSize)} icon={Building2} />
                                     <MiniStat label="Total Staff" value={`${gym.staffCount} Pro`} icon={Users} />
                                 </div>
                             </div>
@@ -158,128 +188,126 @@ export function GymApprovals() {
                                 </button>
                                 <p className="text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">{gym.joined}</p>
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             )}
 
             {/* Verification Detail Modal */}
-            <AnimatePresence>
-                {selectedGym && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 100 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 100 }}
-                            className="bg-white w-full max-w-6xl h-[92vh] rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)] border border-white/20"
+            {selectedGym && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+                    <div className="bg-white w-full max-w-6xl h-[92vh] rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)] border border-white/20">
+                        <button
+                            onClick={() => setSelectedGym(null)}
+                            className="absolute top-10 right-10 p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all z-20 shadow-sm"
+                            title="Close Audit"
                         >
-                            <button
-                                onClick={() => setSelectedGym(null)}
-                                className="absolute top-10 right-10 p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all z-20 shadow-sm"
-                                title="Close Audit"
-                            >
-                                <X className="w-8 h-8 text-black" />
-                            </button>
+                            <X className="w-8 h-8 text-black" />
+                        </button>
 
-                            <div className="flex-1 overflow-y-auto custom-scrollbar">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
-                                    {/* Left: Branding & Specs */}
-                                    <div className="lg:col-span-4 bg-gray-900 p-12 text-white flex flex-col justify-between relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 blur-[90px] rounded-full" />
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+                                {/* Left: Branding & Specs */}
+                                <div className="lg:col-span-4 bg-gray-900 p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 blur-[90px] rounded-full" />
 
-                                        <div className="relative z-10 space-y-12">
-                                            <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-2xl">
-                                                <img src={selectedGym.images[0]} className="w-full h-full object-cover" alt="Gym" />
-                                            </div>
-
-                                            <div>
-                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">{selectedGym.name}</h3>
-                                                <p className="text-xs font-bold text-primary uppercase tracking-[0.3em]">Institutional Grade Verification</p>
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                <SideInfoLine label="Entity Type" value="Partnership Firm" icon={Building2} />
-                                                <SideInfoLine label="Est. Year" value={selectedGym.establishedYear} icon={Landmark} />
-                                                <SideInfoLine label="Verification Level" value="Level 4 (High)" icon={Award} />
-                                            </div>
+                                    <div className="relative z-10 space-y-12">
+                                        <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-2xl bg-white/5">
+                                            <img
+                                                src={Array.isArray(selectedGym.images) && selectedGym.images.length > 0 ? selectedGym.images[0] : ""}
+                                                className="w-full h-full object-cover"
+                                                alt="Gym"
+                                                onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }}
+                                            />
                                         </div>
 
-                                        <div className="pt-12 border-t border-white/10 relative z-10">
-                                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Official Contact</p>
-                                            <div className="flex items-center gap-4 mb-4">
-                                                <div className="p-3 bg-white/10 rounded-xl"><Mail className="w-5 h-5 text-primary" /></div>
-                                                <p className="font-bold text-sm">{selectedGym.ownerEmail}</p>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-white/10 rounded-xl"><Phone className="w-5 h-5 text-primary" /></div>
-                                                <p className="font-bold text-sm">{selectedGym.ownerPhone}</p>
-                                            </div>
+                                        <div>
+                                            <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">{selectedGym.name}</h3>
+                                            <p className="text-xs font-bold text-primary uppercase tracking-[0.3em]">Institutional Grade Verification</p>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <SideInfoLine label="Entity Type" value="Partnership Firm" icon={Building2} />
+                                            <SideInfoLine label="Est. Year" value={String(selectedGym.establishedYear)} icon={Landmark} />
+                                            <SideInfoLine label="Verification Level" value="Level 4 (High)" icon={Award} />
                                         </div>
                                     </div>
 
-                                    {/* Right: Docs & Compliance */}
-                                    <div className="lg:col-span-8 p-16 space-y-12 bg-white">
-                                        <section>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
-                                                <ShieldCheck className="w-4 h-4" /> Legal Compliance Portfolio
-                                            </h4>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <DocCard label="Trading License" id={selectedGym.documentation.tradingLicense} status="VERIFIED" icon={FileText} />
-                                                <DocCard label="NoC - Fire Safety" id={selectedGym.documentation.fireSafety} status="EXPIRES 2027" icon={Shield} />
-                                                <DocCard label="GST Verification" id={selectedGym.gstNo} status="ACTIVE" icon={Landmark} />
-                                                <DocCard label="Insurance Policy" id={selectedGym.documentation.insurancePolicy} status="GOLD COVER" icon={ShieldCheck} />
-                                            </div>
-                                        </section>
-
-                                        <section>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
-                                                <Dumbbell className="w-4 h-4" /> Facility Profile
-                                            </h4>
-                                            <p className="text-lg font-medium text-gray-600 leading-relaxed italic mb-8">
-                                                "{selectedGym.description}"
-                                            </p>
-                                            <div className="flex flex-wrap gap-3">
-                                                {selectedGym.facilities.map((fac, i) => (
-                                                    <span key={i} className="px-6 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-gray-600 flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-emerald-500" /> {fac}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </section>
-
-                                        <section className="bg-red-50 p-10 rounded-[48px] border border-red-100">
-                                            <div className="flex items-center gap-4 mb-6">
-                                                <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
-                                                    <AlertCircle className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-xl font-black uppercase italic tracking-tighter text-red-900 line-none">Executive Decision</h4>
-                                                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Final onboarding authorization required</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-4">
-                                                <button
-                                                    onClick={() => handleAction(selectedGym.id, 'reject')}
-                                                    className="px-10 py-5 bg-white border border-red-200 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-sm hover:bg-red-500 hover:text-white transition-all flex items-center gap-3"
-                                                >
-                                                    <Trash2 className="w-5 h-5" /> Deny Access
-                                                </button>
-                                                <button
-                                                    onClick={() => handleAction(selectedGym.id, 'approve')}
-                                                    className="flex-1 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-black/20 hover:bg-gray-800 transition-all flex items-center justify-center gap-3"
-                                                >
-                                                    <Check className="w-5 h-5 text-primary" /> Authorize & Launch Venue
-                                                </button>
-                                            </div>
-                                        </section>
+                                    <div className="pt-12 border-t border-white/10 relative z-10">
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Official Contact</p>
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="p-3 bg-white/10 rounded-xl"><Mail className="w-5 h-5 text-primary" /></div>
+                                            <p className="font-bold text-sm">{selectedGym.ownerEmail}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-white/10 rounded-xl"><Phone className="w-5 h-5 text-primary" /></div>
+                                            <p className="font-bold text-sm">{selectedGym.ownerPhone}</p>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Right: Docs & Compliance */}
+                                <div className="lg:col-span-8 p-16 space-y-12 bg-white">
+                                    <section>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
+                                            <ShieldCheck className="w-4 h-4" /> Legal Compliance Portfolio
+                                        </h4>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <DocCard label="Trading License" id={String(selectedGym.documentation?.tradingLicense || "PENDING")} status="VERIFIED" icon={FileText} />
+                                            <DocCard label="NoC - Fire Safety" id={String(selectedGym.documentation?.fireSafety || "PENDING")} status="EXPIRES 2027" icon={Shield} />
+                                            <DocCard label="GST Verification" id={String(selectedGym.gstNo || "PENDING")} status="ACTIVE" icon={Landmark} />
+                                            <DocCard label="Insurance Policy" id={String(selectedGym.documentation?.insurancePolicy || "PENDING")} status="GOLD COVER" icon={ShieldCheck} />
+                                        </div>
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
+                                            <Dumbbell className="w-4 h-4" /> Facility Profile
+                                        </h4>
+                                        <p className="text-lg font-medium text-gray-600 leading-relaxed italic mb-8">
+                                            "{selectedGym.description || "No description provided."}"
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {(Array.isArray(selectedGym.facilities) ? selectedGym.facilities : []).map((fac, i) => (
+                                                <span key={i} className="px-6 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-gray-600 flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-emerald-500" /> {String(fac)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    <section className="bg-red-50 p-10 rounded-[48px] border border-red-100">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                                                <AlertCircle className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xl font-black uppercase italic tracking-tighter text-red-900 line-none">Executive Decision</h4>
+                                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Final onboarding authorization required</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => handleAction(selectedGym.id, 'reject')}
+                                                className="px-10 py-5 bg-white border border-red-200 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-sm hover:bg-red-500 hover:text-white transition-all flex items-center gap-3"
+                                            >
+                                                <Trash2 className="w-5 h-5" /> Deny Access
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(selectedGym.id, 'approve')}
+                                                className="flex-1 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-black/20 hover:bg-gray-800 transition-all flex items-center justify-center gap-3"
+                                            >
+                                                <Check className="w-5 h-5 text-primary" /> Authorize & Launch Venue
+                                            </button>
+                                        </div>
+                                    </section>
+                                </div>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
         </div>
     );
 }

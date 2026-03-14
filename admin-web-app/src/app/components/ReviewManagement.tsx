@@ -95,7 +95,7 @@ export function ReviewManagement() {
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-black text-[#A3E635] rounded-2xl flex items-center justify-center font-black text-lg italic uppercase tracking-tighter shadow-lg shadow-black/10">
-                                        {review.userId?.name.charAt(0)}
+                                        {(review.userId?.name || "?")[0]}
                                     </div>
                                     <div>
                                         <h4 className="font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name}</h4>
