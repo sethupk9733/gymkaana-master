@@ -1,5 +1,5 @@
 import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Loader2, Landmark, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, ReactNode, ErrorInfo } from "react";
 import { fetchGyms, fetchDashboardStats } from "../lib/api";
 
 interface GymMetric {
@@ -16,6 +16,46 @@ interface GymMetric {
     dailyActive: number;
     marketCategory: 'Premium' | 'Budget' | 'Boutique';
     yieldPerMember: string;
+}
+
+interface DashboardErrorBoundaryProps {
+    children: ReactNode;
+}
+
+interface DashboardErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+}
+
+class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, DashboardErrorBoundaryState> {
+    constructor(props: DashboardErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        console.error("📊 Dashboard Error Boundary caught:", error);
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("📊 Dashboard componentDidCatch:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-20 text-center space-y-4">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
+                    <h2 className="text-2xl font-black uppercase text-red-900">Dashboard Rendering Error</h2>
+                    <code className="block p-4 bg-gray-900 text-primary rounded-xl text-xs overflow-auto break-words">{this.state.error?.message}</code>
+                    <p className="text-xs text-gray-500">{this.state.error?.stack}</p>
+                    <button onClick={() => window.location.reload()} className="px-8 py-3 bg-black text-white rounded-xl font-bold uppercase tracking-widest">Reload Page</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
 }
 
 export function AdminDashboard() {
@@ -36,6 +76,7 @@ export function AdminDashboard() {
     const loadData = async () => {
         setLoading(true);
         setError(null);
+        setRenderError(null);
         try {
             console.log("📊 AdminDashboard: Fetching live market intelligence...");
             const [gymsData, statsData] = await Promise.all([
@@ -43,55 +84,85 @@ export function AdminDashboard() {
                 fetchDashboardStats('all').catch(e => { console.error("fetchStats fail", e); return null; })
             ]);
 
-            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData });
+            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData, gymsDataType: typeof gymsData });
 
-            const dataArray = Array.isArray(gymsData) ? gymsData : [];
-            const mappedGyms: GymMetric[] = dataArray.map((g: any) => {
-                try {
-                    const revenueNum = Math.floor(Math.random() * 500000);
-                    const platformIncomeNum = Math.floor(revenueNum * 0.15);
-                    const safeName = String(g.name || "Unknown Hub");
-                    return {
-                        id: String(g._id || Math.random()),
-                        name: safeName,
-                        logo: String(safeName || "?")[0].toUpperCase(),
-                        revenue: `Rs.${revenueNum.toLocaleString()}`,
-                        platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
-                        contributionScore: 20,
-                        growth: "+0%",
-                        members: Number(g.members || 0),
-                        retention: "85%",
-                        status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
-                        dailyActive: 0,
-                        marketCategory: 'Premium',
-                        yieldPerMember: "Rs.0"
-                    };
-                } catch (err) {
-                    return null;
-                }
-            }).filter(Boolean) as GymMetric[];
+            let dataArray: any[] = [];
+            try {
+                dataArray = Array.isArray(gymsData) ? gymsData : [];
+                console.log("📊 AdminDashboard: dataArray created with", dataArray.length, "items");
+            } catch (e) {
+                console.error("📊 AdminDashboard: Error creating dataArray", e);
+                dataArray = [];
+            }
 
-            setGymsPerformance(mappedGyms);
-            setStats(statsData || { totalRevenue: 0, activeGyms: 0, checkinsToday: 0 });
+            let mappedGyms: GymMetric[] = [];
+            try {
+                mappedGyms = dataArray.map((g: any) => {
+                    try {
+                        if (!g || typeof g !== 'object') {
+                            console.warn("📊 AdminDashboard: Skipping invalid gym object", g);
+                            return null;
+                        }
+                        const revenueNum = Math.floor(Math.random() * 500000);
+                        const platformIncomeNum = Math.floor(revenueNum * 0.15);
+                        const safeName = String(g?.name || "Unknown Hub");
+                        const nameFirstChar = safeName && safeName.length > 0 ? safeName[0].toUpperCase() : "?";
+                        
+                        return {
+                            id: String(g._id || Math.random()),
+                            name: safeName,
+                            logo: nameFirstChar,
+                            revenue: `Rs.${revenueNum.toLocaleString()}`,
+                            platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
+                            contributionScore: 20,
+                            growth: "+0%",
+                            members: Number(g.members || 0),
+                            retention: "85%",
+                            status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
+                            dailyActive: 0,
+                            marketCategory: 'Premium',
+                            yieldPerMember: "Rs.0"
+                        };
+                    } catch (err: any) {
+                        console.error("📊 AdminDashboard: Error mapping gym", g, err.message);
+                        return null;
+                    }
+                }).filter((x): x is GymMetric => x !== null && x !== undefined);
+                console.log("📊 AdminDashboard: Successfully mapped", mappedGyms.length, "gyms");
+            } catch (e: any) {
+                console.error("📊 AdminDashboard: Error in mappedGyms creation", e.message);
+                mappedGyms = [];
+            }
+
+            setGymsPerformance(mappedGyms || []);
+            setStats(statsData || { 
+                totalRevenue: 0, 
+                activeGyms: 0, 
+                checkinsToday: 0,
+                totalMembers: 0,
+                totalUsers: 0,
+                pendingGyms: 0
+            });
             console.log("📊 AdminDashboard: State synchronization complete");
         } catch (err: any) {
             console.error("📊 AdminDashboard: System Link Failure", err);
             setError(err.message || "Cloud link severed. Could not fetch live intelligence.");
+            setRenderError(err.message || "Failed to load dashboard data.");
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredGyms = (gymsPerformance || []).filter(g =>
-        String(g.name || "").toLowerCase().includes(String(searchQuery || "").toLowerCase())
-    );
+    const filteredGyms = Array.isArray(gymsPerformance) ? (gymsPerformance || []).filter(g =>
+        g && String(g.name || "").toLowerCase().includes(String(searchQuery || "").toLowerCase())
+    ) : [];
 
     if (renderError) {
         return (
             <div className="p-20 text-center space-y-4">
                 <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
                 <h2 className="text-2xl font-black uppercase text-red-900">Dashboard Intelligence Failure</h2>
-                <code className="block p-4 bg-gray-900 text-primary rounded-xl text-xs">{renderError}</code>
+                <code className="block p-4 bg-gray-900 text-primary rounded-xl text-xs overflow-auto break-words">{renderError}</code>
                 <button onClick={() => window.location.reload()} className="px-8 py-3 bg-black text-white rounded-xl font-bold uppercase tracking-widest">Reboot Intelligence</button>
             </div>
         );
@@ -120,6 +191,7 @@ export function AdminDashboard() {
     }
 
     return (
+        <DashboardErrorBoundary>
             <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
                 <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div className="space-y-2">
@@ -311,27 +383,28 @@ export function AdminDashboard() {
                                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 px-4">
                                     <div className="flex items-center gap-8">
                                         <div className="w-24 h-24 bg-black text-white rounded-[40px] flex items-center justify-center text-4xl font-black italic shadow-2xl">
-                                            {String(selectedPerfGym.logo || " ")[0]}
+                                            {selectedPerfGym ? String(selectedPerfGym.logo || "?")[0] : "?"}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-4">
-                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{selectedPerfGym.name}</h3>
+                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{selectedPerfGym?.name || "Unknown"}</h3>
                                             </div>
                                         </div>
                                     </div>
                                 </header>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <InsightCard label="Market Position" value={selectedPerfGym.marketCategory} type="info" icon={Building2} sub="Category" />
-                                    <InsightCard label="Retention" value={selectedPerfGym.retention} type="success" icon={Activity} sub="Stickiness" />
-                                    <InsightCard label="Income" value={selectedPerfGym.platformIncome} type="primary" icon={DollarSign} sub="Yield" />
+                                    <InsightCard label="Market Position" value={selectedPerfGym?.marketCategory || "N/A"} type="info" icon={Building2} sub="Category" />
+                                    <InsightCard label="Retention" value={selectedPerfGym?.retention || "N/A"} type="success" icon={Activity} sub="Stickiness" />
+                                    <InsightCard label="Income" value={selectedPerfGym?.platformIncome || "Rs.0"} type="primary" icon={DollarSign} sub="Yield" />
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
-        );
+        </DashboardErrorBoundary>
+    );
 }
 
 function InsightCard({ label, value, sub, icon: Icon, type }: any) {
