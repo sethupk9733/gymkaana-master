@@ -11,7 +11,7 @@ interface GymDetail {
     location: string;
     address: string;
     joined: string;
-    status: 'pending' | 'approved' | 'rejected' | 'active';
+    status: 'pending' | 'active' | 'inactive' | 'rejected';
     gstNo: string;
     panNo: string;
     description: string;
@@ -50,6 +50,7 @@ export function GymApprovals() {
             if (!data) {
                 console.error("🛡️ GymApprovals: Received null/undefined data from API");
                 setGyms([]);
+                setError("No data received from server. Please refresh the page.");
                 return;
             }
 
@@ -95,9 +96,14 @@ export function GymApprovals() {
 
             console.log("🛡️ GymApprovals: Mapped gyms", mappedGyms);
             setGyms(mappedGyms);
+            if (mappedGyms.length === 0) {
+                console.warn("⚠️ GymApprovals: No gyms found after mapping");
+            }
         } catch (err: any) {
             console.error("🛡️ GymApprovals: Error in loadGyms", err);
-            setError(err.message || "Institutional link failed. Could not fetch vetting requests.");
+            const errorMessage = err.message || "Failed to load gym approvals. Please check your connection.";
+            setError(errorMessage);
+            setGyms([]);
         } finally {
             setLoading(false);
         }
@@ -137,8 +143,14 @@ export function GymApprovals() {
             </header>
 
             {error && (
-                <div className="bg-red-50 border-2 border-red-100 p-8 rounded-[40px] text-red-600 font-black uppercase tracking-widest text-xs italic text-center">
-                    SYSTEM ALERT: {error}
+                <div className="bg-red-50 border-2 border-red-100 p-8 rounded-[40px] text-red-600 font-black uppercase tracking-widest text-xs italic text-center space-y-4">
+                    <p>SYSTEM ALERT: {error}</p>
+                    <button
+                        onClick={() => loadGyms()}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                    >
+                        Retry
+                    </button>
                 </div>
             )}
 

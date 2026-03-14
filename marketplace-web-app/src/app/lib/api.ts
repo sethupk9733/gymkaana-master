@@ -140,7 +140,7 @@ export const checkSession = async () => {
 };
 
 export const fetchGyms = async () => {
-    const response = await fetch(`${BASE_URL}/gyms`, { cache: 'no-store' });
+    const response = await fetch(`${BASE_URL}/gyms?status=active`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch gyms');
     return await response.json();
 };
