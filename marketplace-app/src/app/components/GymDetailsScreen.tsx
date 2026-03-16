@@ -48,6 +48,21 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
     );
   }
 
+  if (!gym) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+          <MapPin size={32} />
+        </div>
+        <h2 className="text-xl font-bold">Venue Not Found</h2>
+        <p className="text-gray-500 text-sm">The gym details could not be retrieved at this time.</p>
+        <button onClick={onBack} className="px-6 py-2 bg-black text-white rounded-xl text-sm font-bold">
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   // Icons map for facilities
   const iconMap: Record<string, any> = {
     "Weights": Dumbbell,
