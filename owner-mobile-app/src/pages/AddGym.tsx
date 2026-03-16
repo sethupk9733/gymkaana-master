@@ -30,6 +30,8 @@ export default function AddGym() {
         fireSafety: '',
         insurancePolicy: '',
         bankStatement: '',
+        gstNo: '',
+        panNo: '',
         bankDetails: {
             accountName: '',
             accountNumber: '',
@@ -94,6 +96,8 @@ export default function AddGym() {
                     insurancePolicy: form.insurancePolicy || 'Pending',
                     bankStatement: form.bankStatement || 'Pending'
                 },
+                gstNo: form.gstNo || '',
+                panNo: form.panNo || '',
                 bankDetails: form.bankDetails,
                 plans: form.plans,
                 status: 'pending'
@@ -466,29 +470,67 @@ export default function AddGym() {
                             <div className="p-2 bg-indigo-50 rounded-lg">
                                 <Shield className="w-5 h-5 text-indigo-600" />
                             </div>
-                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-900 italic">Vetting Docs</h3>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-900 italic">Legal Compliance</h3>
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Trade License #</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
-                                    placeholder="Enter license number"
-                                    value={form.tradingLicense}
-                                    onChange={e => setForm({ ...form, tradingLicense: e.target.value })}
-                                />
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">GST Number</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                        placeholder="29AAAAA0000A1Z5"
+                                        value={form.gstNo}
+                                        onChange={e => setForm({ ...form, gstNo: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">PAN Number</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                        placeholder="ABCDE1234F"
+                                        value={form.panNo}
+                                        onChange={e => setForm({ ...form, panNo: e.target.value })}
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">GST/Insurance #</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
-                                    placeholder="Enter policy number"
-                                    value={form.insurancePolicy}
-                                    onChange={e => setForm({ ...form, insurancePolicy: e.target.value })}
-                                />
+
+                            <div className="pt-2">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">License / Policy Documents</p>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Trade License #</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="LIC-XXXXX"
+                                            value={form.tradingLicense}
+                                            onChange={e => setForm({ ...form, tradingLicense: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Fire Safety No.</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="FIRE-XXXXX"
+                                            value={form.fireSafety}
+                                            onChange={e => setForm({ ...form, fireSafety: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Insurance Policy #</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="INS-XXXXX"
+                                            value={form.insurancePolicy}
+                                            onChange={e => setForm({ ...form, insurancePolicy: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

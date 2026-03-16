@@ -26,6 +26,11 @@ export default function EditGym() {
         facilities: [] as string[],
         specializations: [] as string[],
         trainers: '',
+        gstNo: '',
+        panNo: '',
+        tradingLicense: '',
+        fireSafety: '',
+        insurancePolicy: ''
     });
 
     const [images, setImages] = useState<string[]>([]);
@@ -46,6 +51,11 @@ export default function EditGym() {
                     facilities: gym.facilities || [],
                     specializations: gym.specializations || [],
                     trainers: (gym.trainers || []).join(', '),
+                    gstNo: gym.gstNo || '',
+                    panNo: gym.panNo || '',
+                    tradingLicense: gym.documentation?.tradingLicense || '',
+                    fireSafety: gym.documentation?.fireSafety || '',
+                    insurancePolicy: gym.documentation?.insurancePolicy || ''
                 });
                 setImages(gym.images || []);
                 setLoadingGym(false);
@@ -97,7 +107,14 @@ export default function EditGym() {
             const payload = {
                 ...form,
                 trainers: form.trainers.split(',').map(t => t.trim()).filter(t => t),
-                images: images
+                images: images,
+                gstNo: form.gstNo,
+                panNo: form.panNo,
+                documentation: {
+                    tradingLicense: form.tradingLicense,
+                    fireSafety: form.fireSafety,
+                    insurancePolicy: form.insurancePolicy
+                }
             };
             await updateGym(id, payload);
             navigate(-1);
@@ -242,6 +259,77 @@ export default function EditGym() {
                                     value={form.timings}
                                     onChange={e => setForm({ ...form, timings: e.target.value })}
                                 />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Legal Compliance */}
+                    <div className="bg-white p-6 rounded-[32px] border-2 border-gray-100 shadow-sm space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-indigo-50 rounded-lg">
+                                <Shield className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-900 italic">Legal Compliance</h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">GST Number</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none font-mono"
+                                        placeholder="29AAAAA0000A1Z5"
+                                        value={form.gstNo}
+                                        onChange={e => setForm({ ...form, gstNo: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">PAN Number</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none font-mono"
+                                        placeholder="ABCDE1234F"
+                                        value={form.panNo}
+                                        onChange={e => setForm({ ...form, panNo: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 italic">License / Policy Documents</p>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Trade License #</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="LIC-XXXXX"
+                                            value={form.tradingLicense}
+                                            onChange={e => setForm({ ...form, tradingLicense: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Fire Safety No.</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="FIRE-XXXXX"
+                                            value={form.fireSafety}
+                                            onChange={e => setForm({ ...form, fireSafety: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Insurance Policy #</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-2xl text-sm font-bold placeholder:text-gray-300 focus:border-black transition-all outline-none"
+                                            placeholder="INS-XXXXX"
+                                            value={form.insurancePolicy}
+                                            onChange={e => setForm({ ...form, insurancePolicy: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
