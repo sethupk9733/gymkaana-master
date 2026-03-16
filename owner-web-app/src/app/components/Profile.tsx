@@ -119,7 +119,7 @@ export function Profile({ onLogout }: ProfileProps) {
               <img src={editData.profileImage} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <div className="text-gray-400 font-bold text-2xl uppercase">
-                {profile?.name?.charAt(0) || 'U'}
+                {String(profile?.name || 'U').charAt(0).toUpperCase()}
               </div>
             )}
           </div>
@@ -303,7 +303,7 @@ export function Profile({ onLogout }: ProfileProps) {
                   {profile?.profileImage ? (
                     <img src={profile.profileImage} alt="User" className="w-full h-full object-cover" />
                   ) : (
-                    profile?.name?.charAt(0).toUpperCase() || 'P'
+                    String(profile?.name || 'P').charAt(0).toUpperCase()
                   )}
                 </div>
                 <div className="flex-1">

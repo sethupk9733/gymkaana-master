@@ -23,11 +23,12 @@ export function ReviewManagement() {
         }
     };
 
-    const filteredReviews = reviews.filter(r =>
-        r.gymId?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.userId?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.comment.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredReviews = reviews.filter(r => {
+        const gymMatch = String(r.gymId?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const userMatch = String(r.userId?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const commentMatch = String(r.comment || "").toLowerCase().includes(searchTerm.toLowerCase());
+        return gymMatch || userMatch || commentMatch;
+    });
 
     const sortedReviews = [...filteredReviews].sort((a, b) => {
         if (sortBy === 'highest') return b.rating - a.rating;
@@ -95,7 +96,7 @@ export function ReviewManagement() {
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-black text-[#A3E635] rounded-2xl flex items-center justify-center font-black text-lg italic uppercase tracking-tighter shadow-lg shadow-black/10">
-                                        {(review.userId?.name || "?")[0]}
+                                        {String(review.userId?.name || "?").charAt(0).toUpperCase()}
                                     </div>
                                     <div>
                                         <h4 className="font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name}</h4>
@@ -115,8 +116,12 @@ export function ReviewManagement() {
 
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-[#A3E635] uppercase tracking-widest bg-black px-2 py-1 rounded-md">{review.gymId?.name}</span>
-                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                    <span className="text-[9px] font-black text-[#A3E635] uppercase tracking-widest bg-black px-2 py-1 rounded-md">
+                                        {review.gymId?.name || "Unknown Hub"}
+                                    </span>
+                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                        {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "N/A"}
+                                    </span>
                                 </div>
                                 <p className="text-sm font-bold text-gray-600 leading-relaxed italic border-l-4 border-gray-100 pl-4 py-1">
                                     "{review.comment}"
@@ -124,7 +129,9 @@ export function ReviewManagement() {
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
-                                <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">ID: {review._id.slice(-8).toUpperCase()}</span>
+                                <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">
+                                    ID: {String(review._id || "").slice(-8).toUpperCase() || "N/A"}
+                                </span>
                                 <button className="text-[8px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-colors">Flag Report</button>
                             </div>
                         </div>

@@ -162,7 +162,7 @@ export default function Bookings() {
                                             {booking.userId?.profileImage ? (
                                                 <img src={booking.userId.profileImage} alt="User" className="w-full h-full object-cover rotate-3 group-hover:rotate-0" />
                                             ) : (
-                                                memberName.split(' ').map((n: any) => n[0]).join('').toUpperCase()
+                                                String(memberName || "U").charAt(0).toUpperCase()
                                             )}
                                         </div>
                                         <div>
@@ -266,7 +266,7 @@ export default function Bookings() {
                                             {selectedBooking.userId?.profileImage ? (
                                                 <img src={selectedBooking.userId.profileImage} alt="User" className="w-full h-full object-cover" />
                                             ) : (
-                                                (selectedBooking.userId?.name || 'U').charAt(0).toUpperCase()
+                                                String(selectedBooking.userId?.name || 'U').charAt(0).toUpperCase()
                                             )}
                                         </div>
                                         <div className="flex-1 pt-2">

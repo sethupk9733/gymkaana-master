@@ -297,7 +297,7 @@ export default function CheckIn() {
                                         />
                                     ) : (
                                         <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center text-xl font-black italic">
-                                            {scannedUser.memberName?.charAt(0)}
+                                            {String(scannedUser.memberName || "?").charAt(0).toUpperCase()}
                                         </div>
                                     )}
                                     <div className="flex-1">
@@ -421,7 +421,7 @@ export default function CheckIn() {
                                         "w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-colors",
                                         activity.type === 'info' || activity.type === 'success' ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
                                     )}>
-                                        {activity.action?.charAt(0) || 'A'}
+                                        {String(activity.action || 'A').charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-black italic uppercase tracking-tighter text-gray-900 group-hover:text-primary transition-colors truncate">{activity.description}</p>

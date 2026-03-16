@@ -377,7 +377,7 @@ export function PartnerManagement() {
                                                             <Layers className="w-4 h-4" /> Facility Gallery
                                                         </h4>
                                                         <div className="grid grid-cols-3 gap-6 h-64">
-                                                            {(selectedGym.gallery || selectedGym.images).slice(0, 3).map((img, i) => (
+                                                            {(selectedGym.gallery || selectedGym.images || []).slice(0, 3).map((img, i) => (
                                                                 <div key={i} className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm relative group">
                                                                     <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Facility" />
                                                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -397,10 +397,10 @@ export function PartnerManagement() {
                                                         </header>
 
                                                         <div className="grid grid-cols-2 gap-6">
-                                                            <AssetCard label="Trading License" val={selectedGym.documentation.tradingLicense} color="indigo" />
-                                                            <AssetCard label="Fire Safety NoC" val={selectedGym.documentation.fireSafety} color="orange" />
-                                                            <AssetCard label="GST Certificate" val={selectedGym.gstNo} color="emerald" />
-                                                            <AssetCard label="Insurance Desk" val={selectedGym.documentation.insurancePolicy} color="blue" />
+                                                            <AssetCard label="Trading License" val={selectedGym.documentation?.tradingLicense || "MISSING"} color="indigo" />
+                                                            <AssetCard label="Fire Safety NoC" val={selectedGym.documentation?.fireSafety || "MISSING"} color="orange" />
+                                                            <AssetCard label="GST Certificate" val={selectedGym.gstNo || "PENDING"} color="emerald" />
+                                                            <AssetCard label="Insurance Desk" val={selectedGym.documentation?.insurancePolicy || "MISSING"} color="blue" />
                                                         </div>
                                                     </section>
                                                 </motion.div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Loader2 } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
-import { GymApprovals } from './components/GymApprovals';
+import { PartnerApprovals } from './components/PartnerApprovals';
 import { UserManagement } from './components/UserManagement';
 import { RefundManagement } from './components/RefundManagement';
 import { Promotions } from './components/Promotions';
@@ -9,6 +9,7 @@ import { Settings } from './components/Settings';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminLogin } from './components/AdminLogin';
 import { setToken, checkSession, logout } from './lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -89,7 +90,7 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard': return <AdminDashboard />;
-      case 'partners': return <GymApprovals />;
+      case 'partners': return <PartnerApprovals />;
       case 'users': return <UserManagement />;
       case 'refunds': return <RefundManagement />;
       case 'promotions': return <Promotions />;
@@ -130,10 +131,10 @@ export default function App() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <ErrorBoundary key={currentTab}>
-            {renderContent()}
-          </ErrorBoundary>
+        <main className="flex-1 overflow-y-auto relative bg-gray-100">
+           <ErrorBoundary key={currentTab}>
+             {renderContent()}
+           </ErrorBoundary>
         </main>
       </div>
     </ErrorBoundary>

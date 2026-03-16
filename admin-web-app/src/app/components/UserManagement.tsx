@@ -33,12 +33,14 @@ export function UserManagement() {
         setError(null);
         try {
             const data = await fetchUsers();
-            const mappedUsers: UserDetail[] = data.map((u: any) => ({
-                id: u._id,
-                name: u.name,
-                email: u.email,
-                phone: u.phone || "N/A",
-                joinDate: new Date(u.createdAt).toLocaleDateString(),
+            if (!Array.isArray(data)) throw new Error("Invalid user list received");
+            
+            const mappedUsers: UserDetail[] = data.map((u: any, index: number) => ({
+                id: u._id || u.id || `user-${index}`,
+                name: String(u.name || "Unknown"),
+                email: String(u.email || "N/A"),
+                phone: String(u.phone || "N/A"),
+                joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A",
                 status: 'Active',
                 totalBookings: 0,
                 favoriteGym: "N/A",
@@ -69,14 +71,6 @@ export function UserManagement() {
                         <Activity className="w-3 h-3 text-primary animate-pulse" /> Live membership stream & identity verification
                     </p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="px-8 py-4 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm">
-                        Export CRM Data
-                    </button>
-                    <button className="px-8 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-2xl shadow-black/10">
-                        Add New Member
-                    </button>
-                </div>
             </header>
 
             {/* Quick Stats Grid */}
@@ -99,14 +93,6 @@ export function UserManagement() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                    </div>
-
-                    <div className="flex bg-gray-50 p-2 rounded-2xl gap-2 overflow-x-auto w-full lg:w-auto">
-                        {['All', 'Active', 'Pending', 'Suspended'].map(tab => (
-                            <button key={tab} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${tab === 'All' ? 'bg-black text-white' : 'text-gray-400 hover:text-black'}`}>
-                                {tab}
-                            </button>
-                        ))}
                     </div>
                 </div>
 
@@ -138,7 +124,7 @@ export function UserManagement() {
                                         <td className="p-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-black text-primary flex items-center justify-center text-sm font-black italic shadow-lg group-hover:scale-110 transition-transform">
-                                                    {(user.name || "?")[0]}
+                                                    {String(user.name || "?").charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-gray-900 uppercase italic tracking-tighter">{user.name}</p>
@@ -182,11 +168,17 @@ export function UserManagement() {
             {/* User Detail Overlays */}
             {selectedUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                    <div className="bg-white w-full max-w-5xl rounded-[64px] overflow-hidden flex flex-col md:flex-row relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]">
-                        {/* Detail content logic here (removed for brevity but keeping structure stable) */}
-                        <div className="p-16 flex-1 text-center">
-                            <h3 className="text-3xl font-black uppercase italic">{selectedUser.name}</h3>
-                            <button onClick={() => setSelectedUser(null)} className="mt-8 px-12 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all">
+                    <div className="bg-white w-full max-w-2xl rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]">
+                        <div className="p-16 text-center space-y-8">
+                            <div className="w-24 h-24 bg-black text-primary rounded-[32px] flex items-center justify-center text-4xl font-black italic mx-auto">
+                                {String(selectedUser.name || "?").charAt(0).toUpperCase()}
+                            </div>
+                            <h3 className="text-3xl font-black uppercase italic tracking-tighter">{selectedUser.name}</h3>
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedUser.email}</p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedUser.phone}</p>
+                            </div>
+                            <button onClick={() => setSelectedUser(null)} className="px-12 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all w-full">
                                 Close Terminal
                             </button>
                         </div>

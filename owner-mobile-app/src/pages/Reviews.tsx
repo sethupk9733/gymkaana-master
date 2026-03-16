@@ -80,7 +80,7 @@ export default function Reviews({ onBack }: { onBack: () => void }) {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-black text-primary rounded-xl flex items-center justify-center font-black text-sm italic uppercase tracking-tighter">
-                                        {review.userId?.name.charAt(0)}
+                                        {String(review.userId?.name || "?").charAt(0).toUpperCase()}
                                     </div>
                                     <div>
                                         <h4 className="text-sm font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name}</h4>

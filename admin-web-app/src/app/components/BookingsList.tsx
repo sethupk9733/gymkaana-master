@@ -127,7 +127,7 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
-                    {(booking.user || "?")[0]}
+                    {String(booking.user || "?").charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-gray-900">{booking.user}</h3>

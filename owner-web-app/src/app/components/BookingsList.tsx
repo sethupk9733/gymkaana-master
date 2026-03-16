@@ -148,7 +148,7 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
                       {booking.userId?.profileImage ? (
                         <img src={booking.userId.profileImage} alt="User" className="w-full h-full object-cover" />
                       ) : (
-                        (booking.userId?.name || booking.memberName || "U").charAt(0).toUpperCase()
+                        String(booking.userId?.name || booking.memberName || "U").charAt(0).toUpperCase()
                       )}
                     </div>
                     <div>

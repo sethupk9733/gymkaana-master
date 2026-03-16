@@ -165,7 +165,7 @@ export function RefundManagement() {
                                     <td className="py-6 px-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[10px] font-black italic">
-                                                {(txn.gym || "?")[0]}
+                                                {String(txn.gym || "?").charAt(0).toUpperCase()}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900 text-sm">{txn.gym}</p>

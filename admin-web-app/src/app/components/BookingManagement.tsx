@@ -175,7 +175,7 @@ export function BookingManagement() {
                                         <td className="p-8">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm transition-colors group-hover:bg-primary group-hover:text-black">
-                                                    {(booking.memberName || "?")[0]}
+                                                    {String(booking.memberName || "?").charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <p className="font-black text-gray-900 uppercase italic tracking-tighter">{booking.memberName}</p>
@@ -258,7 +258,7 @@ export function BookingManagement() {
                                 <h3 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900">Protocol Assignment Detail</h3>
                                 <div className="flex flex-col gap-1 mt-2">
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                        Booking ID: #{selectedBooking.id.slice(-8).toUpperCase()}
+                                        Booking ID: #{String(selectedBooking.id || "").slice(-8).toUpperCase()}
                                     </p>
                                     {selectedBooking.paymentId && (
                                         <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">

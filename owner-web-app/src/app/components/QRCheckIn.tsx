@@ -101,7 +101,7 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
             <div className="mt-6 bg-gray-700/50 rounded-xl p-4 text-left border border-gray-700">
               <div className="flex items-center gap-4 border-b border-gray-600 pb-4 mb-4">
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-xl font-bold">
-                  {scannedUser.name.charAt(0)}
+                  {String(scannedUser.name || "?").charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">{scannedUser.name}</h3>

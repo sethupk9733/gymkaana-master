@@ -236,7 +236,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-black text-primary rounded-lg flex items-center justify-center font-black text-[10px] italic uppercase tracking-tighter">
-                          {review.userId?.name.charAt(0)}
+                          {String(review.userId?.name || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <h4 className="text-[11px] font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name}</h4>

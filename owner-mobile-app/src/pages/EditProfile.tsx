@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Camera, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Phone, Camera, Save, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '../lib/utils';
 import { fetchProfile, updateProfile } from '../lib/api';
@@ -85,7 +85,7 @@ export default function EditProfile() {
                             {formData.profileImage ? (
                                 <img src={formData.profileImage} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                formData.name.charAt(0).toUpperCase() || 'U'
+                                String(formData.name || 'U').charAt(0).toUpperCase()
                             )}
                         </div>
                         <button

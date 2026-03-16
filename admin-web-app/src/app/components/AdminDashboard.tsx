@@ -84,57 +84,49 @@ export function AdminDashboard() {
                 fetchDashboardStats('all').catch(e => { console.error("fetchStats fail", e); return null; })
             ]);
 
-            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData, gymsDataType: typeof gymsData });
+            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData });
 
+            // Handle different variations of gymsData structure
             let dataArray: any[] = [];
-            try {
-                dataArray = Array.isArray(gymsData) ? gymsData : [];
-                console.log("📊 AdminDashboard: dataArray created with", dataArray.length, "items");
-            } catch (e) {
-                console.error("📊 AdminDashboard: Error creating dataArray", e);
-                dataArray = [];
+            if (Array.isArray(gymsData)) {
+                dataArray = gymsData;
+            } else if (gymsData && typeof gymsData === 'object') {
+                dataArray = (gymsData as any).gyms || (gymsData as any).data || [];
             }
+            
+            console.log("📊 AdminDashboard: Processing", dataArray.length, "items");
 
-            let mappedGyms: GymMetric[] = [];
-            try {
-                mappedGyms = dataArray.map((g: any) => {
-                    try {
-                        if (!g || typeof g !== 'object') {
-                            console.warn("📊 AdminDashboard: Skipping invalid gym object", g);
-                            return null;
-                        }
-                        const revenueNum = Math.floor(Math.random() * 500000);
-                        const platformIncomeNum = Math.floor(revenueNum * 0.15);
-                        const safeName = String(g?.name || "Unknown Hub");
-                        const nameFirstChar = safeName && safeName.length > 0 ? safeName[0].toUpperCase() : "?";
-                        
-                        return {
-                            id: String(g._id || Math.random()),
-                            name: safeName,
-                            logo: nameFirstChar,
-                            revenue: `Rs.${revenueNum.toLocaleString()}`,
-                            platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
-                            contributionScore: 20,
-                            growth: "+0%",
-                            members: Number(g.members || 0),
-                            retention: "85%",
-                            status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
-                            dailyActive: 0,
-                            marketCategory: 'Premium',
-                            yieldPerMember: "Rs.0"
-                        };
-                    } catch (err: any) {
-                        console.error("📊 AdminDashboard: Error mapping gym", g, err.message);
-                        return null;
-                    }
-                }).filter((x): x is GymMetric => x !== null && x !== undefined);
-                console.log("📊 AdminDashboard: Successfully mapped", mappedGyms.length, "gyms");
-            } catch (e: any) {
-                console.error("📊 AdminDashboard: Error in mappedGyms creation", e.message);
-                mappedGyms = [];
-            }
+            const mappedGyms: GymMetric[] = dataArray.map((g: any, index: number) => {
+                try {
+                    if (!g || typeof g !== 'object') return null;
+                    
+                    const revenueNum = Math.floor(Math.random() * 500000);
+                    const platformIncomeNum = Math.floor(revenueNum * 0.15);
+                    const safeName = String(g.name || "Unknown Hub");
+                    const nameFirstChar = safeName.charAt(0).toUpperCase() || "?";
+                    
+                    return {
+                        id: String(g._id || g.id || `gym-${index}`),
+                        name: safeName,
+                        logo: nameFirstChar,
+                        revenue: `Rs.${revenueNum.toLocaleString()}`,
+                        platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
+                        contributionScore: 20,
+                        growth: "+0%",
+                        members: Number(g.members || 0),
+                        retention: "85%",
+                        status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
+                        dailyActive: 0,
+                        marketCategory: 'Premium',
+                        yieldPerMember: "Rs.0"
+                    };
+                } catch (err: any) {
+                    console.error("📊 AdminDashboard: Mapper error at index", index, err);
+                    return null;
+                }
+            }).filter((x): x is GymMetric => x !== null);
 
-            setGymsPerformance(mappedGyms || []);
+            setGymsPerformance(mappedGyms);
             setStats(statsData || { 
                 totalRevenue: 0, 
                 activeGyms: 0, 
@@ -143,30 +135,18 @@ export function AdminDashboard() {
                 totalUsers: 0,
                 pendingGyms: 0
             });
-            console.log("📊 AdminDashboard: State synchronization complete");
+            console.log("📊 AdminDashboard: Stats locked in:", statsData ? "Live" : "Fallback");
         } catch (err: any) {
-            console.error("📊 AdminDashboard: System Link Failure", err);
-            setError(err.message || "Cloud link severed. Could not fetch live intelligence.");
-            setRenderError(err.message || "Failed to load dashboard data.");
+            console.error("📊 AdminDashboard: Global Failure", err);
+            setError(err.message || "Failed to synchronize intelligence.");
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredGyms = Array.isArray(gymsPerformance) ? (gymsPerformance || []).filter(g =>
-        g && String(g.name || "").toLowerCase().includes(String(searchQuery || "").toLowerCase())
-    ) : [];
-
-    if (renderError) {
-        return (
-            <div className="p-20 text-center space-y-4">
-                <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-                <h2 className="text-2xl font-black uppercase text-red-900">Dashboard Intelligence Failure</h2>
-                <code className="block p-4 bg-gray-900 text-primary rounded-xl text-xs overflow-auto break-words">{renderError}</code>
-                <button onClick={() => window.location.reload()} className="px-8 py-3 bg-black text-white rounded-xl font-bold uppercase tracking-widest">Reboot Intelligence</button>
-            </div>
-        );
-    }
+    const filteredGyms = (gymsPerformance || []).filter(g =>
+        g && String(g.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     if (loading) {
         return (
@@ -180,11 +160,11 @@ export function AdminDashboard() {
     if (error) {
         return (
             <div className="p-8">
-                <div className="bg-red-50 border-2 border-red-100 p-12 rounded-[48px] text-center space-y-4">
+                <div className="bg-red-50 border-2 border-red-100 p-12 rounded-[48px] text-center space-y-4 shadow-sm">
                     <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-                    <h3 className="text-xl font-black text-red-900 uppercase italic">Protocol Interrupted</h3>
+                    <h3 className="text-xl font-black text-red-900 uppercase italic">Connection Failure</h3>
                     <p className="text-red-600 font-bold uppercase tracking-widest text-xs">{error}</p>
-                    <button onClick={loadData} className="px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition-all">Reload Intelligence</button>
+                    <button onClick={loadData} className="px-8 py-3 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all">Retry Link</button>
                 </div>
             </div>
         );
@@ -282,7 +262,7 @@ export function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {(filteredGyms || []).map((gym) => (
+                                            {filteredGyms.map((gym) => (
                                                 <tr
                                                     key={gym.id}
                                                     className="hover:bg-gray-50/50 transition-all cursor-pointer group"
@@ -291,7 +271,7 @@ export function AdminDashboard() {
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center font-black italic text-sm group-hover:bg-primary transition-colors">
-                                                                {String(gym.logo || " ")[0]}
+                                                                {String(gym.logo || "?").charAt(0)}
                                                             </div>
                                                             <div>
                                                                 <p className="font-black text-gray-900 uppercase italic tracking-tight">{gym.name}</p>
@@ -383,20 +363,20 @@ export function AdminDashboard() {
                                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 px-4">
                                     <div className="flex items-center gap-8">
                                         <div className="w-24 h-24 bg-black text-white rounded-[40px] flex items-center justify-center text-4xl font-black italic shadow-2xl">
-                                            {selectedPerfGym ? String(selectedPerfGym.logo || "?")[0] : "?"}
+                                            {String(selectedPerfGym.logo || "?").charAt(0)}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-4">
-                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{selectedPerfGym?.name || "Unknown"}</h3>
+                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{selectedPerfGym.name}</h3>
                                             </div>
                                         </div>
                                     </div>
                                 </header>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <InsightCard label="Market Position" value={selectedPerfGym?.marketCategory || "N/A"} type="info" icon={Building2} sub="Category" />
-                                    <InsightCard label="Retention" value={selectedPerfGym?.retention || "N/A"} type="success" icon={Activity} sub="Stickiness" />
-                                    <InsightCard label="Income" value={selectedPerfGym?.platformIncome || "Rs.0"} type="primary" icon={DollarSign} sub="Yield" />
+                                    <InsightCard label="Market Position" value={selectedPerfGym.marketCategory} type="info" icon={Building2} sub="Category" />
+                                    <InsightCard label="Retention" value={selectedPerfGym.retention} type="success" icon={Activity} sub="Stickiness" />
+                                    <InsightCard label="Income" value={selectedPerfGym.platformIncome} type="primary" icon={DollarSign} sub="Yield" />
                                 </div>
                             </div>
                         </div>

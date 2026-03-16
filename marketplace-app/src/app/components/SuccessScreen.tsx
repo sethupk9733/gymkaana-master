@@ -100,7 +100,7 @@ export function SuccessScreen({
             >
               <div className="p-8 pb-4 text-center flex-1 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 bg-gray-50 rounded-2xl p-2 mb-4 border border-gray-100 flex items-center justify-center">
-                  <div className="text-xs font-black italic">{bookingDetails?.gymId?.name?.charAt(0) || 'G'}</div>
+                  <div className="text-xs font-black italic">{String(bookingDetails?.gymId?.name || 'G').charAt(0).toUpperCase()}</div>
                 </div>
                 <h3 className="text-lg font-black italic tracking-tighter uppercase">{bookingDetails?.gymId?.name || 'Gym Venue'}</h3>
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">{bookingDetails?.planId?.name || 'Membership'} Access</p>
