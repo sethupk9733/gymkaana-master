@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Loader2 } from 'lucide-react';
+import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Loader2, MessageCircle, Star, Wallet, User as UserIcon, ShieldCheck, Search } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { GymApprovals } from './components/GymApprovals';
 import { UserManagement } from './components/UserManagement';
 import { RefundManagement } from './components/RefundManagement';
 import { Promotions } from './components/Promotions';
 import { Settings } from './components/Settings';
+import { SupportTickets } from './components/SupportTickets';
+import { ReviewManagement } from './components/ReviewManagement';
+import { PayoutsEarnings } from './components/PayoutsEarnings';
+import { PartnerManagement } from './components/PartnerManagement';
+import { Profile } from './components/Profile';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AdminLogin } from './components/AdminLogin';
 import { setToken, checkSession, logout } from './lib/api';
@@ -90,11 +95,16 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard': return <AdminDashboard />;
-      case 'partners': return <GymApprovals />;
+      case 'partners': return <PartnerManagement />;
+      case 'approvals': return <GymApprovals />;
       case 'users': return <UserManagement />;
+      case 'payouts': return <PayoutsEarnings onBack={() => setCurrentTab('dashboard')} />;
       case 'refunds': return <RefundManagement />;
+      case 'reviews': return <ReviewManagement />;
+      case 'support': return <SupportTickets />;
       case 'promotions': return <Promotions />;
       case 'settings': return <Settings />;
+      case 'profile': return <Profile onLogout={handleLogout} />;
       default: return <AdminDashboard />;
     }
   };
@@ -112,10 +122,15 @@ export default function App() {
 
           <nav className="flex-1 px-4 space-y-2">
             <NavItem icon={Home} label="Dashboard" active={currentTab === 'dashboard'} onClick={() => setCurrentTab('dashboard')} />
-            <NavItem icon={Building2} label="Gym Approvals" active={currentTab === 'partners'} onClick={() => setCurrentTab('partners')} />
-            <NavItem icon={Users} label="User Management" active={currentTab === 'users'} onClick={() => setCurrentTab('users')} />
-            <NavItem icon={DollarSign} label="Refunds & Finance" active={currentTab === 'refunds'} onClick={() => setCurrentTab('refunds')} />
+            <NavItem icon={Search} label="Hub Directory" active={currentTab === 'partners'} onClick={() => setCurrentTab('partners')} />
+            <NavItem icon={ShieldCheck} label="Vetting Queue" active={currentTab === 'approvals'} onClick={() => setCurrentTab('approvals')} />
+            <NavItem icon={Users} label="User Base" active={currentTab === 'users'} onClick={() => setCurrentTab('users')} />
+            <NavItem icon={Wallet} label="Net Earnings" active={currentTab === 'payouts'} onClick={() => setCurrentTab('payouts')} />
+            <NavItem icon={DollarSign} label="Refunds" active={currentTab === 'refunds'} onClick={() => setCurrentTab('refunds')} />
+            <NavItem icon={Star} label="Reviews" active={currentTab === 'reviews'} onClick={() => setCurrentTab('reviews')} />
+            <NavItem icon={MessageCircle} label="Help Center" active={currentTab === 'support'} onClick={() => setCurrentTab('support')} />
             <NavItem icon={Megaphone} label="Promotions" active={currentTab === 'promotions'} onClick={() => setCurrentTab('promotions')} />
+            <NavItem icon={UserIcon} label="Profile" active={currentTab === 'profile'} onClick={() => setCurrentTab('profile')} />
             <NavItem icon={SettingsIcon} label="Settings" active={currentTab === 'settings'} onClick={() => setCurrentTab('settings')} />
           </nav>
 

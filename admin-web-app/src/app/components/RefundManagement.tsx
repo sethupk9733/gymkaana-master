@@ -1,5 +1,6 @@
-import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, X } from "lucide-react";
-import { useState } from "react";
+import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { fetchBookings, fetchAdminAccounting } from "../lib/api";
 
 interface Transaction {
     id: string;
@@ -20,65 +21,45 @@ export function RefundManagement() {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
     const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const transactions: Transaction[] = [
-        {
-            id: "TXN-8821901",
-            user: "Alice Johnson",
-            email: "alice@example.com",
-            gym: "Iron Pump Gym",
-            amount: "₹1,499.00",
-            date: "Jan 5, 2026",
-            time: "14:20 PM",
-            status: "Completed",
-            type: "Monthly Subscription",
-            method: "UPI",
-            commission: "₹224.85",
-            netPayout: "₹1,274.15"
-        },
-        {
-            id: "TXN-8821902",
-            user: "Bob Smith",
-            email: "bob@gym.com",
-            gym: "Elite CrossFit",
-            amount: "₹999.00",
-            date: "Jan 4, 2026",
-            time: "09:30 AM",
-            status: "Refunded",
-            type: "Single Entry Pass",
-            method: "Card",
-            commission: "₹149.85",
-            netPayout: "₹0.00"
-        },
-        {
-            id: "TXN-8821903",
-            user: "Charlie Brown",
-            email: "charlie@fit.com",
-            gym: "Yoga Zen Center",
-            amount: "₹499.00",
-            date: "Jan 3, 2026",
-            time: "18:45 PM",
-            status: "Pending",
-            type: "Trial Session",
-            method: "UPI",
-            commission: "₹74.85",
-            netPayout: "₹424.15"
-        },
-        {
-            id: "TXN-8821904",
-            user: "David Lee",
-            email: "david@lee.com",
-            gym: "Iron Pump Gym",
-            amount: "₹2,999.00",
-            date: "Jan 1, 2026",
-            time: "11:00 AM",
-            status: "Completed",
-            type: "Annual Plan",
-            method: "Net Banking",
-            commission: "₹449.85",
-            netPayout: "₹2,549.15"
-        },
-    ];
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [bookingsData, accountingData] = await Promise.all([
+                fetchBookings(),
+                fetchAdminAccounting()
+            ]);
+            
+            const normalized: Transaction[] = (Array.isArray(bookingsData) ? bookingsData : []).map(b => ({
+                id: b._id || b.id,
+                user: b.userId?.name || 'Unknown User',
+                email: b.userId?.email || '',
+                gym: b.gymId?.name || 'Unknown Hub',
+                amount: `₹${b.totalAmount || 0}`,
+                date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : 'N/A',
+                time: b.createdAt ? new Date(b.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                status: b.status === 'confirmed' ? 'Completed' : (b.status === 'cancelled' ? 'Refunded' : 'Pending'),
+                type: b.planId?.name || 'Booking',
+                method: b.paymentMethod || 'UPI',
+                commission: `₹${(b.totalAmount * 0.15).toFixed(2)}`,
+                netPayout: `₹${(b.totalAmount * 0.85).toFixed(2)}`
+            }));
+
+            setTransactions(normalized);
+            setStats(accountingData);
+        } catch (err) {
+            console.error('Failed to load financial records:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredTransactions = transactions.filter(txn => {
         const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||

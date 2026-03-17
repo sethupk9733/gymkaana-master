@@ -1,54 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Check, X, Building2, MapPin, Eye, FileText, User, Phone, ShieldCheck,
     Dumbbell, Users, Landmark, Award, Shield, Mail, ArrowUpRight,
     ChevronRight, FileCheck, AlertCircle, Trash2, Search, Filter,
-    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus
+    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
-
+import { fetchGyms, updateGymStatus } from '../lib/api';
 
 interface GymDetail {
-    id: number;
+    _id: string; // Changed from id: number
     name: string;
-    owner: string;
-    ownerPhone: string;
-    ownerEmail: string;
+    ownerId?: any; // Changed from owner
     location: string;
-    address: string;
-    joined: string;
     status: 'pending' | 'active' | 'suspended' | 'rejected';
-    tier: 'Premium' | 'Gold' | 'Boutique';
-    revenue: string;
-    members: number;
-    rating: number;
-    gstNo: string;
-    panNo: string;
-    description: string;
-    facilities: string[];
-    images: string[];
-    documentation: {
-        tradingLicense: string;
-        fireSafety: string;
-        insurancePolicy: string;
-        bankStatement: string;
-    };
-    staffCount: number;
-    areaSize: string;
-    establishedYear: string;
-    plans: { name: string; price: string; duration: string; features: string[] }[];
-    gallery: string[];
+    tier?: 'Premium' | 'Gold' | 'Boutique';
+    revenue?: string;
+    members?: number;
+    rating?: number;
+    address?: string;
+    description?: string;
+    gstNo?: string;
+    documentation?: any;
+    images?: string[];
+    createdAt?: string;
 }
 
 export function PartnerManagement() {
-    const [activeTab, setActiveTab] = useState<'directory' | 'onboarding' | 'suspended'>('onboarding');
+    const [activeTab, setActiveTab] = useState<'directory' | 'onboarding' | 'suspended'>('directory');
     const [selectedGym, setSelectedGym] = useState<GymDetail | null>(null);
     const [detailTab, setDetailTab] = useState<'profile' | 'portfolio' | 'financials' | 'clients' | 'plans' | 'preview'>('profile');
     const [isProcessing, setIsProcessing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [showOnboardModal, setShowOnboardModal] = useState(false);
+    const [gyms, setGyms] = useState<GymDetail[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // MOCK DATA FOR THE DEEP DIVE
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchGyms();
+            setGyms(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError('Failed to sync partner network.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const financialHistory = [
         { id: 'TX1', amount: '₹12,400', type: 'Payout', status: 'Success', date: '21 Mar 2024' },
         { id: 'TX2', amount: '₹8,900', type: 'Yield', status: 'Pending', date: '23 Mar 2024' },
@@ -62,114 +67,9 @@ export function PartnerManagement() {
         { id: 4, name: 'Sneha Rao', plan: 'Gold Annual', lastActive: '5 hours ago', spend: '₹15,000' },
     ];
 
-    // FORM STATE
-    const [newGym, setNewGym] = useState({ name: '', owner: '', tier: 'Premium', location: '' });
-    const [gyms, setGyms] = useState<GymDetail[]>([
-        {
-            id: 1,
-            name: "Iron Pump Gym",
-            owner: "John Doe",
-            ownerPhone: "+91 98765 43210",
-            ownerEmail: "john@ironpump.com",
-            location: "Indiranagar",
-            address: "123, Fitness Lane, Indiranagar, Bangalore",
-            joined: "2 days ago",
-            status: "active",
-            tier: "Premium",
-            revenue: "₹45.2L",
-            members: 1240,
-            rating: 4.8,
-            gstNo: "29AAAAA0000A1Z5",
-            panNo: "ABCDE1234F",
-            description: "Premium facility with high-end iron paradise equipment.",
-            facilities: ["Weights", "Cardio", "Steam"],
-            images: ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48"],
-            documentation: {
-                tradingLicense: "LIC-882910-X",
-                fireSafety: "FIRE-2900-B",
-                insurancePolicy: "INS-9901-P",
-                bankStatement: "STMT-23"
-            },
-            staffCount: 15,
-            areaSize: "8000 sqft",
-            establishedYear: "2018",
-            plans: [
-                { name: "Global Pass", price: "₹2,499", duration: "Monthly", features: ["All HSR Hubs", "Steam", "Trainer Access"] },
-                { name: "Pro Athlete", price: "₹18,000", duration: "Annual", features: ["24/7 Access", "Diet Plan", "Personal locker"] }
-            ],
-            gallery: [
-                "https://images.unsplash.com/photo-1534438327276-14e5300c3a48",
-                "https://images.unsplash.com/photo-1540497077202-7c8a3999166f",
-                "https://images.unsplash.com/photo-1571902251103-d87382d6b79c"
-            ]
-        },
-        {
-            id: 2,
-            name: "Yoga Zen Center",
-            owner: "Sarah Smith",
-            ownerPhone: "+91 98765 00000",
-            ownerEmail: "sarah@yogazen.com",
-            location: "Westside",
-            address: "45, Serenity Row, Westside, Bangalore",
-            joined: "1 hour ago",
-            status: "pending",
-            tier: "Boutique",
-            revenue: "₹0",
-            members: 0,
-            rating: 0,
-            gstNo: "29BBBBB1111B1Z6",
-            panNo: "FGHIJ5678K",
-            description: "Find your inner peace with our expert yoga sessions.",
-            facilities: ["Meditation", "Yoga Mats"],
-            images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b"],
-            documentation: {
-                tradingLicense: "LIC-112233-Y",
-                fireSafety: "FIRE-3322-Z",
-                insurancePolicy: "INS-4455-Q",
-                bankStatement: "STMT-24"
-            },
-            staffCount: 8,
-            areaSize: "3200 sqft",
-            establishedYear: "2021",
-            plans: [],
-            gallery: []
-        },
-        {
-            id: 3,
-            name: "Powerhouse Elite",
-            owner: "Mike Johnson",
-            ownerPhone: "+91 88888 11111",
-            ownerEmail: "mike@powerhouse.com",
-            location: "Koramangala",
-            address: "99, Startup St, Koramangala, Bangalore",
-            joined: "5 months ago",
-            status: "active",
-            tier: "Gold",
-            revenue: "₹28.5L",
-            members: 850,
-            rating: 4.6,
-            gstNo: "29CCCCC2222C1Z7",
-            panNo: "KLMNO1234G",
-            description: "The core of strength and conditioning in Koramangala.",
-            facilities: ["Powerlifting", "Boxing", "Cafe"],
-            images: ["https://images.unsplash.com/photo-1540497077202-7c8a3999166f"],
-            documentation: {
-                tradingLicense: "LIC-998877-K",
-                fireSafety: "FIRE-1122-M",
-                insurancePolicy: "INS-2233-R",
-                bankStatement: "STMT-25"
-            },
-            staffCount: 12,
-            areaSize: "5000 sqft",
-            establishedYear: "2020",
-            plans: [],
-            gallery: []
-        }
-    ]);
-
     const filteredGyms = gyms.filter(g => {
-        const matchesSearch = g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            g.location.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (g.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (g.location || "").toLowerCase().includes(searchQuery.toLowerCase());
 
         if (activeTab === 'directory') return g.status === 'active' && matchesSearch;
         if (activeTab === 'onboarding') return g.status === 'pending' && matchesSearch;
@@ -177,14 +77,27 @@ export function PartnerManagement() {
         return matchesSearch;
     });
 
-    const handleAction = async (id: number, status: 'active' | 'suspended' | 'rejected') => {
+    const handleAction = async (id: string, status: 'active' | 'suspended' | 'rejected') => {
         setIsProcessing(true);
-        // Simulate institutional sync delay
-        await new Promise(r => setTimeout(r, 800));
-        setGyms(gyms.map(g => g.id === id ? { ...g, status } : g));
-        setIsProcessing(false);
-        setSelectedGym(null);
+        try {
+            await updateGymStatus(id, status);
+            await loadData();
+            setSelectedGym(null);
+        } catch (err) {
+            alert('Status update failed');
+        } finally {
+            setIsProcessing(false);
+        }
     };
+
+    if (loading && gyms.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[80vh] gap-6">
+                <Loader2 className="w-12 h-12 text-black animate-spin" />
+                <p className="font-black uppercase tracking-[0.4em] text-[10px] text-gray-400">Syncing Partner Network...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-10 max-w-[1600px] mx-auto space-y-12 pb-32 font-sans">
@@ -238,7 +151,7 @@ export function PartnerManagement() {
                 <AnimatePresence mode="popLayout">
                     {filteredGyms.map((gym) => (
                         <motion.div
-                            key={gym.id}
+                            key={gym._id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -253,19 +166,19 @@ export function PartnerManagement() {
                             <div className="flex-1 min-w-[200px]">
                                 <div className="flex items-center gap-3 mb-1">
                                     <h3 className="text-xl font-black italic uppercase tracking-tighter text-gray-900">{gym.name}</h3>
-                                    <TierBadge tier={gym.tier} />
+                                    <TierBadge tier={gym.tier || 'Boutique'} />
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
                                     <MapPin className="w-3 h-3 text-primary shrink-0" /> {gym.location}
                                     <span className="mx-2 text-gray-200">|</span>
-                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {gym.rating > 0 ? gym.rating : 'N/A'}
+                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {(gym.rating || 0) > 0 ? gym.rating : 'N/A'}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-10 border-l border-gray-50 pl-10">
-                                <RowStat label="Revenue" value={gym.revenue} sub="Lifetime GMV" />
-                                <RowStat label="Footfall" value={gym.members} sub="Active Users" />
-                                <RowStat label="Status" value={gym.status} sub={gym.joined} isStatus />
+                                <RowStat label="Revenue" value={gym.revenue || "₹0"} sub="Lifetime GMV" />
+                                <RowStat label="Footfall" value={gym.members || 0} sub="Active Users" />
+                                <RowStat label="Status" value={gym.status} sub={gym.createdAt ? new Date(gym.createdAt).toLocaleDateString() : "PENDING"} isStatus />
                             </div>
 
                             <div className="flex flex-col gap-3 ml-auto">
@@ -315,15 +228,15 @@ export function PartnerManagement() {
                                             <div className="mb-12">
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-[0.9]">{selectedGym.name}</h3>
-                                                    <TierBadge tier={selectedGym.tier} large />
+                                                    <TierBadge tier={selectedGym.tier || 'Boutique'} large />
                                                 </div>
                                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-4">Hub Intelligence V4.2</p>
                                             </div>
 
                                             <div className="space-y-4">
-                                                <HubProp label="Platform ID" value={`GYM-H${selectedGym.id}X9`} />
+                                                <HubProp label="Platform ID" value={`GYM-H${String(selectedGym._id).slice(-6).toUpperCase()}X9`} />
                                                 <HubProp label="Contract State" value={selectedGym.status.toUpperCase()} />
-                                                <HubProp label="Onboarded" value={selectedGym.joined} />
+                                                <HubProp label="Onboarded" value={selectedGym.createdAt ? new Date(selectedGym.createdAt).toLocaleDateString() : 'N/A'} />
                                             </div>
                                         </div>
 
@@ -368,8 +281,8 @@ export function PartnerManagement() {
                                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-16 pb-12">
                                                     <div className="grid grid-cols-3 gap-10">
                                                         <MetricBox label="Avg Quality Score" value="9.4" icon={Star} color="text-yellow-500" />
-                                                        <MetricBox label="Revenue Yield" value={selectedGym.revenue} icon={TrendingUp} color="text-emerald-500" />
-                                                        <MetricBox label="Platform Units" value={selectedGym.members} icon={Users} color="text-blue-500" />
+                                                        <MetricBox label="Revenue Yield" value={selectedGym.revenue || "₹0"} icon={TrendingUp} color="text-emerald-500" />
+                                                        <MetricBox label="Platform Units" value={selectedGym.members || 0} icon={Users} color="text-blue-500" />
                                                     </div>
 
                                                     <section className="space-y-8">
@@ -377,7 +290,7 @@ export function PartnerManagement() {
                                                             <Layers className="w-4 h-4" /> Facility Gallery
                                                         </h4>
                                                         <div className="grid grid-cols-3 gap-6 h-64">
-                                                            {(selectedGym.gallery || selectedGym.images || []).slice(0, 3).map((img, i) => (
+                                                            {(selectedGym.images || []).slice(0, 3).map((img: string, i: number) => (
                                                                 <div key={i} className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm relative group">
                                                                     <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Facility" />
                                                                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -410,17 +323,17 @@ export function PartnerManagement() {
                                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <h4 className="text-2xl font-black italic uppercase tracking-tighter">Live Membership Offerings</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                        {(selectedGym.plans || [
+                                                        {(selectedGym.documentation?.plans || [
                                                             { name: "Monthly Pass", price: "₹2,999", duration: "1 Month", features: ["All weights", "Steam"] },
                                                             { name: "Annual Core", price: "₹24,000", duration: "12 Months", features: ["Personal Trainer", "Dietician"] }
-                                                        ]).map((plan, i) => (
+                                                        ]).map((plan: any, i: number) => (
                                                             <div key={i} className="p-10 bg-gray-900 text-white rounded-[48px] border border-white/10 relative overflow-hidden group hover:border-primary/50 transition-all">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full group-hover:bg-primary/20 transition-all" />
                                                                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">{plan.duration}</p>
                                                                 <h3 className="text-3xl font-black italic uppercase mb-6">{plan.name}</h3>
                                                                 <div className="text-4xl font-black italic text-white mb-8">{plan.price}</div>
                                                                 <div className="space-y-4">
-                                                                    {plan.features.map(f => (
+                                                                    {(plan.features || []).map((f: string) => (
                                                                         <div key={f} className="flex items-center gap-3 text-[10px] font-bold text-white/50 uppercase tracking-widest">
                                                                             <Check className="w-4 h-4 text-primary" /> {f}
                                                                         </div>
@@ -437,18 +350,18 @@ export function PartnerManagement() {
                                                     <div className="bg-gray-50 p-10 rounded-[48px] border border-gray-100 space-y-8">
                                                         <h4 className="text-xl font-black italic uppercase tracking-tighter">Business Application Data</h4>
                                                         <div className="grid grid-cols-2 gap-x-12 gap-y-8">
-                                                            <DetailRow label="Entity Owner" value={selectedGym.owner} icon={User} />
-                                                            <DetailRow label="Contact Line" value={selectedGym.ownerPhone} icon={Phone} />
-                                                            <DetailRow label="Institutional Email" value={selectedGym.ownerEmail} icon={Mail} />
-                                                            <DetailRow label="Established" value={selectedGym.establishedYear} icon={Activity} />
-                                                            <DetailRow label="PAN Account" value={selectedGym.panNo} icon={ShieldCheck} />
-                                                            <DetailRow label="Base Location" value={selectedGym.address} icon={MapPin} />
+                                                            <DetailRow label="Entity Owner" value={selectedGym.ownerId?.name || "IDENTITY PROTECTED"} icon={User} />
+                                                            <DetailRow label="Contact Line" value={selectedGym.ownerId?.phoneNumber || "NOT LINKED"} icon={Phone} />
+                                                            <DetailRow label="Institutional Email" value={selectedGym.ownerId?.email || "NOT LINKED"} icon={Mail} />
+                                                            <DetailRow label="Established" value={selectedGym.documentation?.establishedYear || "N/A"} icon={Activity} />
+                                                            <DetailRow label="PAN Account" value={selectedGym.documentation?.panNo || "PENDING"} icon={ShieldCheck} />
+                                                            <DetailRow label="Base Location" value={selectedGym.address || "NO ADDRESS DATA"} icon={MapPin} />
                                                         </div>
                                                     </div>
 
                                                     <div className="p-10 border border-gray-100 rounded-[48px] space-y-6">
                                                         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Hub Description</h4>
-                                                        <p className="text-gray-600 italic font-medium leading-[1.8] text-lg">"{selectedGym.description}"</p>
+                                                        <p className="text-gray-600 italic font-medium leading-[1.8] text-lg">"{selectedGym.description || "No description provided for this venue."}"</p>
                                                     </div>
                                                 </motion.div>
                                             )}
@@ -579,14 +492,14 @@ export function PartnerManagement() {
                                             {selectedGym.status === 'pending' ? (
                                                 <>
                                                     <button
-                                                        onClick={() => handleAction(selectedGym.id, 'rejected')}
+                                                        onClick={() => handleAction(selectedGym._id, 'rejected')}
                                                         disabled={isProcessing}
                                                         className="px-10 py-5 bg-white border border-red-100 text-red-500 rounded-[28px] font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-50 transition-all flex items-center gap-3 disabled:opacity-50"
                                                     >
                                                         {isProcessing ? 'SYNCING...' : <><X className="w-5 h-5" /> Deny Access</>}
                                                     </button>
                                                     <button
-                                                        onClick={() => handleAction(selectedGym.id, 'active')}
+                                                        onClick={() => handleAction(selectedGym._id, 'active')}
                                                         disabled={isProcessing}
                                                         className="flex-1 py-5 bg-black text-white rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] hover:shadow-2xl hover:shadow-black/30 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
                                                     >
@@ -602,7 +515,7 @@ export function PartnerManagement() {
                                             ) : (
                                                 <>
                                                     <button
-                                                        onClick={() => handleAction(selectedGym.id, selectedGym.status === 'active' ? 'suspended' : 'active')}
+                                                        onClick={() => handleAction(selectedGym._id, selectedGym.status === 'active' ? 'suspended' : 'active')}
                                                         disabled={isProcessing}
                                                         className={`px-10 py-5 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 disabled:opacity-50 ${selectedGym.status === 'active'
                                                             ? 'bg-red-50 text-red-500 hover:bg-red-600 hover:text-white'
@@ -654,27 +567,26 @@ export function PartnerManagement() {
                             <div className="mb-10">
                                 <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-1">New Hub Onboarding</h3>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Initialization of institutional partnership</p>
-                            </div>
-
-                            <div className="space-y-6">
-                                <FormInput label="Official Hub Name" placeholder="e.g. Iron Paradise Indiranagar" value={newGym.name} onChange={(v) => setNewGym({ ...newGym, name: v })} />
-                                <FormInput label="Owner Name / Entity" placeholder="e.g. Arjan Singh" value={newGym.owner} onChange={(v) => setNewGym({ ...newGym, owner: v })} />
+                                         <div className="space-y-6">
+                                <FormInput label="Official Hub Name" placeholder="e.g. Iron Paradise Indiranagar" value={""} onChange={() => {}} />
+                                <FormInput label="Owner Name / Entity" placeholder="e.g. Arjan Singh" value={""} onChange={() => {}} />
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Platform Tier</label>
                                         <select
                                             className="w-full p-4 bg-gray-50 border border-transparent rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary outline-none transition-all uppercase tracking-wider"
                                             title="Select Hub Tier"
-                                            value={newGym.tier}
-                                            onChange={(e) => setNewGym({ ...newGym, tier: e.target.value })}
+                                            value={"Premium"}
+                                            onChange={() => {}}
                                         >
                                             <option>Premium</option>
                                             <option>Gold</option>
                                             <option>Boutique</option>
                                         </select>
                                     </div>
-                                    <FormInput label="Base Location" placeholder="e.g. Indiranagar" value={newGym.location} onChange={(v) => setNewGym({ ...newGym, location: v })} />
+                                    <FormInput label="Base Location" placeholder="e.g. Indiranagar" value={""} onChange={() => {}} />
                                 </div>
+                 </div>
 
                                 <div className="p-8 bg-primary/5 rounded-[32px] border border-primary/10">
                                     <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 text-primary">Pre-Audit Checklist</h4>
