@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Loader2 } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
-import { PartnerApprovals } from './components/PartnerApprovals';
+import { GymApprovals } from './components/GymApprovals';
 import { UserManagement } from './components/UserManagement';
 import { RefundManagement } from './components/RefundManagement';
 import { Promotions } from './components/Promotions';
@@ -90,7 +90,7 @@ export default function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard': return <AdminDashboard />;
-      case 'partners': return <PartnerApprovals />;
+      case 'partners': return <GymApprovals />;
       case 'users': return <UserManagement />;
       case 'refunds': return <RefundManagement />;
       case 'promotions': return <Promotions />;

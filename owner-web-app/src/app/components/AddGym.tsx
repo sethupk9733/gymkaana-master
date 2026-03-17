@@ -1,4 +1,4 @@
-import { ArrowLeft, Upload, Clock, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Clock, Check, Loader2, ShieldCheck, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -29,9 +29,15 @@ export function AddGym({ onBack }: AddGymProps) {
         specializations: "",
         openingHoursWeekdays: "",
         openingHoursWeekends: "",
+        gstNo: "",
+        panNo: "",
+        tradingLicense: "",
+        fireSafety: "",
+        insurancePolicy: ""
     });
 
     const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+    const [images, setImages] = useState<string[]>([]);
 
     const facilities = [
         "Cardio Equipment",
@@ -43,6 +49,21 @@ export function AddGym({ onBack }: AddGymProps) {
         "Personal Trainer",
         "Steam Room",
     ];
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImages(prev => [...prev, reader.result as string]);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -67,11 +88,24 @@ export function AddGym({ onBack }: AddGymProps) {
         setError(null);
 
         try {
-            await createGym({
+            const submissionData = {
                 ...formData,
                 facilities: selectedFacilities,
-                status: 'pending' // Correctly use 'pending' as defined in model
-            });
+                images: images,
+                status: 'pending',
+                documentation: {
+                    tradingLicense: formData.tradingLicense,
+                    fireSafety: formData.fireSafety,
+                    insurancePolicy: formData.insurancePolicy
+                }
+            };
+            
+            // Remove the flattened fields before sending
+            delete (submissionData as any).tradingLicense;
+            delete (submissionData as any).fireSafety;
+            delete (submissionData as any).insurancePolicy;
+
+            await createGym(submissionData);
             setSuccess(true);
             setTimeout(() => onBack(), 2000);
         } catch (err: any) {
@@ -119,10 +153,23 @@ export function AddGym({ onBack }: AddGymProps) {
                         Gym Photos
                     </h3>
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                        <button className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-gray-100 hover:border-blue-400 transition-all group">
+                        {images.map((img, index) => (
+                            <div key={index} className="relative aspect-square rounded-xl overflow-hidden group">
+                                <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                                <button
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove Photo"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ))}
+                        <label className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-gray-100 hover:border-blue-400 transition-all group cursor-pointer">
                             <Upload size={24} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
                             <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 group-hover:text-blue-500">Upload Photo</span>
-                        </button>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
                     </div>
                 </div>
 
@@ -208,6 +255,41 @@ export function AddGym({ onBack }: AddGymProps) {
                         <div className="md:col-span-2">
                             <label className="block text-sm mb-2 text-gray-700 font-bold uppercase tracking-wider">Google Maps Link</label>
                             <Input name="googleMapsLink" value={formData.googleMapsLink} onChange={handleInputChange} placeholder="https://maps.google.com/..." className="h-12 border-2 border-gray-200 rounded-xl" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Compliance & Documentation */}
+                <div className="bg-white p-6 rounded-2xl border-2 border-gray-200 shadow-sm space-y-6">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                        <ShieldCheck size={20} className="text-green-500" />
+                        Compliance & Documentation
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm mb-2 text-gray-700 font-bold uppercase tracking-wider">GST Number</label>
+                            <Input name="gstNo" value={formData.gstNo} onChange={handleInputChange} placeholder="29AAAAA0000A1Z5" className="h-12 border-2 border-gray-200 rounded-xl font-mono" />
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-2 text-gray-700 font-bold uppercase tracking-wider">PAN Number</label>
+                            <Input name="panNo" value={formData.panNo} onChange={handleInputChange} placeholder="ABCDE1234F" className="h-12 border-2 border-gray-200 rounded-xl font-mono" />
+                        </div>
+                        <div className="md:col-span-2 space-y-4">
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Legal Document License Numbers</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-[10px] mb-1 text-gray-500 font-bold uppercase">Trading License</label>
+                                    <Input name="tradingLicense" value={formData.tradingLicense} onChange={handleInputChange} placeholder="LIC-XXXXX" className="h-10 border-2 border-gray-200 rounded-lg text-xs" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] mb-1 text-gray-500 font-bold uppercase">Fire Safety No.</label>
+                                    <Input name="fireSafety" value={formData.fireSafety} onChange={handleInputChange} placeholder="FIRE-XXXXX" className="h-10 border-2 border-gray-200 rounded-lg text-xs" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] mb-1 text-gray-500 font-bold uppercase">Insurance Policy</label>
+                                    <Input name="insurancePolicy" value={formData.insurancePolicy} onChange={handleInputChange} placeholder="INS-XXXXX" className="h-10 border-2 border-gray-200 rounded-lg text-xs" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
