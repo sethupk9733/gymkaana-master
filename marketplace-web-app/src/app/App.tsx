@@ -103,11 +103,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [currentScreen]);
 
-  const handleLoginSuccess = async () => {
+  const handleLoginSuccess = async (isNew?: boolean) => {
     setIsAuthenticated(true);
     await loadProfile();
 
-    if (pendingScreen) {
+    if (isNew) {
+      setProfileInitialView('edit');
+      setCurrentScreen('profile');
+      setPendingScreen(null);
+    } else if (pendingScreen) {
       setCurrentScreen(pendingScreen);
       setPendingScreen(null);
     } else {

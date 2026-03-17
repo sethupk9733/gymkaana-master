@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Calendar, Image as ImageIcon, Plus, Trash2, Megaphone, Tag, ArrowUpRight, CheckCircle, Clock, Loader2 } from "lucide-react";
-import { fetchGyms } from '../lib/api';
+import { fetchGyms, fetchUsers, fetchBookings } from '../lib/api';
 
 interface Promotion {
     id: string | number;
@@ -16,6 +16,11 @@ export function Promotions() {
     const [activeType, setActiveType] = useState('All');
     const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        activeReach: "0",
+        conversionRate: "0%",
+        totalRedemptions: "0"
+    });
 
     useEffect(() => {
         loadData();
@@ -24,7 +29,12 @@ export function Promotions() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const gyms = await fetchGyms();
+            const [gyms, users, bookings] = await Promise.all([
+                fetchGyms().catch(() => []),
+                fetchUsers().catch(() => []),
+                fetchBookings().catch(() => [])
+            ]);
+
             const latestGyms = (Array.isArray(gyms) ? gyms : []).slice(-3).reverse();
             
             const dynamicPromos: Promotion[] = latestGyms.map((gym: any) => ({
@@ -59,6 +69,16 @@ export function Promotions() {
             ];
 
             setPromotions([...dynamicPromos, ...staticPromos]);
+
+            const totalUsers = Array.isArray(users) ? users.length : 0;
+            const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
+            const conversion = (totalUsers > 0 ? ((totalBookings / totalUsers) * 100).toFixed(1) : 0) + "%";
+
+            setStats({
+                activeReach: totalUsers >= 1000 ? (totalUsers / 1000).toFixed(1) + "K" : totalUsers.toString(),
+                conversionRate: conversion,
+                totalRedemptions: totalBookings.toLocaleString()
+            });
         } catch (err) {
             console.error('Failed to load promotions:', err);
         } finally {
@@ -88,9 +108,9 @@ export function Promotions() {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-shadow">
-                <PromoStat label="Active Reach" value="24.8K" sub="Unique Impressions" icon={Megaphone} />
-                <PromoStat label="Conversion Rate" value="3.4%" sub="Campaign Velocity" icon={ArrowUpRight} />
-                <PromoStat label="Total Redemptions" value="1,240" sub="Coupon Usage" icon={Tag} />
+                <PromoStat label="Active Reach" value={stats.activeReach} sub="Unique Impressions" icon={Megaphone} />
+                <PromoStat label="Conversion Rate" value={stats.conversionRate} sub="Campaign Velocity" icon={ArrowUpRight} />
+                <PromoStat label="Total Redemptions" value={stats.totalRedemptions} sub="Coupon Usage" icon={Tag} />
             </div>
 
             <div className="bg-white border border-gray-100 rounded-[48px] p-10 shadow-sm space-y-8">

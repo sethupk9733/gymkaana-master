@@ -7,7 +7,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { login, register, googleLogin } from "../lib/api";
 
 interface OwnerLoginProps {
-  onLogin: () => void;
+  onLogin: (isNew?: boolean) => void;
 }
 
 export function OwnerLogin({ onLogin }: OwnerLoginProps) {
@@ -28,7 +28,7 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
       const res = await googleLogin({ idToken: response.credential, role: 'owner' });
       if (res.accessToken) {
         localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
-        onLogin();
+        onLogin(false); // Can't easily determine if new without backend flag, assume default
       } else {
         setError(res.message || "Google Authentication failed");
       }
@@ -44,15 +44,29 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = isSignUp
-        ? await register({ ...formData, role: 'owner' })
-        : await login({ email: formData.email, password: formData.password });
-
-      if (res.accessToken) {
-        localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
-        onLogin();
+      if (isSignUp) {
+          const regRes = await register({ ...formData, role: 'owner' });
+          if ((regRes as any).requiresVerification) {
+            setError('Please verify your email before logging in.');
+            setLoading(false);
+            return;
+          }
+          // Immediately log them in
+          const loginRes = await login({ email: formData.email, password: formData.password });
+          if (loginRes.accessToken) {
+              localStorage.setItem('gymkaana_owner_user', JSON.stringify(loginRes));
+              onLogin(true); // Is a new registration
+          } else {
+              setError(loginRes.message || "Authentication failed after registration");
+          }
       } else {
-        setError(res.message || "Authentication failed");
+          const res = await login({ email: formData.email, password: formData.password });
+          if (res.accessToken) {
+            localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
+            onLogin(false);
+          } else {
+            setError(res.message || "Authentication failed");
+          }
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during authentication");

@@ -55,7 +55,13 @@ export default function App() {
   }
 
   if (!isLoggedIn) {
-    return <OwnerLogin onLogin={() => setIsLoggedIn(true)} />;
+    return <OwnerLogin onLogin={(isNew?: boolean) => {
+        setIsLoggedIn(true);
+        if (isNew) {
+            setCurrentScreen('addGym');
+            setActiveTab('dashboard');
+        }
+    }} />;
   }
 
   const handleGymSelect = (gymId: string | number) => {

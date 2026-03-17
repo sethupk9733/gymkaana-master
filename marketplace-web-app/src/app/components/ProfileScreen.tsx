@@ -61,7 +61,11 @@ export function ProfileScreen({
   const [editData, setEditData] = useState({
     name: initialProfile?.name || '',
     email: initialProfile?.email || '',
-    phoneNumber: initialProfile?.phoneNumber || ''
+    phoneNumber: initialProfile?.phoneNumber || '',
+    gender: initialProfile?.gender || '',
+    age: initialProfile?.age || '',
+    address: initialProfile?.address || '',
+    occupation: initialProfile?.occupation || ''
   });
 
   useEffect(() => {
@@ -77,7 +81,11 @@ export function ProfileScreen({
           setEditData({
             name: prof.name || '',
             email: prof.email || '',
-            phoneNumber: prof.phoneNumber || ''
+            phoneNumber: prof.phoneNumber || '',
+            gender: prof.gender || '',
+            age: prof.age || '',
+            address: prof.address || '',
+            occupation: prof.occupation || '',
           });
         }
 
@@ -113,7 +121,11 @@ export function ProfileScreen({
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const updated = await updateProfileApi(editData);
+      const payload = {
+        ...editData,
+        age: editData.age ? parseInt(editData.age as string, 10) : undefined
+      };
+      const updated = await updateProfileApi(payload);
       setLocalProfile(updated);
       onProfileUpdate(); // Refresh App.tsx global state
       setCurrentView('main');
@@ -246,6 +258,52 @@ export function ProfileScreen({
             onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })}
             className="w-full p-5 bg-white border border-border/60 rounded-[24px] font-extrabold text-secondary outline-none focus:border-primary transition-all shadow-sm"
             placeholder="+91 00000 00000"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Gender</label>
+            <select
+                title="Gender"
+                value={editData.gender}
+                onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
+                className="w-full p-5 bg-white border border-border/60 rounded-[24px] font-extrabold text-secondary outline-none focus:border-primary transition-all shadow-sm appearance-none"
+            >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            </div>
+            <div className="space-y-2">
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Age</label>
+            <input
+                type="number"
+                value={editData.age}
+                onChange={(e) => setEditData({ ...editData, age: e.target.value })}
+                className="w-full p-5 bg-white border border-border/60 rounded-[24px] font-extrabold text-secondary outline-none focus:border-primary transition-all shadow-sm"
+                placeholder="Years"
+            />
+            </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Address</label>
+          <input
+            type="text"
+            value={editData.address}
+            onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+            className="w-full p-5 bg-white border border-border/60 rounded-[24px] font-extrabold text-secondary outline-none focus:border-primary transition-all shadow-sm"
+            placeholder="Your Address"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Occupation</label>
+          <input
+            type="text"
+            value={editData.occupation}
+            onChange={(e) => setEditData({ ...editData, occupation: e.target.value })}
+            className="w-full p-5 bg-white border border-border/60 rounded-[24px] font-extrabold text-secondary outline-none focus:border-primary transition-all shadow-sm"
+            placeholder="Your Occupation"
           />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { login, register, googleLogin, verifyOTP, resendOTP, forgotPassword, res
 import { GoogleLogin } from '@react-oauth/google';
 import { OWNER_URL } from "../config/api";
 
-export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
+export function LoginSignupScreen({ onLogin, onBack }: { onLogin: (isNew?: boolean) => void; onBack: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [showOTP, setShowOTP] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -33,7 +33,7 @@ export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; on
     try {
       const result = await googleLogin({ idToken: response.credential });
       if (result.accessToken) {
-        onLogin();
+        onLogin(false); // Assume existing user, or backend could return a flag
       } else {
         setError(result.message || "Google login failed");
       }
@@ -69,7 +69,7 @@ export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; on
         } else if (result.error || !result.accessToken) {
           setError(result.error || result.message || "Login failed");
         } else {
-          onLogin();
+          onLogin(false);
         }
       } else {
         // Signup
@@ -101,7 +101,8 @@ export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; on
         } else if (result.error || !result.accessToken) {
           setError(result.error || result.message || "Signup failed");
         } else {
-          onLogin();
+          // They might need to login after signup depending on backend, but if it returns a token:
+          onLogin(true);
         }
       }
     } catch (err: any) {

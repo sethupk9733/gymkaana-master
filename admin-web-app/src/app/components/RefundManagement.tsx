@@ -32,28 +32,10 @@ export function RefundManagement() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [bookingsData, accountingData] = await Promise.all([
-                fetchBookings(),
-                fetchAdminAccounting()
-            ]);
+            const accountingData = await fetchAdminAccounting();
             
-            const normalized: Transaction[] = (Array.isArray(bookingsData) ? bookingsData : []).map(b => ({
-                id: b._id || b.id,
-                user: b.userId?.name || 'Unknown User',
-                email: b.userId?.email || '',
-                gym: b.gymId?.name || 'Unknown Hub',
-                amount: `₹${b.totalAmount || 0}`,
-                date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : 'N/A',
-                time: b.createdAt ? new Date(b.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-                status: b.status === 'confirmed' ? 'Completed' : (b.status === 'cancelled' ? 'Refunded' : 'Pending'),
-                type: b.planId?.name || 'Booking',
-                method: b.paymentMethod || 'UPI',
-                commission: `₹${(b.totalAmount * 0.15).toFixed(2)}`,
-                netPayout: `₹${(b.totalAmount * 0.85).toFixed(2)}`
-            }));
-
-            setTransactions(normalized);
-            setStats(accountingData);
+            setTransactions(accountingData.transactions || []);
+            setStats(accountingData.stats || null);
         } catch (err) {
             console.error('Failed to load financial records:', err);
         } finally {
@@ -61,10 +43,15 @@ export function RefundManagement() {
         }
     };
 
+    const formatCurrency = (amount: any) => {
+        if (!amount) return '₹0';
+        return `₹${amount.toLocaleString('en-IN')}`;
+    };
+
     const filteredTransactions = transactions.filter(txn => {
-        const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            txn.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            txn.gym.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = String(txn.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            String(txn.user || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            String(txn.gym || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === "All" || txn.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
@@ -88,10 +75,10 @@ export function RefundManagement() {
 
             {/* Platform Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FinanceStat label="Gross Revenue" value="₹45.28L" trend="+8%" sub="MTD Performance" color="black" />
-                <FinanceStat label="Total Commission" value="₹6.79L" trend="+12%" sub="Platform Earnings" color="primary" />
-                <FinanceStat label="Total Refunds" value="₹12.5K" trend="-2%" sub="User Reversals" color="red" />
-                <FinanceStat label="Settled Payouts" value="₹38.4L" trend="+5%" sub="Paid to Gyms" color="emerald" />
+                <FinanceStat label="Gross Revenue" value={formatCurrency(stats?.grossRevenue)} trend="+8%" sub="MTD Performance" color="black" />
+                <FinanceStat label="Total Commission" value={formatCurrency(stats?.totalCommission)} trend="+12%" sub="Platform Earnings" color="primary" />
+                <FinanceStat label="Total Refunds" value={formatCurrency(stats?.totalRefunds)} trend="-2%" sub="User Reversals" color="red" />
+                <FinanceStat label="Settled Payouts" value={formatCurrency(stats?.settledPayouts)} trend="+5%" sub="Paid to Gyms" color="emerald" />
             </div>
 
             {/* Custom Search & Filters */}

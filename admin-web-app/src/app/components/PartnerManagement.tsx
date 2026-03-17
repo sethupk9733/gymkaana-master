@@ -3,7 +3,7 @@ import {
     Check, X, Building2, MapPin, Eye, FileText, User, Phone, ShieldCheck,
     Dumbbell, Users, Landmark, Award, Shield, Mail, ArrowUpRight,
     ChevronRight, FileCheck, AlertCircle, Trash2, Search, Filter,
-    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2
+    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2, Clock
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchGyms, updateGymStatus } from '../lib/api';
@@ -19,10 +19,23 @@ interface GymDetail {
     members?: number;
     rating?: number;
     address?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    zipCode?: string;
+    landmark?: string;
+    headTrainer?: string;
+    experience?: string;
+    specializations?: string[];
+    googleMapsLink?: string;
+    openingHoursWeekdays?: string;
+    openingHoursWeekends?: string;
     description?: string;
     gstNo?: string;
-    documentation?: any;
+    panNo?: string;
     images?: string[];
+    facilities?: string[];
+    documentation?: any;
     createdAt?: string;
 }
 
@@ -323,9 +336,8 @@ export function PartnerManagement() {
                                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <h4 className="text-2xl font-black italic uppercase tracking-tighter">Live Membership Offerings</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                        {(selectedGym.documentation?.plans || [
-                                                            { name: "Monthly Pass", price: "₹2,999", duration: "1 Month", features: ["All weights", "Steam"] },
-                                                            { name: "Annual Core", price: "₹24,000", duration: "12 Months", features: ["Personal Trainer", "Dietician"] }
+                                                        {(selectedGym.documentation?.plans && selectedGym.documentation?.plans.length > 0 ? selectedGym.documentation.plans : [
+                                                            { name: "Monthly Pass", price: "Live sync pending", duration: "Standard", features: ["Facility Access"] }
                                                         ]).map((plan: any, i: number) => (
                                                             <div key={i} className="p-10 bg-gray-900 text-white rounded-[48px] border border-white/10 relative overflow-hidden group hover:border-primary/50 transition-all">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full group-hover:bg-primary/20 transition-all" />
@@ -333,7 +345,7 @@ export function PartnerManagement() {
                                                                 <h3 className="text-3xl font-black italic uppercase mb-6">{plan.name}</h3>
                                                                 <div className="text-4xl font-black italic text-white mb-8">{plan.price}</div>
                                                                 <div className="space-y-4">
-                                                                    {(plan.features || []).map((f: string) => (
+                                                                    {(Array.isArray(plan.features) ? plan.features : []).map((f: string) => (
                                                                         <div key={f} className="flex items-center gap-3 text-[10px] font-bold text-white/50 uppercase tracking-widest">
                                                                             <Check className="w-4 h-4 text-primary" /> {f}
                                                                         </div>
@@ -351,11 +363,22 @@ export function PartnerManagement() {
                                                         <h4 className="text-xl font-black italic uppercase tracking-tighter">Business Application Data</h4>
                                                         <div className="grid grid-cols-2 gap-x-12 gap-y-8">
                                                             <DetailRow label="Entity Owner" value={selectedGym.ownerId?.name || "IDENTITY PROTECTED"} icon={User} />
-                                                            <DetailRow label="Contact Line" value={selectedGym.ownerId?.phoneNumber || "NOT LINKED"} icon={Phone} />
-                                                            <DetailRow label="Institutional Email" value={selectedGym.ownerId?.email || "NOT LINKED"} icon={Mail} />
+                                                            <DetailRow label="Contact Line" value={selectedGym.phone || selectedGym.ownerId?.phoneNumber || "NOT LINKED"} icon={Phone} />
+                                                            <DetailRow label="Institutional Email" value={selectedGym.email || selectedGym.ownerId?.email || "NOT LINKED"} icon={Mail} />
                                                             <DetailRow label="Established" value={selectedGym.documentation?.establishedYear || "N/A"} icon={Activity} />
-                                                            <DetailRow label="PAN Account" value={selectedGym.documentation?.panNo || "PENDING"} icon={ShieldCheck} />
+                                                            <DetailRow label="PAN Account" value={selectedGym.panNo || "PENDING"} icon={ShieldCheck} />
                                                             <DetailRow label="Base Location" value={selectedGym.address || "NO ADDRESS DATA"} icon={MapPin} />
+                                                            <DetailRow label="City & Zip" value={`${selectedGym.city || ''} ${selectedGym.zipCode || ''}`.trim() || "N/A"} icon={MapPin} />
+                                                            <DetailRow label="Landmark" value={selectedGym.landmark || "N/A"} icon={MapPin} />
+                                                        </div>
+                                                        <h4 className="text-xl font-black italic uppercase tracking-tighter mt-8">Operations & Personnel</h4>
+                                                        <div className="grid grid-cols-2 gap-x-12 gap-y-8">
+                                                            <DetailRow label="Head Trainer" value={selectedGym.headTrainer || "N/A"} icon={User} />
+                                                            <DetailRow label="Experience" value={selectedGym.experience ? `${selectedGym.experience} Years` : "N/A"} icon={Award} />
+                                                            <DetailRow label="Specializations" value={(selectedGym.specializations || []).join(', ') || "N/A"} icon={Star} />
+                                                            <DetailRow label="Google Maps" value={selectedGym.googleMapsLink ? 'Available' : 'N/A'} icon={MapPin} />
+                                                            <DetailRow label="Weekdays Hrs" value={selectedGym.openingHoursWeekdays || "N/A"} icon={Clock} />
+                                                            <DetailRow label="Weekends Hrs" value={selectedGym.openingHoursWeekends || "N/A"} icon={Clock} />
                                                         </div>
                                                     </div>
 
@@ -464,14 +487,21 @@ export function PartnerManagement() {
                                                                 </div>
                                                             </div>
                                                             <div className="flex gap-2 flex-wrap">
-                                                                <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Weights</span>
-                                                                <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Steam</span>
-                                                                <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Free WiFi</span>
+                                                                {(selectedGym.facilities || []).slice(0, 3).map((f: string, i: number) => (
+                                                                    <span key={i} className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">{f}</span>
+                                                                ))}
+                                                                {(!selectedGym.facilities || selectedGym.facilities.length === 0) && (
+                                                                    <>
+                                                                    <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Weights</span>
+                                                                    <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Steam</span>
+                                                                    <span className="px-2 py-1 bg-gray-100 rounded-md text-[8px] font-black uppercase">Free WiFi</span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                             <div className="pt-4 border-t border-gray-50 mt-4">
                                                                 <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Starts from</p>
                                                                 <div className="flex justify-between items-center mt-1">
-                                                                    <p className="text-xl font-black text-gray-900 italic">₹199 <span className="text-[10px] font-medium text-gray-400">/visit</span></p>
+                                                                    <p className="text-xl font-black text-gray-900 italic">{(selectedGym.documentation?.plans && selectedGym.documentation?.plans.length > 0) ? String(selectedGym.documentation.plans[0].price).split('/')[0] : '₹199'} <span className="text-[10px] font-medium text-gray-400">/visit</span></p>
                                                                     <button className="px-6 py-2 bg-black text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-black/10">Book</button>
                                                                 </div>
                                                             </div>
