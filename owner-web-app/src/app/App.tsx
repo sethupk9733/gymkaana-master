@@ -22,8 +22,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentScreen, setCurrentScreen] = useState("main");
-  const [selectedGymId, setSelectedGymId] = useState<number | null>(null);
-  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  const [selectedGymId, setSelectedGymId] = useState<string | number | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | number | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -58,12 +58,12 @@ export default function App() {
     return <OwnerLogin onLogin={() => setIsLoggedIn(true)} />;
   }
 
-  const handleGymSelect = (gymId: number) => {
+  const handleGymSelect = (gymId: string | number) => {
     setSelectedGymId(gymId);
     setCurrentScreen("gymDetails");
   };
 
-  const handleBookingSelect = (bookingId: number) => {
+  const handleBookingSelect = (bookingId: string | number) => {
     setSelectedBookingId(bookingId);
     setCurrentScreen("bookingDetails");
   };
@@ -80,8 +80,8 @@ export default function App() {
       );
     }
 
-    if (currentScreen === "editGym") {
-      return <EditGym onBack={() => setCurrentScreen("gymDetails")} />;
+    if (currentScreen === "editGym" && selectedGymId !== null) {
+      return <EditGym gymId={selectedGymId} onBack={() => setCurrentScreen("gymDetails")} />;
     }
 
     if (currentScreen === "addGym") {

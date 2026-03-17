@@ -50,46 +50,57 @@ export function GymApprovals() {
             let list: any[] = [];
             if (Array.isArray(rawData)) {
                 list = rawData;
-            } else if (rawData && typeof rawData === 'object') {
+            } else if (rawData && typeof rawData === 'object' && rawData !== null) {
                 // Check common wrapper keys used in the backend
-                list = rawData.gyms || rawData.data || rawData.items || [];
+                list = (rawData as any).gyms || (rawData as any).data || (rawData as any).items || [];
+            }
+
+            if (!Array.isArray(list)) {
+                console.warn("⚠️ GymApprovals: Payload detected but failed to extract list. Defaulting to empty array.");
+                list = [];
             }
 
             // Mapper with cross-platform field normalization and crash protection
-            const sanitized: GymRecord[] = (list || []).map((item, idx) => {
+            const sanitized: GymRecord[] = list.map((item, idx) => {
                 try {
-                    if (!item || typeof item !== 'object') return null;
+                    if (!item || typeof item !== 'object') {
+                        console.warn(`⚠️ GymApprovals: Malformed record at index ${idx}`, item);
+                        return null;
+                    }
 
-                    // Multi-source image detection
+                    // Multi-source image detection with safe array access
                     let img = FALLBACK_IMG;
-                    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-                        img = String(item.images[0] || FALLBACK_IMG);
-                    } else if (item.image) {
+                    const images = item?.images;
+                    if (Array.isArray(images) && images.length > 0) {
+                        img = String(images[0] || FALLBACK_IMG);
+                    } else if (item?.image) {
                         img = String(item.image);
+                    } else if (typeof item?.displayImage === 'string') {
+                        img = item.displayImage;
                     }
 
                     // Strict normalization of nested owner details (prevents deeply-nested undefined crashes)
-                    const owner = item.ownerId || {};
+                    const owner = item?.ownerId || item?.owner || {};
 
                     return {
-                        _id: String(item._id || item.id || `gym-record-${idx}`),
-                        name: String(item.name || "UNNAMED HUB").toUpperCase(),
-                        ownerName: String(owner.name || "IDENTITY PROTECTED"),
-                        ownerPhone: String(owner.phoneNumber || item.phone || "NOT LINKED"),
-                        ownerEmail: String(owner.email || item.email || "NOT LINKED"),
-                        address: String(item.address || "NO ADDRESS DATA"),
-                        status: String(item.status || "pending").toLowerCase(),
-                        gstNo: String(item.gstNo || "PENDING"),
-                        panNo: String(item.panNo || "PENDING"),
-                        description: String(item.description || "No description provided for this venue."),
-                        facilities: Array.isArray(item.facilities) ? item.facilities.map(f => String(f || "")) : [],
+                        _id: String(item?._id || item?.id || `gym-record-${idx}`),
+                        name: String(item?.name || "UNNAMED HUB").toUpperCase(),
+                        ownerName: String(owner?.name || "IDENTITY PROTECTED"),
+                        ownerPhone: String(owner?.phoneNumber || owner?.phone || item?.phone || "NOT LINKED"),
+                        ownerEmail: String(owner?.email || item?.email || "NOT LINKED"),
+                        address: String(item?.address || "NO ADDRESS DATA"),
+                        status: String(item?.status || "pending").toLowerCase(),
+                        gstNo: String(item?.gstNo || "PENDING"),
+                        panNo: String(item?.panNo || "PENDING"),
+                        description: String(item?.description || "No description provided for this venue."),
+                        facilities: Array.isArray(item?.facilities) ? item.facilities.map((f: any) => String(f || "")) : [],
                         displayImage: img,
                         documentation: {
-                            trading: String(item.documentation?.tradingLicense || item.tradingLicense || "MISSING"),
-                            fire: String(item.documentation?.fireSafety || item.fireSafety || "MISSING"),
-                            insurance: String(item.documentation?.insurancePolicy || item.insurancePolicy || "MISSING")
+                            trading: String(item?.documentation?.tradingLicense || item?.tradingLicense || "MISSING"),
+                            fire: String(item?.documentation?.fireSafety || item?.fireSafety || "MISSING"),
+                            insurance: String(item?.documentation?.insurancePolicy || item?.insurancePolicy || "MISSING")
                         },
-                        createdAt: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "RECENT"
+                        createdAt: item?.createdAt ? new Date(item.createdAt).toLocaleDateString() : "RECENT"
                     };
                 } catch (e) {
                     console.error("❌ GymApprovals Mapper CRASH at index", idx, e);
@@ -97,7 +108,7 @@ export function GymApprovals() {
                 }
             }).filter((p): p is GymRecord => p !== null);
 
-            console.log("✅ GymApprovals: Sanitized Queue", sanitized.length);
+            console.log("✅ GymApprovals: Sanitized Queue Loaded", sanitized.length);
             setGyms(sanitized);
         } catch (err: any) {
             console.error("🚨 GymApprovals: CRITICAL FETCH ERROR", err);
@@ -111,15 +122,22 @@ export function GymApprovals() {
 
     // Filter queue with safety guards
     const queue = useMemo(() => {
-        if (!Array.isArray(gyms)) return [];
+        if (!Array.isArray(gyms)) {
+            console.warn("⚠️ GymApprovals: gyms state lost array integrity. Re-initializing.");
+            return [];
+        }
         return gyms.filter(p => p && (p.status === 'pending' || p.status === 'approved' || p.status === ''));
     }, [gyms]);
 
     const performAction = async (id: string, action: 'authorize' | 'terminate') => {
+        if (!id) return;
         try {
             const nextStatus = action === 'authorize' ? 'active' : 'rejected';
             await updateGymStatus(id, nextStatus);
-            setGyms(prev => Array.isArray(prev) ? prev.map(p => p._id === id ? { ...p, status: nextStatus } : p) : []);
+            setGyms(prev => {
+                if (!Array.isArray(prev)) return [];
+                return prev.map(p => p?._id === id ? { ...p, status: nextStatus } : p);
+            });
             setAuditTarget(null);
         } catch (err: any) {
             console.error("Action Protocol Error:", err);
@@ -160,14 +178,14 @@ export function GymApprovals() {
                 <div className="bg-black px-10 py-6 rounded-[32px] text-white flex items-center gap-6 shadow-[0_32px_64px_rgba(0,0,0,0.2)]">
                     <div className="text-right">
                         <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Queue Status</p>
-                        <p className="text-4xl font-black italic tracking-tighter leading-none">{queue?.length || 0}</p>
+                        <p className="text-4xl font-black italic tracking-tighter leading-none">{Array.isArray(queue) ? queue.length : 0}</p>
                     </div>
                     <div className="w-px h-10 bg-white/10" />
                     <Building2 className="w-8 h-8 text-[#A3E635]" />
                 </div>
             </header>
 
-            {!queue || queue.length === 0 ? (
+            {!Array.isArray(queue) || queue.length === 0 ? (
                 <div className="bg-white p-32 rounded-[72px] border-2 border-dashed border-gray-100 text-center space-y-8 shadow-sm">
                     <ShieldCheck className="w-24 h-24 text-gray-100 mx-auto" />
                     <div>
@@ -180,32 +198,35 @@ export function GymApprovals() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-10">
-                    {queue.map((partner) => (
-                        <div 
-                            key={partner?._id || `partner-${Math.random()}`}
-                            onClick={() => setAuditTarget(partner)}
-                            className="bg-white p-10 rounded-[64px] border border-gray-100 hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all cursor-pointer group flex flex-col lg:flex-row gap-12 items-center relative overflow-hidden"
-                        >
-                            <div className="w-48 h-48 rounded-[48px] overflow-hidden bg-gray-50 shrink-0 border-4 border-white shadow-xl">
-                                <img src={partner?.displayImage || FALLBACK_IMG} alt="Partner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                            </div>
-                            <div className="flex-1 space-y-6">
-                                <div className="flex items-center gap-6">
-                                    <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{partner?.name || "UNNAMED HUB"}</h3>
-                                    <span className="px-5 py-2 bg-amber-50 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">Audit Req.</span>
+                    {queue.map((partner) => {
+                        if (!partner) return null;
+                        return (
+                            <div 
+                                key={partner?._id || `partner-${Math.random()}`}
+                                onClick={() => setAuditTarget(partner)}
+                                className="bg-white p-10 rounded-[64px] border border-gray-100 hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all cursor-pointer group flex flex-col lg:flex-row gap-12 items-center relative overflow-hidden"
+                            >
+                                <div className="w-48 h-48 rounded-[48px] overflow-hidden bg-gray-50 shrink-0 border-4 border-white shadow-xl">
+                                    <img src={partner?.displayImage || FALLBACK_IMG} alt="Partner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                                    <InfoBox icon={User} label="Principal" value={partner?.ownerName} />
-                                    <InfoBox icon={Landmark} label="Entity ID" value={partner?.gstNo} />
-                                    <InfoBox icon={Users} label="Protocol" value="Standard" />
-                                    <InfoBox icon={Award} label="Status" value="Pending" />
+                                <div className="flex-1 space-y-6">
+                                    <div className="flex items-center gap-6">
+                                        <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{partner?.name || "UNNAMED HUB"}</h3>
+                                        <span className="px-5 py-2 bg-amber-50 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">Audit Req.</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                                        <InfoBox icon={User} label="Principal" value={partner?.ownerName} />
+                                        <InfoBox icon={Landmark} label="Entity ID" value={partner?.gstNo} />
+                                        <InfoBox icon={Users} label="Protocol" value="Standard" />
+                                        <InfoBox icon={Award} label="Status" value="Pending" />
+                                    </div>
+                                </div>
+                                <div className="px-12 py-6 bg-black text-white rounded-[32px] font-black text-xs uppercase tracking-widest flex items-center gap-4 shadow-2xl group-hover:bg-gray-800 transition-all">
+                                    <Eye className="w-5 h-5 text-[#A3E635]" /> Inspect
                                 </div>
                             </div>
-                            <button className="px-12 py-6 bg-black text-white rounded-[32px] font-black text-xs uppercase tracking-widest flex items-center gap-4 shadow-2xl group-hover:bg-gray-800 transition-all">
-                                <Eye className="w-5 h-5 text-[#A3E635]" /> Inspect
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
@@ -258,7 +279,7 @@ export function GymApprovals() {
                                     "{auditTarget?.description || "No classification provided for this hub."}"
                                 </p>
                                 <div className="flex flex-wrap gap-4">
-                                    {(auditTarget?.facilities || []).map((f, i) => (
+                                    {Array.isArray(auditTarget?.facilities) && auditTarget.facilities.map((f, i) => (
                                         <span key={i} className="px-10 py-5 bg-gray-50 border border-gray-100 rounded-[32px] font-black text-[11px] uppercase tracking-widest text-black shadow-sm">
                                             {String(f || "UNKNOWN").toUpperCase()}
                                         </span>
@@ -343,4 +364,3 @@ function FileCard({ icon: Icon, label, id }: { icon: any, label: string, id: any
         </div>
     );
 }
-

@@ -247,7 +247,7 @@ export function PartnerManagement() {
                             className="bg-white border border-gray-200 rounded-[40px] p-8 hover:shadow-2xl hover:border-black transition-all cursor-pointer group flex flex-wrap md:flex-nowrap items-center gap-10 shadow-sm"
                         >
                             <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100">
-                                <img src={(gym.images ?? [])[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={gym.name} onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
+                                <img src={gym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={gym?.name || "Hub"} onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
                             </div>
 
                             <div className="flex-1 min-w-[200px]">
@@ -309,7 +309,7 @@ export function PartnerManagement() {
 
                                         <div className="relative z-10">
                                             <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-3xl mb-10">
-                                                <img src={(selectedGym.images ?? [])[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover" alt="Hub" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
+                                                <img src={selectedGym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover" alt="Hub" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
                                             </div>
 
                                             <div className="mb-12">
@@ -536,7 +536,7 @@ export function PartnerManagement() {
                                                     {/* Simulated Mobile Frame */}
                                                     <div className="w-[340px] h-[580px] bg-white rounded-[40px] shadow-2xl border-[8px] border-black overflow-hidden relative flex flex-col scale-90">
                                                         <div className="h-48 bg-gray-200 relative flex-shrink-0">
-                                                            <img src={(selectedGym.images ?? [])[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover" alt="Preview" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
+                                                            <img src={selectedGym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover" alt="Preview" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
                                                             <div className="absolute top-6 left-6 p-2 bg-white/20 backdrop-blur-md rounded-xl"><ChevronRight className="w-4 h-4 text-white rotate-180" /></div>
                                                         </div>
                                                         <div className="p-6 space-y-4 overflow-y-auto overflow-x-hidden">

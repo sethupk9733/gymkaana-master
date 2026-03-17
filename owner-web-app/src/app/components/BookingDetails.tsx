@@ -4,11 +4,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useState } from "react";
 
 interface BookingDetailsProps {
-  bookingId: number;
+  bookingId: string | number;
   onBack: () => void;
 }
 
 export function BookingDetails({ bookingId, onBack }: BookingDetailsProps) {
+  const displayId = String(bookingId).slice(-4).padStart(4, '0');
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -69,7 +70,7 @@ export function BookingDetails({ bookingId, onBack }: BookingDetailsProps) {
             <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase">Booking ID</span>
-                <p className="font-medium text-gray-900">#BK{bookingId.toString().padStart(4, '0')}</p>
+                <p className="font-medium text-gray-900">#BK{displayId}</p>
               </div>
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase">Status</span>
