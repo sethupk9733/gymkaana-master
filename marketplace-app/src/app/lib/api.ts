@@ -260,16 +260,42 @@ export const updateProfile = async (userData: any) => {
 };
 
 export const cancelBooking = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/bookings/${id}/cancel`, {
+    const response = await fetch(`${BASE_URL}/bookings/${id}/request-refund`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         //@ts-ignore
         credentials: 'include'
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Failed to cancel booking');
+    if (!response.ok) throw new Error(data.message || 'Failed to request refund');
     return data;
 };
+
+export const approveRefund = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/bookings/${id}/approve-refund`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to approve refund');
+    return data;
+};
+
+export const rejectRefund = async (id: string, remarks?: string) => {
+    const response = await fetch(`${BASE_URL}/bookings/${id}/reject-refund`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify({ remarks })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to reject refund');
+    return data;
+};
+
 
 export const updateBookingDate = async (id: string, dates: { startDate?: string; endDate?: string }) => {
     const response = await fetch(`${BASE_URL}/bookings/${id}/update-date`, {
