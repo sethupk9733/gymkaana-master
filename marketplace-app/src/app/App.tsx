@@ -15,6 +15,7 @@ const SuccessScreen = lazy(() => import("./components/SuccessScreen").then(m => 
 const DashboardScreen = lazy(() => import("./components/DashboardScreen").then(m => ({ default: m.DashboardScreen })));
 const ProfileScreen = lazy(() => import("./components/ProfileScreen").then(m => ({ default: m.ProfileScreen })));
 const BookingHistoryScreen = lazy(() => import("./components/BookingHistoryScreen").then(m => ({ default: m.BookingHistoryScreen })));
+const TermsScreen = lazy(() => import("./components/TermsScreen").then(m => ({ default: m.TermsScreen })));
 
 type Screen =
   | "splash"
@@ -28,7 +29,8 @@ type Screen =
   | "success"
   | "dashboard"
   | "profile"
-  | "bookings";
+  | "bookings"
+  | "terms";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
@@ -98,6 +100,7 @@ export default function App() {
           <LoginSignupScreen
             onLogin={handleLoginSuccess}
             onBack={() => setCurrentScreen(pendingScreen && pendingScreen !== 'login' ? "home" : "home")}
+            onTerms={() => setCurrentScreen("terms")}
           />
         );
 
@@ -204,6 +207,7 @@ export default function App() {
             onViewBookings={() => setCurrentScreen("bookings")}
             userPhoto={userProfile?.profileImage}
             onPhotoCapture={loadProfile}
+            onTerms={() => setCurrentScreen("terms")}
           />
         );
 
@@ -211,6 +215,13 @@ export default function App() {
         return (
           <BookingHistoryScreen
             onBack={() => setCurrentScreen("profile")}
+          />
+        );
+
+      case "terms":
+        return (
+          <TermsScreen
+            onBack={() => setCurrentScreen("home")}
           />
         );
 

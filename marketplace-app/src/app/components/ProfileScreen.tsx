@@ -36,13 +36,15 @@ export function ProfileScreen({
   onLogout,
   onViewBookings,
   userPhoto,
-  onPhotoCapture
+  onPhotoCapture,
+  onTerms
 }: {
   onBack: () => void;
   onLogout: () => void;
   onViewBookings: () => void;
   userPhoto: string | null;
   onPhotoCapture: (photo: string) => void;
+  onTerms: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showQR, setShowQR] = useState(false);
@@ -132,6 +134,7 @@ export function ProfileScreen({
     { icon: HelpCircle, label: "Help & Support", onClick: () => setCurrentView('help') },
     { icon: Settings, label: "Settings", onClick: () => setCurrentView('settings') },
     { icon: Building, label: "Gym Owner Portal", onClick: () => window.open('https://gymkaana-owner.vercel.app', '_blank') },
+    { icon: FileText, label: "Terms of Service", onClick: onTerms },
   ];
 
   /* Sub-view Components */

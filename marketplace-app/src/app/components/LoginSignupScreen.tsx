@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { login, register, googleLogin, verifyOTP, resendOTP, forgotPassword, resetPassword } from "../lib/api";
 import { GoogleLogin } from '@react-oauth/google';
 
-export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
+export function LoginSignupScreen({ onLogin, onBack, onTerms }: { onLogin: () => void; onBack: () => void; onTerms: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -421,6 +421,12 @@ export function LoginSignupScreen({ onLogin, onBack }: { onLogin: () => void; on
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               Secure authentication
             </div>
+
+            {!isLogin && (
+              <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] text-center max-w-[240px]">
+                By signing up, you agree to our <button onClick={onTerms} className="text-primary underline">Terms & Conditions</button>
+              </p>
+            )}
 
             <button
               onClick={() => window.open('https://gymkaana-owner.vercel.app', '_blank')}
