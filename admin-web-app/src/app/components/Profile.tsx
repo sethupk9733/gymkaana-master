@@ -11,6 +11,34 @@ export function Profile({ onLogout }: ProfileProps) {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phoneNumber: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  interface MenuItem {
+    icon: any;
+    label: string;
+    badge: string | null;
+    onClick?: () => void;
+  }
+
+  const menuSections: { title: string; items: MenuItem[] }[] = [
+    {
+      title: "Administration",
+      items: [
+        { icon: Building2, label: "Platform Overview", badge: "Live" },
+        { icon: Shield, label: "Create Admin Account", badge: "Secure", onClick: () => { setCreateError(null); setShowCreateAdmin(true); } },
+      ],
+    },
+    {
+      title: "Support",
+      items: [
+        { icon: HelpCircle, label: "Admin Documentation", badge: null },
+        { icon: Settings, label: "Global Settings", badge: null },
+      ],
+    },
+  ];
 
   useEffect(() => {
     const savedUser = localStorage.getItem('gymkaana_user');
@@ -30,23 +58,6 @@ export function Profile({ onLogout }: ProfileProps) {
       setLoading(false);
     }
   };
-
-  const menuSections = [
-    {
-      title: "Administration",
-      items: [
-        { icon: Building2, label: "Platform Overview", badge: "Live" },
-        { icon: Shield, label: "Security & Permissions", badge: null },
-      ],
-    },
-    {
-      title: "Support",
-      items: [
-        { icon: HelpCircle, label: "Admin Documentation", badge: null },
-        { icon: Settings, label: "Global Settings", badge: null },
-      ],
-    },
-  ];
 
   if (loading && !user) {
     return (
@@ -105,7 +116,11 @@ export function Profile({ onLogout }: ProfileProps) {
                     <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] px-2">{section.title}</h3>
                     <div className="bg-white rounded-[40px] border border-gray-100 divide-y divide-gray-50 overflow-hidden shadow-sm">
                         {section.items.map((item, i) => (
-                            <button key={i} className="w-full p-8 flex items-center justify-between hover:bg-gray-50 transition-all group">
+                            <button 
+                                key={i} 
+                                onClick={item.onClick}
+                                className="w-full p-8 flex items-center justify-between hover:bg-gray-50 transition-all group"
+                            >
                                 <div className="flex items-center gap-6">
                                     <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all">
                                         <item.icon size={24} />
@@ -126,6 +141,93 @@ export function Profile({ onLogout }: ProfileProps) {
                 </div>
             ))}
         </div>
+
+        {/* Create Admin Modal */}
+        {showCreateAdmin && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
+                <div className="bg-white w-full max-w-xl rounded-[48px] overflow-hidden p-12 shadow-2xl space-y-8">
+                    <div className="text-center space-y-2">
+                        <div className="w-20 h-20 bg-black rounded-3xl mx-auto flex items-center justify-center mb-6">
+                             <Shield size={40} className="text-primary" />
+                        </div>
+                        <h3 className="text-3xl font-black italic uppercase tracking-tighter">Grant Administrative Power</h3>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">Identity creation for system operators</p>
+                    </div>
+
+                    {createError && (
+                        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest text-center">
+                            {createError}
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <input 
+                            type="text" 
+                            placeholder="FULL NAME" 
+                            className="w-full p-5 bg-gray-50 border-none rounded-2xl font-black text-xs uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/20"
+                            value={newAdmin.name}
+                            onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                        />
+                        <input 
+                            type="email" 
+                            placeholder="INSTITUTIONAL EMAIL" 
+                            className="w-full p-5 bg-gray-50 border-none rounded-2xl font-black text-xs uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/20"
+                            value={newAdmin.email}
+                            onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                        />
+                        <input 
+                            type="tel" 
+                            placeholder="CONTACT LINE (PH)" 
+                            className="w-full p-5 bg-gray-50 border-none rounded-2xl font-black text-xs uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/20"
+                            value={newAdmin.phoneNumber}
+                            onChange={(e) => setNewAdmin({...newAdmin, phoneNumber: e.target.value})}
+                        />
+                        <input 
+                            type="password" 
+                            placeholder="ACCESS KEY (PASSWORD)" 
+                            className="w-full p-5 bg-gray-50 border-none rounded-2xl font-black text-xs uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/20"
+                            value={newAdmin.password}
+                            onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
+                        />
+                    </div>
+
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={() => setShowCreateAdmin(false)}
+                            className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all"
+                        >
+                            Abort
+                        </button>
+                        <button 
+                            disabled={submitting}
+                            onClick={async () => {
+                                if (!newAdmin.email || !newAdmin.password) {
+                                    setCreateError("Institutional email and access key are mandatory.");
+                                    return;
+                                }
+                                setSubmitting(true);
+                                setCreateError(null);
+                                try {
+                                    const { createAdmin } = await import('../lib/api');
+                                    await createAdmin(newAdmin);
+                                    alert("ADMINISTRATOR AUTHORIZED: The new operator has been granted system access.");
+                                    setShowCreateAdmin(false);
+                                    setNewAdmin({ name: '', email: '', password: '', phoneNumber: '' });
+                                } catch (err: any) {
+                                    setCreateError(err.message || "Authorization sequence failed.");
+                                } finally {
+                                    setSubmitting(false);
+                                }
+                            }}
+                            className="flex-[2] py-5 bg-black text-white rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        >
+                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Shield size={16} className="text-primary" /> Authorize Admin</>}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
       </div>
     </div>
   );

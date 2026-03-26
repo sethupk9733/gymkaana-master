@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Mail, MessageSquare, Clock, CheckCircle, AlertCircle, ChevronRight, Loader2, Send, MessageCircle, Ticket as TicketIcon } from 'lucide-react';
-import { fetchAllTickets, fetchTicketById, addTicketReply, updateTicketStatus } from '../lib/api';
+import { fetchAllTickets, fetchTicketById, addTicketReply, updateTicketStatus, getToken } from '../lib/api';
 
 interface Ticket {
     _id: string;
@@ -25,7 +25,13 @@ export function SupportTickets() {
     const [statusFilter, setStatusFilter] = useState<string>('all');
 
     useEffect(() => {
-        loadTickets();
+        const interval = setInterval(() => {
+            if (getToken()) {
+                loadTickets();
+                clearInterval(interval);
+            }
+        }, 500);
+        return () => clearInterval(interval);
     }, []);
 
     const loadTickets = async () => {
@@ -307,30 +313,32 @@ export function SupportTickets() {
                         </div>
 
                         {/* Replies */}
-                        {selectedTicket.replies?.map((reply, idx) => (
+                        {(selectedTicket.replies || []).map((reply: any, idx: number) => (
                             <div key={idx} className={`rounded-lg p-4 border ${reply.senderRole === 'admin'
                                 ? 'bg-[#A3E635]/10 border-[#A3E635]'
-                                : 'bg-white border-gray-200'
+                                : 'bg-white border-gray-200 shadow-sm'
                                 }`}>
-                                <div className="flex items-start gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${reply.senderRole === 'admin'
-                                        ? 'bg-[#A3E635]'
-                                        : 'bg-gray-200'
+                                <div className="flex items-start gap-4">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${reply.senderRole === 'admin'
+                                        ? 'bg-[#A3E635] shadow-lg shadow-[#A3E635]/20'
+                                        : 'bg-black text-white shadow-lg'
                                         }`}>
-                                        <MessageSquare className={`w-5 h-5 ${reply.senderRole === 'admin' ? 'text-black' : 'text-gray-600'
+                                        <MessageSquare className={`w-5 h-5 ${reply.senderRole === 'admin' ? 'text-black' : 'text-[#A3E635]'
                                             }`} />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-semibold text-gray-900">{reply.senderName}</p>
-                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded font-medium text-gray-700">
-                                                {reply.senderRole === 'admin' ? 'Admin' : 'User'}
+                                        <div className="flex items-center gap-3">
+                                            <p className="font-black uppercase italic tracking-tighter text-gray-900">{reply.senderName || (reply.senderRole === 'admin' ? 'System Administrator' : 'User')}</p>
+                                            <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest ${
+                                                reply.senderRole === 'admin' ? 'bg-black text-primary' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {reply.senderRole === 'admin' ? 'Admin Authority' : 'Citizen'}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-500 mb-2">
+                                        <p className="text-[10px] font-bold text-gray-400 mt-1">
                                             {new Date(reply.createdAt).toLocaleString()}
                                         </p>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{reply.message}</p>
+                                        <div className="mt-3 text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-wrap">{reply.message || reply.text || "No message content."}</div>
                                     </div>
                                 </div>
                             </div>

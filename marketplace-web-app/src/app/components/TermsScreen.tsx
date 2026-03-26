@@ -6,23 +6,33 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
     const sections = [
         {
             icon: Scale,
-            title: "1. Acceptance of Protocol",
-            content: "By accessing the Gymkaana ecosystem, you agree to abide by our unified access protocols and operational guidelines. Any unauthorized override of system security is strictly prohibited."
+            title: "1 & 2. Introduction & Platform Scope",
+            content: "Gymkaana is a digital platform operated by Vuegam Solutions. We connect users with gyms and fitness centers while providing management tools for our gym partners. We do not own, operate, or control the fitness centers listed."
         },
         {
             icon: ShieldCheck,
-            title: "2. Membership Integrity",
-            content: "All memberships are venue-specific and non-transferable. Users must present a live QR pass for every check-in procedure. Identity verification may be required by venue command staff."
+            title: "3, 4 & 5. Eligibility & Account Security",
+            content: "Users must be 18+ and provide accurate data. You are responsible for account confidentiality. Gymkaana provides gym discovery, membership tools, and business analytics for partners."
         },
         {
             icon: AlertCircle,
-            title: "3. Booking Liability",
-            content: "Gymkaana facilitates the connection between users and fitness venues. While we maintain high clearance standards for all partners, the specific liability for physical safety remains with the venue operative."
+            title: "6 & 7. Payments, Pricing & Refunds",
+            content: "Payments are processed through secure gateways. Gymkaana may charge platform fees and commissions. Refunds are subject to our Refund Policy, gym partner policies, and usage timing."
+        },
+        {
+            icon: Scale,
+            title: "8 & 9. Duties & User Conduct",
+            content: "Gym partners must honor services and maintain hygiene. Users must not use the platform for illegal activities, hack the system, or upload misleading information."
+        },
+        {
+            icon: ShieldCheck,
+            title: "10, 11 & 12. Intellectual Property & Liability",
+            content: "All content belongs to Vuegam Solutions. We are not liable for injuries at gym locations, service issues by partners, or third-party service failures. Use is at your own risk."
         },
         {
             icon: FileText,
-            title: "4. Cancellation & Refunds",
-            content: "Cancellation available within 1hr of booking or before check-in. Refund protocols are processed through encrypted financial channels and may take 5-7 standard operational days."
+            title: "13 - 17. Legal, Termination & Privacy",
+            content: "You agree to indemnify Vuegam Solutions. We reserve the right to terminate accounts for misuse. These terms are governed by the laws of India, subject to courts in Tamil Nadu."
         }
     ];
 
@@ -34,8 +44,8 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
             className="w-full min-h-screen bg-white"
         >
             <SEO
-                title="Terms of Service"
-                description="Review the legal framework and operational standards governing the Gymkaana fitness ecosystem. Information on bookings, memberships, and liability."
+                title="Terms of Service | Gymkaana"
+                description="📄 TERMS & CONDITIONS – GYMKAANA. Operated by Vuegam Solutions. Review our 17-point legal framework for users and partners."
             />
             {/* Header */}
             <div className="pt-32 pb-20 px-6 lg:px-12 bg-black text-white relative overflow-hidden">
@@ -51,10 +61,10 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
                         <ArrowLeft className="w-4 h-4" /> Return to Home
                     </button>
                     <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-none mb-6">
-                        Terms of <br /> <span className="text-primary underline decoration-white decoration-8 underline-offset-[12px]">Service</span>
+                        Gymkaana <br /> <span className="text-primary underline decoration-white decoration-8 underline-offset-[12px]">Agreement</span>
                     </h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.4em] text-xs max-w-xl">
-                        Legal framework and operational standards governing the Gymkaana fitness ecosystem.
+                        Official Terms & Conditions – Powered by Vuegam Solutions.
                     </p>
                 </div>
             </div>
@@ -77,8 +87,8 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
                     ))}
 
                     <div className="pt-20 border-t border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-4">Last Protocol Update</p>
-                        <p className="text-sm font-bold text-gray-900">FEBRUARY 05, 2026 — VERSION 4.1.2</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-4">Last Legal Update</p>
+                        <p className="text-sm font-bold text-gray-900">{new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()} — VUEGAM SOLUTIONS PROTOCOL</p>
                     </div>
                 </div>
             </section>

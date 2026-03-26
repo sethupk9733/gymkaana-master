@@ -100,8 +100,8 @@ export function AdminDashboard() {
                 try {
                     if (!g || typeof g !== 'object') return null;
                     
-                    const revenueNum = Math.floor(Math.random() * 500000);
-                    const platformIncomeNum = Math.floor(revenueNum * 0.15);
+                    const revenueNum = Number(g.revenue || 0);
+                    const platformIncomeNum = Number(g.platformIncome || (revenueNum * 0.15));
                     const safeName = String(g.name || "Unknown Hub");
                     const nameFirstChar = safeName.charAt(0).toUpperCase() || "?";
                     
@@ -111,14 +111,14 @@ export function AdminDashboard() {
                         logo: nameFirstChar,
                         revenue: `Rs.${revenueNum.toLocaleString()}`,
                         platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
-                        contributionScore: 20,
-                        growth: "+0%",
+                        contributionScore: Number(g.contributionScore || 0),
+                        growth: g.growth || "+0%",
                         members: Number(g.members || 0),
-                        retention: "85%",
+                        retention: g.retention || "100%",
                         status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
-                        dailyActive: 0,
-                        marketCategory: 'Premium',
-                        yieldPerMember: "Rs.0"
+                        dailyActive: Number(g.dailyActive || 0),
+                        marketCategory: g.tier || g.marketCategory || 'Standard',
+                        yieldPerMember: `Rs.${Number(g.yieldPerMember || 0).toLocaleString()}`
                     };
                 } catch (err: any) {
                     console.error("📊 AdminDashboard: Mapper error at index", index, err);
@@ -127,15 +127,9 @@ export function AdminDashboard() {
             }).filter((x): x is GymMetric => x !== null);
 
             setGymsPerformance(mappedGyms);
-            setStats(statsData || { 
-                totalRevenue: 0, 
-                activeGyms: 0, 
-                checkinsToday: 0,
-                totalMembers: 0,
-                totalUsers: 0,
-                pendingGyms: 0
-            });
-            console.log("📊 AdminDashboard: Stats locked in:", statsData ? "Live" : "Fallback");
+            setStats(statsData);
+
+            console.log("📊 AdminDashboard: Live intelligence synchronized.");
         } catch (err: any) {
             console.error("📊 AdminDashboard: Global Failure", err);
             setError(err.message || "Failed to synchronize intelligence.");
@@ -205,12 +199,12 @@ export function AdminDashboard() {
                                 help="Aggregate revenue across all active hubs"
                             />
                             <YieldCard
-                                label="Active Hubs"
-                                value={String(stats?.activeGyms || "0")}
-                                sub="Live Partner Network"
-                                icon={Building2}
+                                label="Platform Income"
+                                value={stats?.platformIncome ? `Rs.${Number(stats.platformIncome).toLocaleString()}` : "Rs.0"}
+                                sub="Net Commission (15%)"
+                                icon={TrendingUp}
                                 color="primary"
-                                help="Verified gyms currently transacting"
+                                help="15% platform management fee"
                             />
                             <YieldCard
                                 label="Daily Check-ins"
@@ -221,13 +215,14 @@ export function AdminDashboard() {
                                 help="Member entries recorded in last 24h"
                             />
                             <YieldCard
-                                label="Yield Health"
-                                value="84.2%"
-                                sub="Efficiency Score"
-                                icon={Activity}
+                                label="Active Hubs"
+                                value={String(stats?.activeGyms || "0")}
+                                sub="Live Partner Network"
+                                icon={Building2}
                                 color="primary"
-                                help="Revenue health per customer"
+                                help="Verified gyms currently transacting"
                             />
+
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -344,9 +339,9 @@ export function AdminDashboard() {
                 {activeView === 'economics' && (
                     <div className="space-y-12">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <YieldCard label="Platform Reserve" value="Rs.1.24Cr" sub="Liquidity Pool Balance" icon={Inbox} color="black" help="Platform's treasury for gym payouts" />
-                            <YieldCard label="Net Yield Projection" value="Rs.18.5L" sub="Expected Next Month" icon={TrendingUp} color="emerald" help="Projected 15% revenue" />
-                            <YieldCard label="Network Liability" value="Rs.42.1L" sub="Awaiting Partner Payout" icon={AlertCircle} color="orange" help="Total outstanding to gyms" />
+                                <YieldCard label="Platform Reserve" value={stats?.platformReserve !== undefined ? `Rs.${Number(stats.platformReserve).toLocaleString()}` : "Rs.0"} sub="Liquidity Pool Balance" icon={Inbox} color="black" help="Platform's treasury for gym payouts" />
+                                <YieldCard label="Net Yield Projection" value={stats?.projectedIncome !== undefined ? `Rs.${Number(stats.projectedIncome).toLocaleString()}` : "Rs.0"} sub="Expected Next Month" icon={TrendingUp} color="emerald" help="Projected 15% revenue" />
+                                <YieldCard label="Network Liability" value={stats?.totalPendingPayout !== undefined ? `Rs.${Number(stats.totalPendingPayout).toLocaleString()}` : "Rs.0"} sub="Awaiting Partner Payout" icon={AlertCircle} color="orange" help="Total outstanding to gyms" />
                         </div>
                     </div>
                 )}

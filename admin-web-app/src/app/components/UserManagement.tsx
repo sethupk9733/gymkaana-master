@@ -1,6 +1,6 @@
-import { Search, MoreHorizontal, User as UserIcon, ShieldAlert, Mail, MapPin, Calendar, Ban, CheckCircle, CreditCard, ChevronRight, X, Activity, Dumbbell, Clock, MessageSquare, AlertCircle, TrendingUp, Loader2 } from "lucide-react";
+import { Search, MoreHorizontal, User as UserIcon, ShieldAlert, Mail, MapPin, Calendar, Ban, CheckCircle, CreditCard, ChevronRight, X, Activity, Dumbbell, Clock, MessageSquare, AlertCircle, TrendingUp, Loader2, History, Phone } from "lucide-react";
 import { useState, useEffect } from "react";
-import { fetchUsers } from "../lib/api";
+import { fetchUsers, getToken } from "../lib/api";
 
 interface UserDetail {
     id: string | number;
@@ -10,12 +10,18 @@ interface UserDetail {
     joinDate: string;
     status: 'Active' | 'Inactive' | 'Pending';
     totalBookings: number;
+    totalSpent: number;
     favoriteGym: string;
     lastActive: string;
     credits: number;
     location: string;
     riskScore: 'Low' | 'Medium' | 'High';
+    age?: number;
+    gender?: string;
+    address?: string;
+    activities?: any[];
 }
+
 
 export function UserManagement() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -25,7 +31,13 @@ export function UserManagement() {
     const [users, setUsers] = useState<UserDetail[]>([]);
 
     useEffect(() => {
-        loadUsers();
+        const interval = setInterval(() => {
+            if (getToken()) {
+                loadUsers();
+                clearInterval(interval);
+            }
+        }, 500);
+        return () => clearInterval(interval);
     }, []);
 
     const loadUsers = async () => {
@@ -35,21 +47,37 @@ export function UserManagement() {
             const data = await fetchUsers();
             if (!Array.isArray(data)) throw new Error("Invalid user list received");
             
-            const mappedUsers: UserDetail[] = data.map((u: any, index: number) => ({
-                id: u._id || u.id || `user-${index}`,
-                name: String(u.name || "Unknown"),
-                email: String(u.email || "N/A"),
-                phone: String(u.phone || "N/A"),
-                joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A",
-                status: 'Active',
-                totalBookings: 0,
-                favoriteGym: "N/A",
-                lastActive: "Today",
-                credits: 0,
-                location: "N/A",
-                riskScore: 'Low'
-            }));
+            const mappedUsers: UserDetail[] = data.map((u: any, index: number) => {
+                // Determine address string from potential address object or string
+                let fullAddress = "No address data";
+                if (typeof u.address === 'string') {
+                    fullAddress = u.address;
+                } else if (u.address && typeof u.address === 'object') {
+                    fullAddress = `${u.address.addressLine || ''} ${u.address.city || ''} ${u.address.state || ''}`.trim() || "No address data";
+                }
+
+                return {
+                    id: u._id || u.id || `user-${index}`,
+                    name: String(u.name || "Unknown Citizen"),
+                    email: String(u.email || "N/A"),
+                    phone: String(u.phoneNumber || u.phone || "N/A"),
+                    joinDate: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A",
+                    status: 'Active',
+                    totalBookings: Number(u.bookingsCount || 0),
+                    totalSpent: Number(u.totalSpent || 0),
+                    favoriteGym: "Unknown Hub",
+                    lastActive: u.lastActive ? new Date(u.lastActive).toLocaleDateString() : "Today",
+                    credits: 0,
+                    location: fullAddress,
+                    riskScore: (u.bookingsCount === 0) ? 'Medium' : 'Low',
+                    age: u.age || u.profile?.age || 25,
+                    gender: u.gender || u.profile?.gender || 'Not Specified',
+                    address: fullAddress,
+                    activities: u.recentActivities || []
+                };
+            });
             setUsers(mappedUsers);
+
         } catch (err: any) {
             setError(err.message || "Failed to load citizens.");
         } finally {
@@ -76,9 +104,9 @@ export function UserManagement() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard label="Active Citizens" value={users.length} sub="Currently enrolled" icon={UserIcon} color="primary" />
-                <StatCard label="Avg. Order Frequency" value="4.2" sub="Bookings per user/mo" icon={TrendingUp} color="emerald" />
-                <StatCard label="Identity Verified" value="92%" sub="KYC Compliance Score" icon={ShieldAlert} color="blue" />
-                <StatCard label="Churn Warning" value="48" sub="Users inactive > 30d" icon={Clock} color="orange" />
+                <StatCard label="Engagement Index" value={users.reduce((acc, u) => acc + (u.totalBookings || 0), 0)} sub="Total bookings processed" icon={TrendingUp} color="emerald" />
+                <StatCard label="Platform Integrity" value="100%" sub="Identity Security Score" icon={ShieldAlert} color="blue" />
+                <StatCard label="Live Stream" value="Active" sub="Server connected" icon={Clock} color="orange" />
             </div>
 
             {/* Main Interactive Table Section */}
@@ -137,9 +165,10 @@ export function UserManagement() {
                                             <p className="text-[10px] font-black text-gray-400 uppercase">Legacy Date</p>
                                         </td>
                                         <td className="p-6">
-                                            <p className="font-black text-gray-900 text-xs">₹3,400</p>
-                                            <p className="text-[10px] font-black text-primary uppercase">Spend Index</p>
+                                            <p className="font-black text-gray-900 text-xs">₹{user.totalSpent?.toLocaleString() || '0'}</p>
+                                            <p className="text-[10px] font-black text-primary uppercase">{user.totalBookings} Bookings</p>
                                         </td>
+
                                         <td className="p-6">
                                             <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${user.riskScore === 'Low' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-red-50 text-red-500 border-red-100'
                                                 }`}>
@@ -153,7 +182,10 @@ export function UserManagement() {
                                             </span>
                                         </td>
                                         <td className="p-6 text-right">
-                                            <button className="p-3 hover:bg-white rounded-[16px] transition-colors shadow-sm group-hover:text-black text-gray-300 border border-transparent hover:border-gray-100">
+                                            <button 
+                                                className="p-3 hover:bg-white rounded-[16px] transition-colors shadow-sm group-hover:text-black text-gray-300 border border-transparent hover:border-gray-100"
+                                                title={`Review Inquiry for ${user.name}`}
+                                            >
                                                 <MoreHorizontal className="w-5 h-5" />
                                             </button>
                                         </td>
@@ -167,20 +199,124 @@ export function UserManagement() {
 
             {/* User Detail Overlays */}
             {selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                    <div className="bg-white w-full max-w-2xl rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]">
-                        <div className="p-16 text-center space-y-8">
-                            <div className="w-24 h-24 bg-black text-primary rounded-[32px] flex items-center justify-center text-4xl font-black italic mx-auto">
-                                {String(selectedUser.name || "?").charAt(0).toUpperCase()}
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 bg-black/95 backdrop-blur-3xl overflow-hidden">
+                    <div className="bg-white w-full max-w-5xl h-full md:h-[90vh] rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_40px_80px_rgba(0,0,0,0.6)] border border-white/20">
+                        <button title="Close User Details" onClick={() => setSelectedUser(null)} className="absolute top-10 right-10 p-5 bg-gray-50 hover:bg-black hover:text-white rounded-[24px] transition-all z-[110] shadow-sm">
+                            <X className="w-8 h-8" />
+                        </button>
+
+                        <div className="flex-1 lg:grid lg:grid-cols-12 overflow-hidden h-full">
+                            {/* Left Panel: Profile Context */}
+                            <div className="lg:col-span-4 bg-gray-900 p-12 text-white flex flex-col justify-between relative h-full">
+                                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/20 blur-[130px] rounded-full" />
+                                
+                                <div className="relative z-10 text-center">
+                                    <div className="w-32 h-32 bg-black text-primary rounded-[48px] flex items-center justify-center text-5xl font-black italic mx-auto border-4 border-white/5 shadow-2xl mb-8">
+                                        {String(selectedUser.name || "?").charAt(0).toUpperCase()}
+                                    </div>
+                                    <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-2">{selectedUser.name}</h3>
+                                    <span className="px-5 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Verified Citizen</span>
+
+                                    <div className="mt-12 space-y-6 text-left">
+                                        <div className="flex items-center gap-4 group">
+                                            <div className="p-3 bg-white/5 rounded-xl text-primary"><Mail className="w-4 h-4" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Digital Address</p>
+                                                <p className="text-sm font-bold truncate">{selectedUser.email}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 group">
+                                            <div className="p-3 bg-white/5 rounded-xl text-primary"><Phone className="w-4 h-4" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Emergency Line</p>
+                                                <p className="text-sm font-bold">{selectedUser.phone}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 group">
+                                            <div className="p-3 bg-white/5 rounded-xl text-primary"><MapPin className="w-4 h-4" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Base Coordinate</p>
+                                                <p className="text-sm font-bold leading-tight">{selectedUser.address}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-8 border-t border-white/10 relative z-10 grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-1">Legacy Age</p>
+                                        <p className="text-2xl font-black italic">{selectedUser.age || 25}</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-1">Gender Identity</p>
+                                        <p className="text-2xl font-black italic">{selectedUser.gender || 'M'}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <h3 className="text-3xl font-black uppercase italic tracking-tighter">{selectedUser.name}</h3>
-                            <div className="space-y-2">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedUser.email}</p>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedUser.phone}</p>
+
+                            {/* Right Panel: Intelligence Data */}
+                            <div className="lg:col-span-8 p-12 space-y-12 bg-white overflow-y-auto custom-scrollbar h-full relative">
+                                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full -mr-64 -mt-64" />
+
+                                <div className="relative z-10 space-y-16">
+                                    <section>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-8 flex items-center gap-3">
+                                            <Activity className="w-4 h-4" /> Performance Metrics
+                                        </h4>
+                                        <div className="grid grid-cols-3 gap-8">
+                                            <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Yield</p>
+                                                <p className="text-3xl font-black italic">₹{selectedUser.totalSpent?.toLocaleString()}</p>
+                                            </div>
+                                            <div className="p-8 bg-black text-white rounded-[40px] border border-white/10">
+                                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">Engagements</p>
+                                                <p className="text-3xl font-black italic">{selectedUser.totalBookings}</p>
+                                            </div>
+                                            <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Risk Index</p>
+                                                <p className={`text-3xl font-black italic uppercase ${selectedUser.riskScore === 'Low' ? 'text-blue-500' : 'text-red-500'}`}>{selectedUser.riskScore}</p>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-8 flex items-center gap-3">
+                                            <Clock className="w-4 h-4" /> Intelligence Logs (Recent Activities)
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {selectedUser.activities?.length ? selectedUser.activities.map((act: any, idx: number) => (
+                                                <div key={idx} className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex items-center justify-between group hover:border-black transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-3 bg-white rounded-xl"><Calendar className="w-4 h-4" /></div>
+                                                        <div>
+                                                            <p className="font-black text-xs uppercase italic tracking-tight">{act.description}</p>
+                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">{act.date}</p>
+                                                        </div>
+                                                    </div>
+                                                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-black transition-colors" />
+                                                </div>
+                                            )) : (
+                                                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-[48px]">
+                                                    <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.3em]">No activity logs found in memory vault</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </section>
+
+                                    <section>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-8 flex items-center gap-3">
+                                            <History className="w-4 h-4" /> Engagement History (History of Bookings)
+                                        </h4>
+                                        <div className="p-10 bg-black text-white rounded-[48px] border border-white/10 flex items-center justify-between">
+                                            <div>
+                                                <h5 className="text-2xl font-black italic uppercase italic tracking-tighter">Legacy Stream Sync</h5>
+                                                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">Cross-referencing hub bookings...</p>
+                                            </div>
+                                            <div className="w-16 h-1 bg-white/10 rounded-full" />
+                                        </div>
+                                    </section>
+                                </div>
                             </div>
-                            <button onClick={() => setSelectedUser(null)} className="px-12 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all w-full">
-                                Close Terminal
-                            </button>
                         </div>
                     </div>
                 </div>

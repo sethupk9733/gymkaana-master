@@ -6,7 +6,7 @@ import {
     TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2, Clock
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchGyms, updateGymStatus } from '../lib/api';
+import { fetchGyms, updateGymStatus, fetchBookingsByGym, fetchPlansByGym } from '../lib/api';
 
 interface GymDetail {
     _id: string; // Changed from id: number
@@ -44,11 +44,36 @@ export function PartnerManagement() {
     const [selectedGym, setSelectedGym] = useState<GymDetail | null>(null);
     const [detailTab, setDetailTab] = useState<'profile' | 'portfolio' | 'financials' | 'clients' | 'plans' | 'preview'>('profile');
     const [isProcessing, setIsProcessing] = useState(false);
+
+    useEffect(() => {
+        if (selectedGym && (detailTab === 'financials' || detailTab === 'clients' || detailTab === 'plans')) {
+            loadHubIntelligence(selectedGym._id);
+        }
+    }, [selectedGym, detailTab]);
+
+    const loadHubIntelligence = async (gymId: string) => {
+        setLoadingHubData(true);
+        try {
+            const [bookings, plans] = await Promise.all([
+                fetchBookingsByGym(gymId).catch(() => []),
+                fetchPlansByGym(gymId).catch(() => [])
+            ]);
+            setHubBookings(Array.isArray(bookings) ? bookings : []);
+            setHubPlans(Array.isArray(plans) ? plans : []);
+        } catch (err) {
+            console.error("Failed to sync hub intelligence", err);
+        } finally {
+            setLoadingHubData(false);
+        }
+    };
     const [searchQuery, setSearchQuery] = useState("");
     const [showOnboardModal, setShowOnboardModal] = useState(false);
     const [gyms, setGyms] = useState<GymDetail[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hubBookings, setHubBookings] = useState<any[]>([]);
+    const [hubPlans, setHubPlans] = useState<any[]>([]);
+    const [loadingHubData, setLoadingHubData] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -162,7 +187,7 @@ export function PartnerManagement() {
             {/* DIRECTORY LIST */}
             <div className="grid grid-cols-1 gap-4">
                 <AnimatePresence mode="popLayout">
-                    {filteredGyms.map((gym) => (
+                    {filteredGyms.map((gym, index) => (
                         <motion.div
                             key={gym._id}
                             initial={{ opacity: 0, y: 20 }}
@@ -172,8 +197,20 @@ export function PartnerManagement() {
                             onClick={() => setSelectedGym(gym)}
                             className="bg-white border border-gray-200 rounded-[40px] p-8 hover:shadow-2xl hover:border-black transition-all cursor-pointer group flex flex-wrap md:flex-nowrap items-center gap-10 shadow-sm"
                         >
-                            <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100">
-                                <img src={gym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={gym?.name || "Hub"} onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
+                            <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 relative group-hover:border-primary transition-colors">
+                                <img 
+                                    src={gym?.images?.[0] || `https://source.unsplash.com/featured/?gym,fitness,${index}`} 
+                                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" 
+                                    alt={gym?.name || "Hub"} 
+                                    onError={(e) => { 
+                                        const target = e.target as HTMLImageElement;
+                                        if (target.src.includes('unsplash')) {
+                                            target.src = "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1000&auto=format&fit=crop";
+                                        } else {
+                                            target.src = `https://source.unsplash.com/featured/?gym,fitness,interior&sig=${gym?._id || index}`;
+                                        }
+                                    }} 
+                                />
                             </div>
 
                             <div className="flex-1 min-w-[200px]">
@@ -234,8 +271,15 @@ export function PartnerManagement() {
                                         <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/20 blur-[130px] rounded-full" />
 
                                         <div className="relative z-10">
-                                            <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-3xl mb-10">
-                                                <img src={selectedGym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} className="w-full h-full object-cover" alt="Hub" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"; }} />
+                                            <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-3xl mb-10 group">
+                                                <img 
+                                                    src={selectedGym?.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48"} 
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                                                    alt="Hub" 
+                                                    onError={(e) => { 
+                                                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1000&auto=format&fit=crop"; 
+                                                    }} 
+                                                />
                                             </div>
 
                                             <div className="mb-12">
@@ -336,9 +380,14 @@ export function PartnerManagement() {
                                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                                     <h4 className="text-2xl font-black italic uppercase tracking-tighter">Live Membership Offerings</h4>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                        {(selectedGym.documentation?.plans && selectedGym.documentation?.plans.length > 0 ? selectedGym.documentation.plans : [
-                                                            { name: "Monthly Pass", price: "Live sync pending", duration: "Standard", features: ["Facility Access"] }
-                                                        ]).map((plan: any, i: number) => (
+                                                        {loadingHubData ? (
+                                                            <div className="col-span-2 flex flex-col items-center py-20 gap-4">
+                                                                <Loader2 className="w-12 h-12 text-black animate-spin" />
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Negotiating Service Terms...</p>
+                                                            </div>
+                                                        ) : (hubPlans.length > 0 ? hubPlans : (selectedGym.documentation?.plans && selectedGym.documentation?.plans.length > 0 ? selectedGym.documentation.plans : [
+                                                            { name: "Global Access", price: "₹2,499", duration: "Monthly", features: ["Weights", "Cardio", "Lockers"] }
+                                                        ])).map((plan: any, i: number) => (
                                                             <div key={i} className="p-10 bg-gray-900 text-white rounded-[48px] border border-white/10 relative overflow-hidden group hover:border-primary/50 transition-all">
                                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full group-hover:bg-primary/20 transition-all" />
                                                                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">{plan.duration}</p>
@@ -394,12 +443,12 @@ export function PartnerManagement() {
                                                     <div className="grid grid-cols-2 gap-8">
                                                         <div className="bg-black text-white p-10 rounded-[48px] border border-white/10">
                                                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2">Platform Balance</p>
-                                                            <h3 className="text-4xl font-black italic uppercase mb-2">₹8.24L</h3>
+                                                            <h3 className="text-4xl font-black italic uppercase mb-2">₹{selectedGym.revenue || "0"}</h3>
                                                             <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Awaiting scheduled payout</p>
                                                         </div>
                                                         <div className="bg-gray-50 p-10 rounded-[48px] border border-gray-100">
                                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Gross Platform Yield</p>
-                                                            <h3 className="text-4xl font-black italic uppercase mb-2">₹1.15L</h3>
+                                                            <h3 className="text-4xl font-black italic uppercase mb-2">₹{Number(selectedGym.revenue || 0) * 0.15}</h3>
                                                             <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">15% commission applied</p>
                                                         </div>
                                                     </div>
@@ -408,21 +457,30 @@ export function PartnerManagement() {
                                                     <div className="space-y-6">
                                                         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Transaction Telemetry</h4>
                                                         <div className="space-y-3">
-                                                            {financialHistory.map(tx => (
-                                                                <div key={tx.id} className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex items-center justify-between group hover:border-black transition-all">
+                                                            {loadingHubData ? (
+                                                                <div className="flex flex-col items-center py-10 gap-4">
+                                                                    <Loader2 className="w-8 h-8 text-black animate-spin" />
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Telemetery...</p>
+                                                                </div>
+                                                            ) : hubBookings.length > 0 ? hubBookings.map((tx, idx) => (
+                                                                <div key={tx._id || idx} className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex items-center justify-between group hover:border-black transition-all">
                                                                     <div className="flex items-center gap-4">
-                                                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black italic text-[10px]">{tx.id}</div>
+                                                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black italic text-[10px]">TX{(tx._id || '').slice(-3).toUpperCase()}</div>
                                                                         <div>
-                                                                            <p className="font-black text-xs uppercase tracking-tight">{tx.type} Initialization</p>
-                                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">{tx.date}</p>
+                                                                            <p className="font-black text-xs uppercase tracking-tight">{tx.planName || 'Visit'} Authorization</p>
+                                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">{tx.bookingDate ? new Date(tx.bookingDate).toLocaleDateString() : 'Recent'}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-8">
-                                                                        <p className="font-black italic text-lg">{tx.amount}</p>
-                                                                        <span className={`px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${tx.status === 'Success' ? 'bg-emerald-100 text-emerald-600' : tx.status === 'Hold' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>{tx.status}</span>
+                                                                        <p className="font-black italic text-lg">₹{tx.totalAmount || '0'}</p>
+                                                                        <span className={`px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${tx.status === 'confirmed' ? 'bg-emerald-100 text-emerald-600' : tx.status === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>{tx.status}</span>
                                                                     </div>
                                                                 </div>
-                                                            ))}
+                                                            )) : (
+                                                                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-[48px]">
+                                                                    <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.3em]">No transaction telemetry found in memory bank</p>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -597,7 +655,8 @@ export function PartnerManagement() {
                             <div className="mb-10">
                                 <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-1">New Hub Onboarding</h3>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Initialization of institutional partnership</p>
-                                         <div className="space-y-6">
+                            </div>
+                            <div className="space-y-6">
                                 <FormInput label="Official Hub Name" placeholder="e.g. Iron Paradise Indiranagar" value={""} onChange={() => {}} />
                                 <FormInput label="Owner Name / Entity" placeholder="e.g. Arjan Singh" value={""} onChange={() => {}} />
                                 <div className="grid grid-cols-2 gap-6">
@@ -616,7 +675,6 @@ export function PartnerManagement() {
                                     </div>
                                     <FormInput label="Base Location" placeholder="e.g. Indiranagar" value={""} onChange={() => {}} />
                                 </div>
-                 </div>
 
                                 <div className="p-8 bg-primary/5 rounded-[32px] border border-primary/10">
                                     <h4 className="text-[9px] font-black uppercase tracking-[0.2em] mb-4 text-primary">Pre-Audit Checklist</h4>

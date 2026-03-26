@@ -151,32 +151,64 @@ export function PartnerTerms({ onBack, onAccept }: PartnerTermsProps) {
                         </section>
                     </div>
 
-                    <div className="space-y-8">
-                        <section className="space-y-4 border-l-4 border-black pl-8">
-                            <h2 className="text-xl font-black uppercase italic tracking-tight">01. Service Fulfillment Protocol</h2>
+                    <div className="space-y-12">
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <FileText className="w-5 h-5 text-indigo-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">01 - 03. Relationship & Scope</h2>
+                            </div>
+                            <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100/50 space-y-4 text-xs font-bold text-gray-700 leading-relaxed italic">
+                                Gymkaana connects users with partners via our technology platform. You operate as an independent service provider; this agreement does not create employment or agency. Our duties include lead generation, payment processing, and providing the digital ecosystem for your venue.
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">04. Partner Obligations</h2>
+                            </div>
                             <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                                Partners must honor every verified Gymkaana booking during listed operational hours. The check-in must be validated through the Gymkaana Owner App using the QR technology detailed above. Manual entries or outside proofs are not accepted for financial settlement. Failure to perform a successful scan results in an unverified session and non-payment.
+                                You must provide accurate pricing and facility info, maintain safety standards, and honor all valid Gymkaana memberships. Access must be granted to users with verified bookings through our QR protocol.
                             </p>
                         </section>
 
-                        <section className="space-y-4 border-l-4 border-black pl-8">
-                            <h2 className="text-xl font-black uppercase italic tracking-tight">02. Data Integrity & Pricing</h2>
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <IndianRupee className="w-5 h-5 text-amber-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">05 & 06. Pricing & Settlement</h2>
+                            </div>
                             <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                                Venue pricing on Gymkaana must be "Market Fair." Artificial inflation of base prices for the purpose of manipulating platform discounts is grounds for immediate de-listing. Partners must update the platform within 12 hours of any changes to facility availability or operating hours.
+                                Commission is set at a fixed 5% rate for verified sessions. Settlements are transferred weekly after deducting commissions and platform fees. Delays caused by banks or gateways are beyond our liability.
                             </p>
                         </section>
 
-                        <section className="space-y-4 border-l-4 border-black pl-8">
-                            <h2 className="text-xl font-black uppercase italic tracking-tight">03. Financial Settlement & Taxation</h2>
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <ShieldAlert className="w-5 h-5 text-red-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">07 - 09. Service & Reviews</h2>
+                            </div>
                             <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                                All payments collected via Gymkaana are held in a secure escrow before settlement. Payouts are triggered on a weekly cycle for all verified check-ins. GST and other applicable taxes are the responsibility of the venue partner, unless otherwise specified in local laws for digital platforms.
+                                You are solely responsible for service quality, staff behavior, and user safety. Refunds for service failure may be deducted from your settlement. We reserve the right to moderate user ratings and reviews.
                             </p>
                         </section>
 
-                        <section className="space-y-4 border-l-4 border-black pl-8">
-                            <h2 className="text-xl font-black uppercase italic tracking-tight">04. Dispute Resolution</h2>
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <Scale className="w-5 h-5 text-blue-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">10 - 13. Legality & IP</h2>
+                            </div>
                             <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                                Any disputes regarding check-in validity or payment amounts must be raised with Partner Support within 14 business days of the transaction date. Our team will review system logs and provides a final, binding decision.
+                                Vuegam Solutions retains all software rights. You indemnify us against premises-related injuries. We may terminate this agreement for fraud, poor service, or breach of platform security.
+                            </p>
+                        </section>
+
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 text-black">
+                                <Gavel className="w-5 h-5 text-indigo-500" />
+                                <h2 className="text-sm font-black uppercase tracking-widest italic">14 - 17. Data & Governing Law</h2>
+                            </div>
+                            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                                Partner must protect user data. Bypassing the platform to avoid commission is prohibited. This agreement is governed by Indian law, subject to Tamil Nadu jurisdiction. Force Majeure applies to unforeseen events.
                             </p>
                         </section>
                     </div>

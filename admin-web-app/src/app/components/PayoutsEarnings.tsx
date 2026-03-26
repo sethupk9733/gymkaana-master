@@ -33,9 +33,9 @@ export function PayoutsEarnings({ onBack }: PayoutsEarningsProps) {
   };
 
   const summaryCards = [
-    { label: "Total Platform Revenue", value: stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0", change: "+15%", trend: "up" },
-    { label: "Net Platform Commission", value: stats?.netCommission ? `₹${stats.netCommission.toLocaleString()}` : "₹0", change: "+8%", trend: "up" },
-    { label: "Pending Payouts", value: stats?.pendingPayouts ? `₹${stats.pendingPayouts.toLocaleString()}` : "₹0", change: "-", trend: null },
+    { label: "Total Platform Revenue", value: stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0", change: stats?.revenueTrend || "+0%", trend: stats?.revenueTrend?.includes('-') ? "down" : "up" },
+    { label: "Net Platform Commission", value: stats?.netCommission ? `₹${stats.netCommission.toLocaleString()}` : "₹0", change: stats?.commissionTrend || "+0%", trend: stats?.commissionTrend?.includes('-') ? "down" : "up" },
+    { label: "Pending Payouts", value: stats?.totalPendingPayout ? `₹${stats.totalPendingPayout.toLocaleString()}` : "₹0", change: "-", trend: null },
   ];
 
   const transactions = payouts.map(p => ({

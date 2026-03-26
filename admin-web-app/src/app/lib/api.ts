@@ -12,6 +12,8 @@ export const setToken = (token: string | null) => {
     inMemoryToken = token;
 };
 
+export const getToken = () => inMemoryToken;
+
 export const login = async (credentials: any) => {
     const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
@@ -144,6 +146,16 @@ export const fetchUsers = async () => {
 
     if (!response.ok) throw new Error(data.message || 'Failed to fetch users');
     return data;
+};
+
+export const fetchUserById = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/auth/users/${id}`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch user details');
+    return await response.json();
 };
 
 export const logout = async () => {
@@ -298,9 +310,37 @@ export const processPayout = async (id: string, status: string, transactionId?: 
         credentials: 'include',
         body: JSON.stringify({ status, transactionId, remarks })
     });
-    if (!response.ok) throw new Error('Failed to process payout');
-    return await response.json();
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to process payout');
+    return data;
 };
+
+
+export const approveRefund = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/bookings/${id}/approve-refund`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to approve refund');
+    return data;
+};
+
+export const rejectRefund = async (id: string, remarks?: string) => {
+    const response = await fetch(`${BASE_URL}/bookings/${id}/reject-refund`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        //@ts-ignore
+        credentials: 'include',
+        body: JSON.stringify({ remarks })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to reject refund');
+    return data;
+};
+
 // Ticket APIs
 export const fetchAllTickets = async () => {
     const response = await fetch(`${BASE_URL}/tickets/admin/all-tickets`, {

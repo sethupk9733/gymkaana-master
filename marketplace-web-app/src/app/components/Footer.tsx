@@ -9,7 +9,8 @@ export function Footer({
     onContactClick,
     onCareersClick,
     onTermsClick,
-    onPartnerClick
+    onPartnerClick,
+    onRefundClick
 }: {
     onDisciplineClick?: (discipline: string) => void;
     onAboutClick?: () => void;
@@ -20,6 +21,7 @@ export function Footer({
     onCareersClick?: () => void;
     onTermsClick?: () => void;
     onPartnerClick?: () => void;
+    onRefundClick?: () => void;
 }) {
     const cities = [
         "Gyms in Bangalore",
@@ -50,6 +52,7 @@ export function Footer({
         { label: "Help & Support", href: "#" },
         { label: "FAQs", href: "#" },
         { label: "Terms of Service", href: "#" },
+        { label: "Refund Policy", href: "#" },
         { label: "Partner with Us", href: "#" },
         { label: "Careers", href: "#" }
     ];
@@ -197,6 +200,9 @@ export function Footer({
                                                     } else if (link.label === "FAQs" && onFAQClick) {
                                                         e.preventDefault();
                                                         onFAQClick();
+                                                    } else if (link.label === "Refund Policy" && onRefundClick) {
+                                                        e.preventDefault();
+                                                        onRefundClick();
                                                     }
                                                 }}
                                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-primary transition-colors"

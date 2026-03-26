@@ -56,6 +56,7 @@ app.use('/api/plans', require('./routes/planRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/email', require('./routes/emailRoutes'));
 
 // Extended Routes (load safely to prevent crashes if file is missing)
 const extendedRoutes = [

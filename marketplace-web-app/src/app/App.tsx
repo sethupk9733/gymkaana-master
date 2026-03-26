@@ -23,6 +23,7 @@ const ContactUsScreen = lazy(() => import("./components/ContactUsScreen").then(m
 const CareersScreen = lazy(() => import("./components/CareersScreen").then(m => ({ default: m.CareersScreen })));
 const TermsScreen = lazy(() => import("./components/TermsScreen").then(m => ({ default: m.TermsScreen })));
 const PartnerScreen = lazy(() => import("./components/PartnerScreen").then(m => ({ default: m.PartnerScreen })));
+const RefundScreen = lazy(() => import("./components/RefundScreen").then(m => ({ default: m.RefundScreen })));
 
 type Screen =
   | "splash"
@@ -41,7 +42,8 @@ type Screen =
   | "contact"
   | "careers"
   | "terms"
-  | "partner";
+  | "partner"
+  | "refund";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
@@ -51,7 +53,7 @@ export default function App() {
     const actionParam = params.get('action');
 
     if (actionParam === 'login') return 'login';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms'].includes(screenParam)) {
+    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund'].includes(screenParam)) {
       return screenParam;
     }
     return "splash";
@@ -96,6 +98,48 @@ export default function App() {
 
   useEffect(() => {
     loadProfile();
+  }, []);
+
+  // Synchronize URL with active screen state
+  useEffect(() => {
+    if (currentScreen === 'splash') return;
+    
+    const url = new URL(window.location.href);
+    if (currentScreen === 'home') {
+      url.searchParams.delete('screen');
+    } else {
+      url.searchParams.set('screen', currentScreen);
+    }
+    
+    // Maintain Gym context if applicable
+    if (selectedGymId && (currentScreen === 'details' || currentScreen === 'membership_plans' || currentScreen === 'checkout')) {
+      url.searchParams.set('gym', selectedGymId);
+    } else {
+      url.searchParams.delete('gym');
+    }
+
+    if (window.location.search !== url.search) {
+      window.history.pushState({ screen: currentScreen }, '', url.toString());
+    }
+  }, [currentScreen, selectedGymId]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const params = new URLSearchParams(window.location.search);
+      const screenParam = params.get('screen') as Screen;
+      const gymParam = params.get('gym');
+
+      if (screenParam) {
+        setCurrentScreen(screenParam);
+        if (gymParam) setSelectedGymId(gymParam);
+      } else {
+        setCurrentScreen('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
@@ -297,6 +341,13 @@ export default function App() {
           />
         );
 
+      case "refund":
+        return (
+          <RefundScreen
+            onBack={() => setCurrentScreen("home")}
+          />
+        );
+
       default:
         return <SplashScreen onComplete={() => setCurrentScreen("home")} />;
     }
@@ -394,6 +445,9 @@ export default function App() {
               }}
               onPartnerClick={() => {
                 setCurrentScreen("partner");
+              }}
+              onRefundClick={() => {
+                setCurrentScreen("refund");
               }}
             />
           )}

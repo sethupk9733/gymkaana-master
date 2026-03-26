@@ -3,10 +3,31 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const Session = require('../models/Session');
-const sendEmail = require('../utils/sendEmail');
+const { sendWelcomeEmail, sendOTPEmail } = require('../utils/emailService');
 const crypto = require('crypto');
+const OTP = require('../models/OTP');
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+const checkAndTrackOTPRateLimit = async (email, otpCode) => {
+    const hourAgo = new Date();
+    hourAgo.setHours(hourAgo.getHours() - 1);
+    const recentOTPs = await OTP.countDocuments({
+        email: email.toLowerCase(),
+        createdAt: { $gte: hourAgo }
+    });
+    if (recentOTPs >= 5) {
+        throw new Error('Too many requests. Please try again after an hour.');
+    }
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    await OTP.create({
+        email: email.toLowerCase(),
+        otp: otpCode,
+        expiresAt,
+        verified: false
+    });
+};
 
 const generateAccessToken = (user) => {
     return jwt.sign(
@@ -59,19 +80,29 @@ exports.register = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+        await checkAndTrackOTPRateLimit(email, otp);
+
         const user = await User.create({
             name,
             email,
             password,
             roles: role ? [role] : ['user'],
-            isVerified: true // Automatically verify for now
+            isVerified: false,
+            otp,
+            otpExpires
         });
 
         if (user) {
+            // Send OTP Email via Resend
+            try {
+                await sendOTPEmail(user.email, user.otp);
+            } catch (emailErr) {
+                console.warn('OTP email failed but user created:', emailErr.message);
+            }
             res.status(201).json({
-                message: 'Registration successful. Welcome to Gymkaana!',
+                message: 'Registration successful. An OTP has been sent to your email.',
                 email: user.email,
-                requiresVerification: false
+                requiresVerification: true
             });
         }
     } catch (error) {
@@ -327,6 +358,14 @@ exports.verifyOTP = async (req, res) => {
 
         setAuthCookies(res, accessToken, refreshToken);
 
+        // Send welcome email upon successful verification
+        const { sendWelcomeEmail } = require('../utils/emailService');
+        try {
+            await sendWelcomeEmail(user.email, user.name);
+        } catch (emailErr) {
+            console.warn('Welcome email failed but verification succeeded:', emailErr.message);
+        }
+
         res.json({
             message: 'Account verified successfully',
             _id: user._id,
@@ -350,23 +389,13 @@ exports.resendOTP = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
+        await checkAndTrackOTPRateLimit(email, otp);
+
         user.otp = otp;
         user.otpExpires = otpExpires;
         await user.save();
 
-        await sendEmail({
-            email: user.email,
-            subject: 'Gymkaana - Your new verification code',
-            message: `Your new verification code is: ${otp}. It expires in 10 minutes.`,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #000;">Account Verification</h2>
-                    <p>Use this new code to verify your account:</p>
-                    <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0; color: #A3E635;">${otp}</div>
-                    <p style="color: #666; font-size: 12px;">This code expires in 10 minutes.</p>
-                </div>
-            `
-        });
+        await sendOTPEmail(user.email, otp);
 
         res.json({ message: 'New OTP sent to your email' });
     } catch (error) {
@@ -384,23 +413,29 @@ exports.forgotPassword = async (req, res) => {
         const otp = generateOTP();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
+        await checkAndTrackOTPRateLimit(email, otp);
+
         user.resetPasswordToken = otp; // Reusing logic but keeping fields separate
         user.resetPasswordExpires = otpExpires;
         await user.save();
 
-        await sendEmail({
-            email: user.email,
-            subject: 'Gymkaana - Password Reset Code',
-            message: `Your password reset code is: ${otp}. It expires in 10 minutes.`,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #000;">Password Reset</h2>
-                    <p>You requested a password reset. Use this code to continue:</p>
-                    <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0; color: #000;">${otp}</div>
-                    <p style="color: #666; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+        const { sendEmail: resendGeneric } = require('../utils/emailService');
+        await resendGeneric(
+            user.email,
+            'Gymkaana - Password Reset Code',
+            `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2 style="color: #000; text-transform: uppercase;">Password Reset</h2>
+                    <p style="color: #666; font-size: 16px;">You requested a password reset. Use this code to continue:</p>
+                    <div style="background: #f4f4f4; padding: 30px; text-align: center; border-radius: 10px; margin: 20px 0;">
+                        <span style="font-size: 42px; font-weight: 900; letter-spacing: 10px; color: #000;">${otp}</span>
+                    </div>
+                    <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="text-align: center; color: #000; font-weight: bold; font-size: 14px;">Powered by Vuegam Solutions</p>
                 </div>
             `
-        });
+        );
 
         res.json({ message: 'Password reset code sent to your email' });
     } catch (error) {
@@ -452,8 +487,12 @@ exports.getAllUsers = async (req, res) => {
                     phoneNumber: 1,
                     profileImage: 1,
                     createdAt: 1,
+                    gender: 1,
+                    age: 1,
+                    address: 1,
+                    occupation: 1,
                     bookingsCount: { $size: '$userBookings' },
-                    totalSpent: { $sum: '$userBookings.amount' },
+                    totalSpent: { $sum: '$userBookings.totalAmount' }, // Changed from amount to totalAmount to match schema
                     lastActive: { $max: '$userBookings.bookingDate' }
                 }
             },

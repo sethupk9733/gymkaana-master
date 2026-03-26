@@ -1,6 +1,6 @@
 import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, X, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { fetchBookings, fetchAdminAccounting } from "../lib/api";
+import { approveRefund, rejectRefund, fetchAdminAccounting } from "../lib/api";
 
 interface Transaction {
     id: string;
@@ -10,12 +10,14 @@ interface Transaction {
     amount: string;
     date: string;
     time: string;
-    status: 'Completed' | 'Refunded' | 'Pending' | 'Failed';
+    status: 'Completed' | 'Refunded' | 'Pending' | 'Failed' | 'Pending Refund';
     type: string;
     method: 'UPI' | 'Card' | 'Wallet' | 'Net Banking';
     commission: string;
     netPayout: string;
+    rawId?: string;
 }
+
 
 export function RefundManagement() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -96,7 +98,7 @@ export function RefundManagement() {
                     </div>
 
                     <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar w-full lg:w-auto">
-                        {['All', 'Completed', 'Refunded', 'Pending', 'Failed'].map(status => (
+                        {['All', 'Completed', 'Refunded', 'Pending Refund', 'Pending', 'Failed'].map(status => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
@@ -109,6 +111,7 @@ export function RefundManagement() {
                             </button>
                         ))}
                     </div>
+
                 </div>
 
                 <div className="overflow-x-auto">
@@ -218,15 +221,49 @@ export function RefundManagement() {
                             </div>
 
                             <div className="mt-10 flex gap-4">
-                                {selectedTxn.status === 'Completed' && (
-                                    <button className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all flex items-center justify-center gap-3">
-                                        Reverse Payment (Refund)
-                                    </button>
+                                {selectedTxn.status === 'Pending Refund' && (
+                                    <>
+                                        <button 
+                                            onClick={async () => {
+                                                if(!selectedTxn.rawId) return;
+                                                setLoading(true);
+                                                try {
+                                                    await approveRefund(selectedTxn.rawId);
+                                                    alert("REFUND AUTHORIZED: The reversal has been initiated. Funds will be credited to the original payment method within 14 business days.");
+                                                    setSelectedTxn(null);
+                                                    loadData();
+                                                } catch(e:any) { alert(e.message); }
+                                                finally { setLoading(false); }
+                                            }}
+                                            className="flex-1 py-5 bg-emerald-50 text-emerald-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-100 transition-all"
+                                        >
+                                            Approve Refund
+                                        </button>
+                                        <button 
+                                            onClick={async () => {
+                                                if(!selectedTxn.rawId) return;
+                                                const reason = prompt("Enter rejection reason:");
+                                                if(!reason) return;
+                                                setLoading(true);
+                                                try {
+                                                    await rejectRefund(selectedTxn.rawId, reason);
+                                                    alert("Refund Rejected.");
+                                                    setSelectedTxn(null);
+                                                    loadData();
+                                                } catch(e:any) { alert(e.message); }
+                                                finally { setLoading(false); }
+                                            }}
+                                            className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all"
+                                        >
+                                            Reject
+                                        </button>
+                                    </>
                                 )}
-                                <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all">
+                                <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all flex-1">
                                     Close Ledger
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -262,7 +299,9 @@ function StatusBadge({ status }: { status: string }) {
         Refunded: 'bg-red-50 text-red-600 border-red-100 line-through',
         Pending: 'bg-orange-50 text-orange-600 border-orange-100',
         Failed: 'bg-gray-50 text-gray-400 border-gray-100',
+        'Pending Refund': 'bg-purple-50 text-purple-600 border-purple-100 animate-pulse',
     };
+
     return (
         <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${colors[status]}`}>
             {status}
