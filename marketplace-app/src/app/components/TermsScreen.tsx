@@ -60,6 +60,7 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
             {/* Header */}
             <div className="p-6 border-b border-gray-100 bg-white sticky top-0 z-10 flex items-center gap-4">
                 <button
+                    title="Back"
                     onClick={onBack}
                     className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
                 >

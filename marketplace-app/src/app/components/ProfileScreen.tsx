@@ -321,6 +321,7 @@ export function ProfileScreen({
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Gender</label>
             <select
+              title="Gender"
               value={editData.gender}
               onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
               className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-black/5 appearance-none"
