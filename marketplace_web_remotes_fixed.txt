@@ -1,0 +1,2 @@
+origin	https://github.com/sethupk9733/gymkaana-marketplace-web.git (fetch)
+origin	https://github.com/sethupk9733/gymkaana-marketplace-web.git (push)
