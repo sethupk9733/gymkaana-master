@@ -2,26 +2,27 @@
 
 :root {
   --font-size: 16px;
-  --background: #f7f7f7;
+  --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #2ed13b;
-  /* JD Green */
+  --primary: #6366f1;
+  /* Indigo 500 */
   --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  /* Pro Navy */
-  --secondary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  /* Slate 100 */
+  --secondary-foreground: #1e293b;
+  /* Slate 800 */
   --muted: #f8fafc;
   /* Slate 50 */
   --muted-foreground: #64748b;
   /* Slate 500 */
-  --accent: #2ed13b;
-  /* JD Green */
-  --accent-foreground: #ffffff;
-  /* White */
+  --accent: #bef264;
+  /* Lime 300 */
+  --accent-foreground: #1a2e05;
+  /* Lime 950 */
   --destructive: #ef4444;
   /* Red 500 */
   --destructive-foreground: #ffffff;
@@ -138,16 +139,5 @@
   h3,
   h4 {
     @apply font-bold tracking-tight;
-  }
-}
-
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
 }

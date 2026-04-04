@@ -10,21 +10,6 @@ const SPECIALIZATIONS = [
   "Swimming", "Cardio", "Strength Training"
 ];
 
-const HERO_CONTENT = [
-  {
-    heading: <>FUEL THE <br /><span className="text-primary italic underline decoration-white/20 decoration-4 underline-offset-4">PASSION.</span></>,
-    subline: "UNIVERSAL ACCESS TO ELITE VENUES"
-  },
-  {
-    heading: <>LEVEL UP <br /><span className="text-primary italic underline decoration-white/20 decoration-4 underline-offset-4">YOUR GAME.</span></>,
-    subline: "PREMIUM TRAINING GROUNDS NEAR YOU"
-  },
-  {
-    heading: <>UNLEASH THE <br /><span className="text-primary italic underline decoration-white/20 decoration-4 underline-offset-4">BEAST.</span></>,
-    subline: "YOUR UNIVERSAL TICKET TO FITNESS"
-  }
-];
-
 export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (gymId: any) => void; onProfile: () => void; onExplore: () => void }) {
   const [gyms, setGyms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +17,8 @@ export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (
   const [maxDistance, setMaxDistance] = useState(10); // Default 10km radius
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
-  const [activeHero, setActiveHero] = useState(HERO_CONTENT[0]);
 
   useEffect(() => {
-    setActiveHero(HERO_CONTENT[Math.floor(Math.random() * HERO_CONTENT.length)]);
     fetchGyms()
       .then(data => {
         setGyms(data);
@@ -74,20 +57,18 @@ export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="h-full bg-background overflow-y-auto no-scrollbar scroll-smooth"
+      className="h-full bg-white flex flex-col"
     >
-      {/* Branding & Logo - This part will scroll away */}
-      <div className="p-6 pb-2">
-        <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-100 bg-white sticky top-0 z-10">
+        <div className="flex justify-between items-center mb-6">
           <motion.div
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            <h1 className="text-2xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
-              <span className="text-secondary">GYM</span>
-              <span className="text-primary italic mx-0.5">KAA</span>
-              <span className="text-secondary">NA</span>
-            </h1>
+            <h1 className="text-3xl font-black tracking-tighter text-gray-900 italic">GYMKAANA</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mt-1">Elevate your workout</p>
           </motion.div>
 
           <motion.button
@@ -95,101 +76,51 @@ export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (
             animate={{ scale: 1, opacity: 1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onProfile}
-            className="w-10 h-10 rounded-xl bg-black flex items-center justify-center border-2 border-white shadow-lg"
+            className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center border-4 border-white shadow-xl overflow-hidden"
+            aria-label="View Profile"
           >
-            <Users className="w-5 h-5 text-white" />
+            <Users className="w-6 h-6 text-white" />
           </motion.button>
         </div>
-      </div>
 
-      {/* Sticky High-Impact Header Section */}
-      <div className="sticky top-0 z-30 p-6 pt-0">
-        {/* Dynamic Tagline Container */}
-        <div className="bg-secondary p-8 rounded-[32px] relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[40px] rounded-full -mr-16 -mt-16" />
-          <div className="relative z-10">
-            {/* Tagline Part - Hidden on Scroll (Simulated by sticky overlap or just let it scroll inside if desired, but here we'll keep it as one unit that stays) */}
-            {/* Actually, user wants "the header has to scroll above the list or once started scrolling i just need the search bar and the browse discipline" */}
-            {/* To achieve this perfectly, we split the card: tagline scrolls, search+disciplines stick. */}
-
-            <div className="mb-8">
-              <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none mb-3">
-                {activeHero.heading}
-              </h2>
-              <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">
-                {activeHero.subline}
-              </p>
-            </div>
-          </div>
+        {/* Search Bar */}
+        <div className="flex gap-3">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 flex items-center gap-3 shadow-inner group focus-within:ring-2 focus-within:ring-black/5 transition-all"
+          >
+            <Search className="w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for venues or activities..."
+              className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-900 placeholder:text-gray-400"
+              title="Search venues"
+            />
+          </motion.div>
+          <motion.button
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.25 }}
+            onClick={() => setShowFilters(!showFilters)}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${showFilters ? 'bg-black border-black text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-black hover:text-black shadow-sm'}`}
+            title="Toggle Distance Filter"
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+          </motion.button>
         </div>
-      </div>
 
-      {/* STICKY FILTER BAR */}
-      <div className="sticky top-0 z-40 px-6 -mt-20 mb-4">
-        <div className="bg-secondary/95 backdrop-blur-3xl p-5 rounded-[28px] shadow-2xl border border-white/10">
-          {/* Nested Search Bar Container */}
-          <div className="flex gap-3 mb-5">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex-1 bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center gap-3 group transition-all"
-            >
-              <Search className="w-5 h-5 text-white/40 group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search venues or sports..."
-                className="flex-1 bg-transparent outline-none text-sm font-black text-white placeholder:text-white/20"
-              />
-            </motion.div>
-            <motion.button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${showFilters ? 'bg-primary border-primary text-white' : 'bg-white/10 border-white/20 text-white/40'}`}
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-            </motion.button>
-          </div>
-
-          {/* Specialized Disciplines Filter */}
-          <div className="overflow-x-auto no-scrollbar">
-            <div className="flex gap-2.5 min-w-max">
-              {SPECIALIZATIONS.map((discipline, index) => (
-                <motion.button
-                  key={index}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setSelectedDisciplines(prev =>
-                      prev.includes(discipline)
-                        ? prev.filter(d => d !== discipline)
-                        : [...prev, discipline]
-                    );
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${selectedDisciplines.includes(discipline)
-                    ? 'bg-white border-white text-secondary shadow-lg'
-                    : 'bg-white/5 border-white/10 text-white/40 hover:border-white/40 hover:text-white'
-                    }`}
-                >
-                  <span className="text-[10px] font-black uppercase tracking-wider">
-                    {discipline}
-                  </span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="relative z-10">
         {/* Distance Filter Panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden px-6 mb-6"
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              className="overflow-hidden"
             >
               <div className="bg-gray-900 rounded-[32px] p-6 shadow-2xl relative overflow-hidden border border-white/5">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[40px] rounded-full" />
@@ -218,32 +149,80 @@ export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (
                     className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary"
                     title="Distance Radius Slider"
                   />
+                  <div className="flex justify-between mt-4">
+                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">1 KM</span>
+                    <span className="text-primary text-[10px] font-black italic">{maxDistance} KM RADIUS</span>
+                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">50 KM</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Specialized Disciplines Filter */}
+        <div className="px-6 pb-6 bg-white border-b border-gray-100">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Browse Disciplines</h3>
+          <div className="overflow-x-auto pb-2 -mx-6 px-6 no-scrollbar">
+            <div className="flex gap-3 min-w-max">
+              {SPECIALIZATIONS.map((discipline, index) => (
+                <motion.button
+                  key={index}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setSelectedDisciplines(prev =>
+                      prev.includes(discipline)
+                        ? prev.filter(d => d !== discipline)
+                        : [...prev, discipline]
+                    );
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${selectedDisciplines.includes(discipline)
+                    ? 'bg-black border-black text-white shadow-lg'
+                    : 'bg-white border-gray-200 text-gray-400 hover:border-black hover:text-black'
+                    }`}
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider">
+                    {discipline}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto bg-gray-50/30">
+
+
         {/* Gym Listings */}
-        <div className="px-6 pb-20">
-          <div className="flex justify-between items-end mb-10">
+        <div className="p-6">
+          <div className="flex justify-between items-end mb-6">
             <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">Discovery Portal</h3>
-              <p className="text-2xl font-black italic tracking-tight text-gray-900 uppercase">
-                {filteredGyms.length} Protocol Matches
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                {searchQuery || showFilters ? 'Search Results' : 'Featured Venues'}
+              </h3>
+              <p className="text-xs font-bold text-gray-900 mt-1">
+                {filteredGyms.length} {filteredGyms.length === 1 ? 'venue' : 'venues'} found {showFilters && `within ${maxDistance}km`}
               </p>
             </div>
             {!searchQuery && !showFilters && (
               <button
                 onClick={onExplore}
-                className="text-[10px] font-[1000] text-black uppercase tracking-widest border-b-2 border-primary pb-1"
+                className="text-[10px] font-black text-black uppercase tracking-wider border-b-2 border-primary mb-1 active:opacity-50 transition-opacity"
               >
-                VIEW HUB
+                View All
               </button>
             )}
           </div>
 
-          {filteredGyms.length > 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" />
+            </div>
+          ) : filteredGyms.length > 0 ? (
             <div className="space-y-6 pb-10">
               {filteredGyms.map((gym, index) => (
                 <motion.div
@@ -283,11 +262,6 @@ export function HomeScreen({ onGymClick, onProfile, onExplore }: { onGymClick: (
           )}
         </div>
       </div>
-      <div className="px-6 py-10 border-t border-gray-100 mt-10 text-center">
-        <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em]">
-          © {new Date().getFullYear()} VUEGAM SOLUTIONS. ALL RIGHTS RESERVED.
-        </p>
-      </div>
-    </motion.div >
+    </motion.div>
   );
 }

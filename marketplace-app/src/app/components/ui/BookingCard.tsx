@@ -17,9 +17,7 @@ export function BookingCard({ booking }: { booking: Booking }) {
         active: { color: "bg-emerald-50 text-emerald-700 border-emerald-100", label: "Completed" },
         cancelled: { color: "bg-red-50 text-red-700 border-red-100", label: "Cancelled" },
         upcoming: { color: "bg-black text-white border-black", label: "Active" },
-        pending_refund: { color: "bg-orange-50 text-orange-700 border-orange-100", label: "Refund Pending" },
     };
-
 
     const config = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.completed;
 
@@ -85,36 +83,6 @@ export function BookingCard({ booking }: { booking: Booking }) {
                         {config.label}
                     </div>
                 </div>
-
-                {booking.status === 'cancelled' && (
-                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-2xl">
-                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1 flex justify-between">
-                            <span>Termination Ledger</span>
-                            <span className="text-red-600 italic">BY {booking.cancelledBy?.toUpperCase() || 'SYSTEM'}</span>
-                        </p>
-                        <p className="text-xs font-bold text-red-900 italic leading-tight mb-2">
-                            "{booking.cancellationReason || 'Standard Termination protocol applied.'}"
-                        </p>
-                        {booking.refundStatus === 'approved' && (
-                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                                <CheckCircle2 className="w-3 h-3 inline mr-1" /> Approved: Refund will reflect in 14 days.
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                {booking.status === 'pending_refund' && (
-                    <div className="mb-6 p-4 bg-orange-50 border-2 border-orange-100 rounded-2xl animate-pulse">
-                        <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1 flex justify-between">
-                            <span>Audit Processing</span>
-                            <span className="text-orange-600 italic">REVIEW IN PROGRESS</span>
-                        </p>
-                        <p className="text-xs font-bold text-orange-900 leading-tight">
-                            Your refund decision will be decided within 48hr. If approved, the refund will be processed in 14 days.
-                        </p>
-                    </div>
-                )}
-
 
                 <div className="flex items-center justify-between bg-gray-50 p-5 rounded-[24px] border border-gray-100 mb-6">
                     <div className="space-y-2">

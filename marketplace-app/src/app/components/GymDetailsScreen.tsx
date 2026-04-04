@@ -48,21 +48,6 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
     );
   }
 
-  if (!gym) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-          <MapPin size={32} />
-        </div>
-        <h2 className="text-xl font-bold">Venue Not Found</h2>
-        <p className="text-gray-500 text-sm">The gym details could not be retrieved at this time.</p>
-        <button onClick={onBack} className="px-6 py-2 bg-black text-white rounded-xl text-sm font-bold">
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
   // Icons map for facilities
   const iconMap: Record<string, any> = {
     "Weights": Dumbbell,
@@ -154,7 +139,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                 </div>
                 <div>
                   <div className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Location</div>
-                  <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors underline decoration-dotted decoration-gray-400 underline-offset-2">
+                  <div className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors underline decoration-dotted decoration-gray-400 underline-offset-2">
                     {gym.location}
                   </div>
                 </div>
@@ -212,7 +197,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Specialized Disciplines</h3>
                 <div className="flex flex-wrap gap-2">
                   {gym.specializations.map((spec: string, index: number) => (
-                    <span key={index} className="px-4 py-2 bg-gray-100 text-gray-500 rounded-xl text-[9px] font-black uppercase tracking-widest border border-gray-200">
+                    <span key={index} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest border border-blue-100">
                       {spec}
                     </span>
                   ))}
@@ -251,7 +236,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-black text-primary rounded-lg flex items-center justify-center font-black text-[10px] italic uppercase tracking-tighter">
-                          {String(review.userId?.name || "?").charAt(0).toUpperCase()}
+                          {review.userId?.name.charAt(0)}
                         </div>
                         <div>
                           <h4 className="text-[11px] font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name}</h4>

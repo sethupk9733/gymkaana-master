@@ -30,7 +30,7 @@ export function VenueCard({ gym, onClick }: VenueCardProps) {
                 <ImageCarousel images={displayImages} />
                 <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
                     {Number((gym as any).maxBaseDiscount || 0) > 0 ? (
-                        <div className="bg-gradient-to-r from-primary/100 to-indigo-600 text-white px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
                             Up to {Math.round(Number((gym as any).maxBaseDiscount))}% OFF
                         </div>
                     ) : (
@@ -63,12 +63,12 @@ export function VenueCard({ gym, onClick }: VenueCardProps) {
                 {(gym as any).specializations && (gym as any).specializations.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-5 px-0.5">
                         {(gym as any).specializations.slice(0, 2).map((spec: string) => (
-                            <span key={spec} className="px-2 py-0.5 bg-gray-100 text-[8px] font-black uppercase tracking-widest text-gray-500 rounded-md border border-gray-200">
+                            <span key={spec} className="px-2 py-0.5 bg-blue-50 text-[8px] font-black uppercase tracking-widest text-blue-600 rounded-md border border-blue-100">
                                 {spec}
                             </span>
                         ))}
                         {(gym as any).specializations.length > 2 && (
-                            <span className="px-2 py-0.5 bg-gray-100 text-[8px] font-black uppercase tracking-widest text-gray-500 rounded-md border border-gray-200">
+                            <span className="px-2 py-0.5 bg-blue-50 text-[8px] font-black uppercase tracking-widest text-blue-600 rounded-md border border-blue-100">
                                 +{(gym as any).specializations.length - 2}
                             </span>
                         )}

@@ -116,9 +116,7 @@ export function BookingHistoryScreen({ onBack }: { onBack: () => void }) {
                                             amount: booking.amount,
                                             gymId: booking.gymId?._id || booking.gymId,
                                             planId: booking.planId?._id || booking.planId,
-                                            status: booking.status,
-                                            cancellationReason: booking.cancellationReason,
-                                            cancelledBy: booking.cancelledBy
+                                            status: booking.status
                                         }} />
                                     ))}
                                 </div>

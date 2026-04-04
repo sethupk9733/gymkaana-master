@@ -15,7 +15,6 @@ const SuccessScreen = lazy(() => import("./components/SuccessScreen").then(m => 
 const DashboardScreen = lazy(() => import("./components/DashboardScreen").then(m => ({ default: m.DashboardScreen })));
 const ProfileScreen = lazy(() => import("./components/ProfileScreen").then(m => ({ default: m.ProfileScreen })));
 const BookingHistoryScreen = lazy(() => import("./components/BookingHistoryScreen").then(m => ({ default: m.BookingHistoryScreen })));
-const TermsScreen = lazy(() => import("./components/TermsScreen").then(m => ({ default: m.TermsScreen })));
 
 type Screen =
   | "splash"
@@ -29,8 +28,7 @@ type Screen =
   | "success"
   | "dashboard"
   | "profile"
-  | "bookings"
-  | "terms";
+  | "bookings";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
@@ -41,32 +39,33 @@ export default function App() {
   const [latestBooking, setLatestBooking] = useState<any>(null);
 
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('gymkaana_token'));
   const [pendingScreen, setPendingScreen] = useState<Screen | null>(null);
 
   const loadProfile = async () => {
-    try {
-      const { fetchProfile, checkSession } = await import("./lib/api");
-      const user = await checkSession();
-      if (user) {
+    const token = localStorage.getItem('gymkaana_token');
+    if (token) {
+      try {
+        const { fetchProfile } = await import("./lib/api");
         const profile = await fetchProfile();
         setUserProfile(profile);
         setIsAuthenticated(true);
+        try {
+          localStorage.setItem('gymkaana_user', JSON.stringify(profile));
+        } catch (e) {
+          console.warn("Storage quota exceeded for gymkaana_user", e);
+        }
+      } catch (err) {
+        console.error("Profile fetch failed:", err);
+        setIsAuthenticated(false);
+        localStorage.removeItem('gymkaana_token');
       }
-    } catch (err) {
-      console.error("Profile fetch failed:", err);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadProfile();
   }, []);
-
-  if (loading) return <LoadingSpinner />;
 
   const handleLoginSuccess = async () => {
     setIsAuthenticated(true);
@@ -100,7 +99,6 @@ export default function App() {
           <LoginSignupScreen
             onLogin={handleLoginSuccess}
             onBack={() => setCurrentScreen(pendingScreen && pendingScreen !== 'login' ? "home" : "home")}
-            onTerms={() => setCurrentScreen("terms")}
           />
         );
 
@@ -207,7 +205,6 @@ export default function App() {
             onViewBookings={() => setCurrentScreen("bookings")}
             userPhoto={userProfile?.profileImage}
             onPhotoCapture={loadProfile}
-            onTerms={() => setCurrentScreen("terms")}
           />
         );
 
@@ -215,13 +212,6 @@ export default function App() {
         return (
           <BookingHistoryScreen
             onBack={() => setCurrentScreen("profile")}
-          />
-        );
-
-      case "terms":
-        return (
-          <TermsScreen
-            onBack={() => setCurrentScreen("home")}
           />
         );
 

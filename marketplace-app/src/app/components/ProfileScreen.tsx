@@ -36,15 +36,13 @@ export function ProfileScreen({
   onLogout,
   onViewBookings,
   userPhoto,
-  onPhotoCapture,
-  onTerms
+  onPhotoCapture
 }: {
   onBack: () => void;
   onLogout: () => void;
   onViewBookings: () => void;
   userPhoto: string | null;
   onPhotoCapture: (photo: string) => void;
-  onTerms: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showQR, setShowQR] = useState(false);
@@ -58,11 +56,7 @@ export function ProfileScreen({
   const [editData, setEditData] = useState({
     name: '',
     email: '',
-    phoneNumber: '',
-    age: '',
-    gender: '',
-    address: '',
-    occupation: ''
+    phoneNumber: ''
   });
 
   useEffect(() => {
@@ -76,11 +70,7 @@ export function ProfileScreen({
         setEditData({
           name: prof.name || '',
           email: prof.email || '',
-          phoneNumber: prof.phoneNumber || '',
-          age: prof.age ? String(prof.age) : '',
-          gender: prof.gender || '',
-          address: prof.address || '',
-          occupation: prof.occupation || ''
+          phoneNumber: prof.phoneNumber || ''
         });
         setBookings(bookingsData);
       } catch (err) {
@@ -134,7 +124,6 @@ export function ProfileScreen({
     { icon: HelpCircle, label: "Help & Support", onClick: () => setCurrentView('help') },
     { icon: Settings, label: "Settings", onClick: () => setCurrentView('settings') },
     { icon: Building, label: "Gym Owner Portal", onClick: () => window.open('https://gymkaana-owner.vercel.app', '_blank') },
-    { icon: FileText, label: "Terms of Service", onClick: onTerms },
   ];
 
   /* Sub-view Components */
@@ -144,7 +133,7 @@ export function ProfileScreen({
         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Saved Methods</h3>
         <div className="p-4 border border-gray-100 rounded-2xl flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-6 bg-primary rounded flex items-center justify-center text-[8px] text-white font-bold tracking-widest">VISA</div>
+            <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center text-[8px] text-white font-bold tracking-widest">VISA</div>
             <div>
               <p className="font-bold text-sm text-gray-900">•••• 4242</p>
               <p className="text-xs text-gray-400">Expires 12/28</p>
@@ -304,54 +293,6 @@ export function ProfileScreen({
             onChange={(e) => setEditData({ ...editData, phoneNumber: e.target.value })}
             className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm tracking-tight outline-none focus:ring-2 focus:ring-black/5"
             placeholder="+91 XXXXX XXXXX"
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Age</label>
-            <input
-              type="number"
-              value={editData.age}
-              onChange={(e) => setEditData({ ...editData, age: e.target.value })}
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-black/5"
-              placeholder="Ex: 25"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Gender</label>
-            <select
-              title="Gender"
-              value={editData.gender}
-              onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-black/5 appearance-none"
-            >
-              <option value="">Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Occupation</label>
-          <input
-            type="text"
-            value={editData.occupation}
-            onChange={(e) => setEditData({ ...editData, occupation: e.target.value })}
-            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-black/5"
-            placeholder="Ex: Software Engineer"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Address</label>
-          <textarea
-            value={editData.address}
-            onChange={(e) => setEditData({ ...editData, address: e.target.value })}
-            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-black/5 min-h-[100px]"
-            placeholder="Enter your residence details"
           />
         </div>
       </div>

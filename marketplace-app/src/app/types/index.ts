@@ -41,13 +41,8 @@ export interface Booking {
     amount: string;
     gymId?: string;
     planId?: string;
-    status: "completed" | "cancelled" | "upcoming" | "pending_refund" | "active";
-    cancellationReason?: string;
-    cancelledBy?: string;
-    refundRequestedAt?: string;
-    refundStatus?: 'pending' | 'approved' | 'rejected';
+    status: "completed" | "cancelled" | "upcoming";
 }
-
 
 export interface ActivePass {
     id: string;

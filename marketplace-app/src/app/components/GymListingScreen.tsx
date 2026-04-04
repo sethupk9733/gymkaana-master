@@ -172,7 +172,7 @@ export function GymListingScreen({ onBack, onGymClick }: { onBack: () => void; o
                     prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]
                   );
                 }}
-                className={`px-4 py-2.5 rounded-xl border-2 transition-all min-w-max ${selectedDisciplines.includes(spec) ? 'bg-black border-black text-white shadow-lg' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-black hover:text-black'}`}
+                className={`px-4 py-2.5 rounded-xl border-2 transition-all min-w-max ${selectedDisciplines.includes(spec) ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-blue-600 hover:text-blue-600'}`}
               >
                 <span className="text-[9px] font-black uppercase tracking-widest">{spec}</span>
               </motion.button>
