@@ -1,6 +1,9 @@
-import { ArrowLeft, Camera, CheckCircle2, RotateCcw, User, UserCheck, XCircle } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, RotateCcw, User, UserCheck, XCircle, Search, QrCode } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { verifyQR } from "../lib/api";
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface QRCheckInProps {
   onBack: () => void;
@@ -9,40 +12,92 @@ interface QRCheckInProps {
 export function QRCheckIn({ onBack }: QRCheckInProps) {
   const [scanState, setScanState] = useState<"scanning" | "processing" | "success" | "error">("scanning");
   const [scannedUser, setScannedUser] = useState<any>(null);
+  const [manualId, setManualId] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLiveScanning, setIsLiveScanning] = useState(false);
+  const [scannerInitialized, setScannerInitialized] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // simulate camera stream
   useEffect(() => {
-    if (scanState === "scanning" && videoRef.current) {
-      // In a real app, this would use navigator.mediaDevices.getUserMedia
-      // For simulation, we'll just show a placeholder or mock stream if possible
+    let html5QrCode: Html5Qrcode | null = null;
+
+    if (isLiveScanning) {
+      const startScanner = async () => {
+        try {
+          html5QrCode = new Html5Qrcode("reader");
+          setScannerInitialized(true);
+
+          const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+          };
+
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            async (decodedText) => {
+              if (html5QrCode?.isScanning) {
+                await html5QrCode.stop();
+                setScannerInitialized(false);
+                setIsLiveScanning(false);
+                handleVerify(decodedText);
+              }
+            },
+            () => { }
+          );
+        } catch (err) {
+          console.error("Scanner error:", err);
+          setErrorMessage("Camera access denied or unavailable");
+          setScanState('error');
+          setIsLiveScanning(false);
+          setScannerInitialized(false);
+        }
+      };
+
+      startScanner();
     }
-  }, [scanState]);
 
-  const handleSimulateScan = () => {
-    setScanState("processing");
-    setTimeout(() => {
-      // Randomly succeed or fail for demo purposes, mostly succeed
-      const isSuccess = Math.random() > 0.1;
-
-      if (isSuccess) {
-        setScannedUser({
-          name: "Rahul Sharma",
-          plan: "Gold Membership",
-          expiry: "24 Days Left",
-          photoUrl: null, // Placeholder
-          lastCheckIn: "Yesterday, 6:30 PM"
-        });
-        setScanState("success");
-      } else {
-        setScanState("error");
+    return () => {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => console.error("Cleanup stop error:", err));
       }
-    }, 1500);
+    };
+  }, [isLiveScanning]);
+
+  const handleVerify = async (id: string) => {
+    const cleanId = id.trim();
+    if (!cleanId) return;
+
+    // Clean "GYMKAANA-" prefix if scanned or entered manually (case-insensitive)
+    const bookingId = cleanId.toUpperCase().includes('GYMKAANA-')
+      ? cleanId.split(/GYMKAANA-/i)[1].trim()
+      : cleanId;
+
+    setScanState("processing");
+    setErrorMessage("");
+    try {
+      const result = await verifyQR(bookingId);
+      setScannedUser({
+        name: result.booking.memberName || "Member",
+        plan: result.booking.planId?.name || "Premium Plan",
+        expiry: "Verification Complete",
+        id: result.booking._id,
+        photoUrl: null,
+        lastCheckIn: "Just now"
+      });
+      setScanState("success");
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || "Invalid or Expired Booking ID");
+      setScanState("error");
+    }
   };
 
   const resetScan = () => {
     setScanState("scanning");
     setScannedUser(null);
+    setManualId("");
   };
 
   return (
@@ -62,21 +117,68 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
         {scanState === "scanning" && (
           <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-300">
             <div className="relative w-72 h-72 border-2 border-dashed border-gray-600 rounded-3xl overflow-hidden mb-8 bg-gray-800 flex items-center justify-center">
-              {/* Simulated Camera Feed View */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent animate-scan"></div>
-              <Camera className="text-gray-600 w-16 h-16 opacity-50" />
-              <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-scan-line"></div>
+              {!isLiveScanning ? (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent animate-scan"></div>
+                  <button
+                    onClick={() => setIsLiveScanning(true)}
+                    className="z-10 bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-full shadow-lg transform transition-transform hover:scale-110 active:scale-95"
+                    title="Start Camera"
+                  >
+                    <Camera className="w-8 h-8" />
+                  </button>
+                  <p className="absolute bottom-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Initialize Camera</p>
+                </>
+              ) : (
+                <div className="w-full h-full relative">
+                  {!scannerInitialized && (
+                    <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center z-20">
+                      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                      <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Waking Lens...</p>
+                    </div>
+                  )}
+                  <div id="reader" className="w-full h-full"></div>
+                  <button
+                    onClick={() => setIsLiveScanning(false)}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/30 backdrop-blur-md transition-all"
+                  >
+                    Abort
+                  </button>
+                </div>
+              )}
             </div>
 
-            <p className="text-gray-400 text-center mb-8">
-              Align the member's QR code within the frame to check them in.
-            </p>
+            <div className="w-full space-y-4 mb-8">
+              <p className="text-gray-400 text-center text-sm">
+                Scan the member's QR code or enter the Booking ID manually.
+              </p>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <Input
+                    placeholder="Enter Booking ID (e.g. 64b8...)"
+                    className="pl-9 bg-gray-800 border-gray-700 text-white placeholder:text-gray-600 focus:ring-blue-500"
+                    value={manualId}
+                    onChange={(e) => setManualId(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={() => handleVerify(manualId)}
+                  disabled={!manualId}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-bold"
+                >
+                  Verify
+                </Button>
+              </div>
+            </div>
 
             <Button
-              onClick={handleSimulateScan}
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-900/20"
+              onClick={() => handleVerify("678602b9f390886b1d169ac0")} // Example ID for quick test
+              variant="outline"
+              className="w-full h-12 border-gray-700 text-gray-400 hover:bg-gray-800 font-medium rounded-xl"
             >
-              Simulate Scan
+              Test with Demo ID
             </Button>
           </div>
         )}
@@ -84,8 +186,8 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
         {scanState === "processing" && (
           <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
             <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-            <h3 className="text-xl font-bold">Verifying...</h3>
-            <p className="text-gray-400 mt-2">Checking membership status</p>
+            <h3 className="text-xl font-bold italic uppercase tracking-tighter">Verifying Credentials...</h3>
+            <p className="text-gray-400 mt-2 font-medium">Synchronizing with Institutional Servers</p>
           </div>
         )}
 
@@ -95,40 +197,40 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
               <CheckCircle2 size={40} className="text-white" />
             </div>
 
-            <h2 className="text-2xl font-bold mt-4 text-white">Check-in Successful!</h2>
-            <p className="text-green-400 font-medium text-sm mt-1">Membership Active</p>
+            <h2 className="text-2xl font-bold mt-4 text-white italic uppercase tracking-tighter">Access Authorized!</h2>
+            <p className="text-green-400 font-black text-[10px] uppercase tracking-[0.2em] mt-1">Institutional Status: Active</p>
 
             <div className="mt-6 bg-gray-700/50 rounded-xl p-4 text-left border border-gray-700">
               <div className="flex items-center gap-4 border-b border-gray-600 pb-4 mb-4">
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-xl font-bold">
-                  {String(scannedUser.name || "?").charAt(0).toUpperCase()}
+                  {scannedUser.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">{scannedUser.name}</h3>
-                  <p className="text-sm text-gray-400">ID: #987654</p>
+                  <h3 className="text-lg font-bold uppercase italic tracking-tighter">{scannedUser.name}</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{scannedUser.id.slice(-8).toUpperCase()}</p>
                 </div>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Plan</span>
-                  <span className="font-semibold">{scannedUser.plan}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assigned Plan</span>
+                  <span className="font-bold uppercase italic text-[11px]">{scannedUser.plan}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Expires In</span>
-                  <span className="font-semibold text-yellow-400">{scannedUser.expiry}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification</span>
+                  <span className="font-bold text-green-400 text-[11px] uppercase">{scannedUser.expiry}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Last Visit</span>
-                  <span>{scannedUser.lastCheckIn}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Check-in Clock</span>
+                  <span className="font-bold text-[11px] uppercase">{scannedUser.lastCheckIn}</span>
                 </div>
               </div>
             </div>
 
             <Button
               onClick={resetScan}
-              className="w-full h-12 mt-6 bg-white text-gray-900 hover:bg-gray-100 font-bold"
+              className="w-full h-14 mt-6 bg-white text-gray-900 hover:bg-gray-100 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl"
             >
-              Done & Scan Next
+              Authorize Next Entry
             </Button>
           </div>
         )}
@@ -139,26 +241,26 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
               <XCircle size={40} className="text-white" />
             </div>
 
-            <h2 className="text-2xl font-bold mt-4 text-white">Check-in Failed</h2>
-            <p className="text-red-400 font-medium text-sm mt-1">Invalid QR or Expired Membership</p>
+            <h2 className="text-2xl font-bold mt-4 text-white italic uppercase tracking-tighter">Invalid Pass</h2>
+            <p className="text-red-400 font-black text-[10px] uppercase tracking-[0.2em] mt-1">Status: Access Denied</p>
 
-            <p className="text-gray-400 mt-4 mb-6 text-sm">
-              The scanned code is either invalid or belongs to an inactive membership. Please ask the member to verify their plan.
+            <p className="text-gray-400 mt-4 mb-6 text-[11px] font-medium leading-relaxed">
+              {errorMessage || "The provided Institutional Authenticator is invalid, expired, or has already been used. Please verify membership status in the hub dashboard."}
             </p>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3">
               <Button
                 onClick={resetScan}
-                variant="outline"
-                className="flex-1 h-12 border-gray-600 text-white hover:bg-gray-700"
+                className="w-full h-14 bg-white text-gray-900 hover:bg-gray-100 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl"
               >
-                Try Again
+                Retry Scan
               </Button>
               <Button
-                onClick={resetScan} // Ideally navigate to manual entry 
-                className="flex-1 h-12 bg-white text-gray-900 hover:bg-gray-100 font-bold"
+                onClick={onBack}
+                variant="outline"
+                className="w-full h-12 border-gray-700 text-gray-400 hover:bg-gray-800 font-bold uppercase tracking-[0.2em] text-[10px]"
               >
-                Enter ID Manually
+                Exit Verification
               </Button>
             </div>
           </div>

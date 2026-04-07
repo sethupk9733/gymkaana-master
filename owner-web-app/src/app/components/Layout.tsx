@@ -42,6 +42,13 @@ export function Layout({ children, activeTab, setActiveTab, setCurrentScreen }: 
                             Bookings
                         </button>
                         <button
+                            onClick={() => { setActiveTab('reviews'); setCurrentScreen('main'); }}
+                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'reviews' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
+                            title="Reviews"
+                        >
+                            Reviews
+                        </button>
+                        <button
                             onClick={() => { setActiveTab('profile'); setCurrentScreen('main'); }}
                             className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'profile' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
                             title="Profile"
