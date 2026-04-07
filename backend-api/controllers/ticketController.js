@@ -45,10 +45,11 @@ exports.createTicket = async (req, res) => {
 
         // Add the ticket/message as a reply
         const user = await User.findById(req.user._id);
+        const isAdmin = user.roles && user.roles.includes('admin');
         const reply = {
             senderId: req.user._id,
             senderName: user.name,
-            senderRole: (user.roles && user.roles.length > 0) ? user.roles[0] : 'user',
+            senderRole: isAdmin ? 'admin' : 'user',
             message: `**[TICKET]** ${subject}\n\n${description}`
         };
 
@@ -59,7 +60,7 @@ exports.createTicket = async (req, res) => {
         await ticket.save();
         const updated = await Ticket.findById(ticket._id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role');
+            .populate('replies.senderId', 'name roles');
 
         res.status(201).json(updated);
     } catch (err) {
@@ -78,7 +79,7 @@ exports.getAllTickets = async (req, res) => {
 
         const tickets = await Ticket.find({})
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role')
+            .populate('replies.senderId', 'name roles')
             .sort({ updatedAt: -1 });
 
         res.json(tickets);
@@ -104,7 +105,7 @@ exports.getTicket = async (req, res) => {
     try {
         const ticket = await Ticket.findById(req.params.id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role');
+            .populate('replies.senderId', 'name roles');
 
         if (!ticket) {
             return res.status(404).json({ message: 'Ticket not found' });
@@ -162,7 +163,7 @@ exports.addReply = async (req, res) => {
 
         const updatedTicket = await Ticket.findById(req.params.id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role');
+            .populate('replies.senderId', 'name roles');
 
         res.json(updatedTicket);
     } catch (err) {
@@ -229,7 +230,7 @@ exports.getSupportChat = async (req, res) => {
             subject: 'Support Conversation'
         })
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role');
+            .populate('replies.senderId', 'name roles');
 
         // If no conversation exists, create one
         if (!ticket) {
@@ -289,7 +290,7 @@ exports.sendChatMessage = async (req, res) => {
 
         const updatedTicket = await Ticket.findById(ticket._id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name role');
+            .populate('replies.senderId', 'name roles');
 
         res.json(updatedTicket);
     } catch (err) {

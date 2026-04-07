@@ -52,4 +52,13 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Virtual for backward compatibility
+userSchema.virtual('role').get(function() {
+    return this.roles && this.roles.length > 0 ? this.roles[0] : 'user';
+});
+
+// Set virtuals to true for toJSON and toObject
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('User', userSchema);

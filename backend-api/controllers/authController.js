@@ -59,8 +59,8 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
         httpOnly: true,
         secure: isProduction,
         sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        ...(isProduction && { domain: '.gymkaana.com' })
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        // domain: '.gymkaana.com' removed to prevent session bleeding between owner and user portals
     });
 };
 
@@ -258,7 +258,7 @@ exports.logout = async (req, res) => {
         await Session.findOneAndUpdate({ tokenHash: refreshToken }, { isRevoked: true });
     }
     res.clearCookie('accessToken');
-    res.clearCookie('refreshToken', process.env.NODE_ENV === 'production' ? { domain: '.gymkaana.com' } : {});
+    res.clearCookie('refreshToken');
     res.json({ message: 'Logged out successfully' });
 };
 
