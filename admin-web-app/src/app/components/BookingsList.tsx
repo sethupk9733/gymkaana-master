@@ -87,8 +87,8 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
           <button
             onClick={() => setActiveFilter("upcoming")}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeFilter === "upcoming"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
           >
             Upcoming
@@ -96,8 +96,8 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
           <button
             onClick={() => setActiveFilter("active")}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeFilter === "active"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
           >
             Active
@@ -105,8 +105,8 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
           <button
             onClick={() => setActiveFilter("cancelled")}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeFilter === "cancelled"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
           >
             Cancelled
@@ -127,7 +127,7 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
-                    {String(booking.user || "?").charAt(0).toUpperCase()}
+                    {booking.user.charAt(0)}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-gray-900">{booking.user}</h3>

@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
 import { AnimatePresence } from "motion/react";
 import { User as UserIcon } from "lucide-react";
-import { fetchProfile, checkSession } from "./lib/api";
+import { fetchProfile } from "./lib/api";
 
 // Lazy loaded components
 const SplashScreen = lazy(() => import("./components/SplashScreen").then(m => ({ default: m.SplashScreen })));
@@ -23,7 +23,6 @@ const ContactUsScreen = lazy(() => import("./components/ContactUsScreen").then(m
 const CareersScreen = lazy(() => import("./components/CareersScreen").then(m => ({ default: m.CareersScreen })));
 const TermsScreen = lazy(() => import("./components/TermsScreen").then(m => ({ default: m.TermsScreen })));
 const PartnerScreen = lazy(() => import("./components/PartnerScreen").then(m => ({ default: m.PartnerScreen })));
-const RefundScreen = lazy(() => import("./components/RefundScreen").then(m => ({ default: m.RefundScreen })));
 
 type Screen =
   | "splash"
@@ -42,57 +41,39 @@ type Screen =
   | "contact"
   | "careers"
   | "terms"
-  | "partner"
-  | "refund";
+  | "partner";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
-    // Check for deep links immediately during state initialization
-    const params = new URLSearchParams(window.location.search);
-    const screenParam = params.get('screen') as Screen;
-    const actionParam = params.get('action');
-
-    if (actionParam === 'login') return 'login';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund'].includes(screenParam)) {
-      return screenParam;
-    }
-    return "splash";
-  });
+  const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
   const [selectedStartDate, setSelectedStartDate] = useState<string | null>(null);
   const [recentBooking, setRecentBooking] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('gymkaana_token'));
   const [pendingScreen, setPendingScreen] = useState<Screen | null>(null);
   const [initialDiscipline, setInitialDiscipline] = useState<string | null>(null);
   const [profileInitialView, setProfileInitialView] = useState<any>('main');
 
   const [initialSearch, setInitialSearch] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Handle action parameters (like login)
-    const params = new URLSearchParams(window.location.search);
-    const actionParam = params.get('action');
-    if (actionParam === 'login') {
-      setCurrentScreen('login');
-    }
-  }, []);
-
   const loadProfile = async () => {
-    try {
-      const user = await checkSession();
-      if (user) {
+    const token = localStorage.getItem('gymkaana_token');
+    if (token) {
+      try {
         const profile = await fetchProfile();
         setUserProfile(profile);
         setIsAuthenticated(true);
+        try {
+          localStorage.setItem('gymkaana_user', JSON.stringify(profile));
+        } catch (e) {
+          console.warn("Storage quota exceeded for gymkaana_user", e);
+        }
+      } catch (err) {
+        console.error("Profile fetch failed:", err);
+        setIsAuthenticated(false);
+        localStorage.removeItem('gymkaana_token');
       }
-    } catch (err) {
-      console.error("Profile fetch failed:", err);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -100,62 +81,17 @@ export default function App() {
     loadProfile();
   }, []);
 
-  // Synchronize URL with active screen state
+  // Global scroll-to-top reset on screen navigation
   useEffect(() => {
-    if (currentScreen === 'splash') return;
-    
-    const url = new URL(window.location.href);
-    if (currentScreen === 'home') {
-      url.searchParams.delete('screen');
-    } else {
-      url.searchParams.set('screen', currentScreen);
-    }
-    
-    // Maintain Gym context if applicable
-    if (selectedGymId && (currentScreen === 'details' || currentScreen === 'membership_plans' || currentScreen === 'checkout')) {
-      url.searchParams.set('gym', selectedGymId);
-    } else {
-      url.searchParams.delete('gym');
-    }
-
-    if (window.location.search !== url.search) {
-      window.history.pushState({ screen: currentScreen }, '', url.toString());
-    }
-  }, [currentScreen, selectedGymId]);
-
-  // Handle browser back/forward buttons
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      const params = new URLSearchParams(window.location.search);
-      const screenParam = params.get('screen') as Screen;
-      const gymParam = params.get('gym');
-
-      if (screenParam) {
-        setCurrentScreen(screenParam);
-        if (gymParam) setSelectedGymId(gymParam);
-      } else {
-        setCurrentScreen('home');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  useEffect(() => {
-    // Global scroll-to-top reset on screen navigation
+    // Reset scroll on every screen change
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [currentScreen]);
 
-  const handleLoginSuccess = async (isNew?: boolean) => {
+  const handleLoginSuccess = async () => {
     setIsAuthenticated(true);
     await loadProfile();
 
-    if (isNew) {
-      setProfileInitialView('edit');
-      setCurrentScreen('profile');
-      setPendingScreen(null);
-    } else if (pendingScreen) {
+    if (pendingScreen) {
       setCurrentScreen(pendingScreen);
       setPendingScreen(null);
     } else {
@@ -341,33 +277,22 @@ export default function App() {
           />
         );
 
-      case "refund":
-        return (
-          <RefundScreen
-            onBack={() => setCurrentScreen("home")}
-          />
-        );
-
       default:
         return <SplashScreen onComplete={() => setCurrentScreen("home")} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-primary-foreground">
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-black selection:text-white">
       {/* Top Navigation Bar */}
       {currentScreen !== 'splash' && currentScreen !== 'login' && (
-        <header className="fixed top-0 left-0 right-0 h-20 bg-background/80 backdrop-blur-md border-b border-border z-[50] flex items-center justify-between px-6 lg:px-12">
+        <header className="fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 z-[50] flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center gap-12">
             <div
               onClick={() => setCurrentScreen('home')}
               className="cursor-pointer group"
             >
-              <h1 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center group-hover:scale-105 transition-all duration-300 -skew-x-12">
-                <span className="text-secondary">GYM</span>
-                <span className="text-primary italic ml-0.5">KAA</span>
-                <span className="text-secondary">NA</span>
-              </h1>
+              <h1 className="text-2xl font-black tracking-tighter italic uppercase group-hover:scale-105 transition-transform">Gymkaana</h1>
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
@@ -393,7 +318,7 @@ export default function App() {
                   setPendingScreen('profile');
                   setCurrentScreen('login');
                 }}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-full text-sm font-bold uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                className="px-6 py-2 bg-black text-white rounded-full text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors"
               >
                 Login
               </button>
@@ -445,9 +370,6 @@ export default function App() {
               }}
               onPartnerClick={() => {
                 setCurrentScreen("partner");
-              }}
-              onRefundClick={() => {
-                setCurrentScreen("refund");
               }}
             />
           )}

@@ -1,16 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/bookingController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', protect, admin, bookingController.getAllBookings);
-router.get('/my', protect, bookingController.getMyBookings);
-router.get('/gym/:gymId', protect, bookingController.getBookingsByGym);
-router.post('/', protect, bookingController.createBooking);
+// Create booking - with auth from localStorage userId
+router.post('/', bookingController.createBooking);
 
-// Refund Routes
-router.put('/:id/request-refund', protect, bookingController.requestRefund);
-router.put('/:id/approve-refund', protect, admin, bookingController.approveRefund);
-router.put('/:id/reject-refund', protect, admin, bookingController.rejectRefund);
+// All other routes require authentication
+router.use(protect);
+
+router.get('/', bookingController.getAllBookings);
+router.get('/my', bookingController.getMyBookings);
+router.get('/gym/:gymId', bookingController.getBookingsByGym);
+router.get('/:id', bookingController.getBookingById);
+router.put('/:id/cancel', bookingController.cancelBooking);
+router.put('/:id/update-date', bookingController.updateBookingDate);
+router.post('/verify-qr', bookingController.verifyBooking);
 
 module.exports = router;

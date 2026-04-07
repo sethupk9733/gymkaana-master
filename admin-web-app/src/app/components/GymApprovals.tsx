@@ -1,366 +1,310 @@
-import { useState, useEffect, useMemo } from 'react';
-import { 
-    Check, X, Building2, FileText, User, Phone, ShieldCheck, 
-    Users, Landmark, Award, Shield, Mail, AlertCircle, 
-    Loader2, Eye, RefreshCcw 
-} from "lucide-react";
-import { fetchGyms, updateGymStatus } from '../lib/api';
+import { useState } from 'react';
+import { Check, X, Building2, MapPin, Eye, FileText, User, Phone, ShieldCheck, Dumbbell, Users, Landmark, Award, Shield, Mail, ArrowUpRight, ChevronRight, FileCheck, AlertCircle, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
-// --- Types ---
-interface Documentation {
-    trading: string;
-    fire: string;
-    insurance: string;
-}
-
-interface GymRecord {
-    _id: string;
+interface GymDetail {
+    id: number;
     name: string;
-    ownerName: string;
+    owner: string;
     ownerPhone: string;
     ownerEmail: string;
+    location: string;
     address: string;
-    status: string;
+    joined: string;
+    status: 'pending' | 'approved' | 'rejected';
     gstNo: string;
     panNo: string;
     description: string;
     facilities: string[];
-    displayImage: string;
-    documentation: Documentation;
-    createdAt: string;
+    images: string[];
+    documentation: {
+        tradingLicense: string;
+        fireSafety: string;
+        insurancePolicy: string;
+        bankStatement: string;
+    };
+    staffCount: number;
+    areaSize: string;
+    establishedYear: string;
 }
 
-const FALLBACK_IMG = "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1000";
-
 export function GymApprovals() {
-    const [gyms, setGyms] = useState<GymRecord[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [auditTarget, setAuditTarget] = useState<GymRecord | null>(null);
+    const [selectedGym, setSelectedGym] = useState<GymDetail | null>(null);
+    const [gyms, setGyms] = useState<GymDetail[]>([
+        {
+            id: 1,
+            name: "Iron Pump Gym",
+            owner: "John Doe",
+            ownerPhone: "+91 98765 43210",
+            ownerEmail: "john@ironpump.com",
+            location: "Downtown, City",
+            address: "123, Fitness Lane, Downtown, Bangalore - 560001",
+            joined: "2 mins ago",
+            status: "pending",
+            gstNo: "29AAAAA0000A1Z5",
+            panNo: "ABCDE1234F",
+            description: "A premium fitness facility with state-of-the-art equipment and certified trainers. We focus on strength training and community building.",
+            facilities: ["Weights", "Cardio", "Locker Room", "Steam Bath", "Personal Training"],
+            images: ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48", "https://images.unsplash.com/photo-1540497077202-7c8a3999166f"],
+            documentation: {
+                tradingLicense: "LIC-882910-X",
+                fireSafety: "FIRE-2900-B",
+                insurancePolicy: "INS-9901-P",
+                bankStatement: "STMT-2026-JAN"
+            },
+            staffCount: 12,
+            areaSize: "5500 sqft",
+            establishedYear: "2018"
+        },
+        {
+            id: 2,
+            name: "Yoga Zen Center",
+            owner: "Sarah Smith",
+            ownerPhone: "+91 98765 00000",
+            ownerEmail: "sarah@yogazen.com",
+            location: "Westside",
+            address: "45, Serenity Row, Westside, Bangalore - 560032",
+            joined: "10 mins ago",
+            status: "pending",
+            gstNo: "29BBBBB1111B1Z6",
+            panNo: "FGHIJ5678K",
+            description: "Find your inner peace with our expert yoga sessions. We offer Hatha, Vinyasa, and Ashtanga yoga styles.",
+            facilities: ["Yoga Mats", "Meditation Hall", "Organic Juice Bar", "Aroma Therapy"],
+            images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b", "https://images.unsplash.com/photo-1552196562-790757a41925"],
+            documentation: {
+                tradingLicense: "LIC-112233-Y",
+                fireSafety: "FIRE-3322-Z",
+                insurancePolicy: "INS-4455-Q",
+                bankStatement: "STMT-2026-FEB"
+            },
+            staffCount: 8,
+            areaSize: "3200 sqft",
+            establishedYear: "2021"
+        },
+    ]);
 
-    const loadData = async () => {
-        console.log("🛠️ GymApprovals: Initiating secure data sync...");
-        setLoading(true);
-        setError(null);
-        try {
-            const rawData = await fetchGyms();
-            console.log("📦 GymApprovals: Raw payload received", rawData);
-            
-            // Defensive: Extract list from various potential API response formats
-            let list: any[] = [];
-            if (Array.isArray(rawData)) {
-                list = rawData;
-            } else if (rawData && typeof rawData === 'object' && rawData !== null) {
-                // Check common wrapper keys used in the backend
-                list = (rawData as any).gyms || (rawData as any).data || (rawData as any).items || [];
-            }
-
-            if (!Array.isArray(list)) {
-                console.warn("⚠️ GymApprovals: Payload detected but failed to extract list. Defaulting to empty array.");
-                list = [];
-            }
-
-            // Mapper with cross-platform field normalization and crash protection
-            const sanitized: GymRecord[] = list.map((item, idx) => {
-                try {
-                    if (!item || typeof item !== 'object') {
-                        console.warn(`⚠️ GymApprovals: Malformed record at index ${idx}`, item);
-                        return null;
-                    }
-
-                    // Multi-source image detection with safe array access
-                    let img = FALLBACK_IMG;
-                    const images = item?.images;
-                    if (Array.isArray(images) && images.length > 0) {
-                        img = String(images[0] || FALLBACK_IMG);
-                    } else if (item?.image) {
-                        img = String(item.image);
-                    } else if (typeof item?.displayImage === 'string') {
-                        img = item.displayImage;
-                    }
-
-                    // Strict normalization of nested owner details (prevents deeply-nested undefined crashes)
-                    const owner = item?.ownerId || item?.owner || {};
-
-                    return {
-                        _id: String(item?._id || item?.id || `gym-record-${idx}`),
-                        name: String(item?.name || "UNNAMED HUB").toUpperCase(),
-                        ownerName: String(owner?.name || "IDENTITY PROTECTED"),
-                        ownerPhone: String(owner?.phoneNumber || owner?.phone || item?.phone || "NOT LINKED"),
-                        ownerEmail: String(owner?.email || item?.email || "NOT LINKED"),
-                        address: String(item?.address || "NO ADDRESS DATA"),
-                        status: String(item?.status || "pending").toLowerCase(),
-                        gstNo: String(item?.gstNo || "PENDING"),
-                        panNo: String(item?.panNo || "PENDING"),
-                        description: String(item?.description || "No description provided for this venue."),
-                        facilities: Array.isArray(item?.facilities) ? item.facilities.map((f: any) => String(f || "")) : [],
-                        displayImage: img,
-                        documentation: {
-                            trading: String(item?.documentation?.tradingLicense || item?.tradingLicense || "MISSING"),
-                            fire: String(item?.documentation?.fireSafety || item?.fireSafety || "MISSING"),
-                            insurance: String(item?.documentation?.insurancePolicy || item?.insurancePolicy || "MISSING")
-                        },
-                        createdAt: item?.createdAt ? new Date(item.createdAt).toLocaleDateString() : "RECENT"
-                    };
-                } catch (e) {
-                    console.error("❌ GymApprovals Mapper CRASH at index", idx, e);
-                    return null;
-                }
-            }).filter((p): p is GymRecord => p !== null);
-
-            console.log("✅ GymApprovals: Sanitized Queue Loaded", sanitized.length);
-            setGyms(sanitized);
-        } catch (err: any) {
-            console.error("🚨 GymApprovals: CRITICAL FETCH ERROR", err);
-            setError(err.message || "Institutional link failed. Intelligence database offline.");
-        } finally {
-            setLoading(false);
+    const handleAction = (id: number, action: 'approve' | 'reject') => {
+        setGyms(gyms.map(g => g.id === id ? { ...g, status: action === 'approve' ? 'approved' : 'rejected' } : g));
+        if (selectedGym?.id === id) {
+            setSelectedGym(null);
         }
     };
-
-    useEffect(() => { loadData(); }, []);
-
-    // Filter queue with safety guards
-    const queue = useMemo(() => {
-        if (!Array.isArray(gyms)) {
-            console.warn("⚠️ GymApprovals: gyms state lost array integrity. Re-initializing.");
-            return [];
-        }
-        return gyms.filter(p => p && (p.status === 'pending' || p.status === 'approved' || p.status === ''));
-    }, [gyms]);
-
-    const performAction = async (id: string, action: 'authorize' | 'terminate') => {
-        if (!id) return;
-        try {
-            const nextStatus = action === 'authorize' ? 'active' : 'rejected';
-            await updateGymStatus(id, nextStatus);
-            setGyms(prev => {
-                if (!Array.isArray(prev)) return [];
-                return prev.map(p => p?._id === id ? { ...p, status: nextStatus } : p);
-            });
-            setAuditTarget(null);
-        } catch (err: any) {
-            console.error("Action Protocol Error:", err);
-            alert("Authorization failure: " + (err.message || "Unknown protocol error"));
-        }
-    };
-
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center p-32 gap-6 bg-gray-50/50 rounded-[64px] m-8 border border-gray-100 font-sans shadow-inner">
-            <Loader2 className="w-16 h-16 animate-spin text-black" />
-            <p className="font-black uppercase tracking-[0.5em] text-[10px] text-gray-400">Syncing Intelligence Matrix...</p>
-        </div>
-    );
-
-    if (error) return (
-        <div className="p-20 flex items-center justify-center h-full text-center font-sans">
-            <div className="bg-white p-16 rounded-[48px] border-2 border-red-50 text-center max-w-lg shadow-2xl">
-                <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-8" />
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900 mb-4">Link Termination</h3>
-                <p className="text-gray-400 font-bold text-xs uppercase tracking-widest leading-loose mb-10">{error}</p>
-                <button onClick={loadData} className="px-12 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-widest flex items-center gap-4 mx-auto hover:bg-red-600 transition-all shadow-xl">
-                    <RefreshCcw className="w-4 h-4" /> Re-Establish Protocol
-                </button>
-            </div>
-        </div>
-    );
 
     return (
-        <div className="p-10 max-w-7xl mx-auto space-y-16 pb-32 font-sans overflow-x-hidden">
-            <header className="flex flex-col md:flex-row justify-between items-end gap-10">
+        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h2 className="text-5xl font-black text-gray-900 tracking-tighter uppercase italic leading-none">Security Vetting</h2>
-                    <div className="flex items-center gap-4 mt-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic flex items-center gap-2">Network Integrity Center</p>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#A3E635] animate-pulse" />
-                    </div>
+                    <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Institutional Onboarding</h2>
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1">Vetting facility standards & legal documentation</p>
                 </div>
-                <div className="bg-black px-10 py-6 rounded-[32px] text-white flex items-center gap-6 shadow-[0_32px_64px_rgba(0,0,0,0.2)]">
-                    <div className="text-right">
-                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Queue Status</p>
-                        <p className="text-4xl font-black italic tracking-tighter leading-none">{Array.isArray(queue) ? queue.length : 0}</p>
+                <div className="flex gap-4">
+                    <div className="bg-emerald-50 px-6 py-4 rounded-3xl border border-emerald-100 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white">
+                            <FileCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Requests</p>
+                            <p className="text-xl font-black italic tracking-tighter">{gyms.filter(g => g.status === 'pending').length}</p>
+                        </div>
                     </div>
-                    <div className="w-px h-10 bg-white/10" />
-                    <Building2 className="w-8 h-8 text-[#A3E635]" />
                 </div>
             </header>
 
-            {!Array.isArray(queue) || queue.length === 0 ? (
-                <div className="bg-white p-32 rounded-[72px] border-2 border-dashed border-gray-100 text-center space-y-8 shadow-sm">
-                    <ShieldCheck className="w-24 h-24 text-gray-100 mx-auto" />
-                    <div>
-                        <h4 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900">Perimeter Secured</h4>
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-3 italic">All hub nodes are authorized or outside active duty.</p>
-                    </div>
-                    <button onClick={loadData} className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 mx-auto">
-                        <RefreshCcw className="w-4 h-4" /> Refresh Status
-                    </button>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-10">
-                    {queue.map((partner) => {
-                        if (!partner) return null;
-                        return (
-                            <div 
-                                key={partner?._id || `partner-${Math.random()}`}
-                                onClick={() => setAuditTarget(partner)}
-                                className="bg-white p-10 rounded-[64px] border border-gray-100 hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all cursor-pointer group flex flex-col lg:flex-row gap-12 items-center relative overflow-hidden"
+            <div className="grid grid-cols-1 gap-6">
+                {gyms.filter(g => g.status === 'pending').map((gym) => (
+                    <motion.div
+                        key={gym.id}
+                        layoutId={`gym-${gym.id}`}
+                        onClick={() => setSelectedGym(gym)}
+                        className="bg-white border border-gray-100 rounded-[48px] p-8 shadow-sm hover:shadow-2xl transition-all cursor-pointer group flex flex-col md:flex-row gap-8 items-center"
+                    >
+                        <div className="w-40 h-40 rounded-3xl overflow-hidden bg-gray-50 flex-shrink-0 relative">
+                            <img src={gym.images[0]} alt={gym.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                        </div>
+
+                        <div className="flex-1 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <h3 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900">{gym.name}</h3>
+                                <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-3 py-1.5 rounded-full border border-yellow-100 uppercase tracking-widest">Awaiting Verification</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <MiniStat label="Owner Name" value={gym.owner} icon={User} />
+                                <MiniStat label="GST Number" value={gym.gstNo} icon={FileText} />
+                                <MiniStat label="Area Size" value={gym.areaSize} icon={Building2} />
+                                <MiniStat label="Total Staff" value={`${gym.staffCount} Pro`} icon={Users} />
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedGym(gym); }}
+                                className="px-8 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 transition-all hover:bg-gray-800 shadow-xl shadow-black/10"
                             >
-                                <div className="w-48 h-48 rounded-[48px] overflow-hidden bg-gray-50 shrink-0 border-4 border-white shadow-xl">
-                                    <img src={partner?.displayImage || FALLBACK_IMG} alt="Partner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                                </div>
-                                <div className="flex-1 space-y-6">
-                                    <div className="flex items-center gap-6">
-                                        <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{partner?.name || "UNNAMED HUB"}</h3>
-                                        <span className="px-5 py-2 bg-amber-50 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">Audit Req.</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                                        <InfoBox icon={User} label="Principal" value={partner?.ownerName} />
-                                        <InfoBox icon={Landmark} label="Entity ID" value={partner?.gstNo} />
-                                        <InfoBox icon={Users} label="Protocol" value="Standard" />
-                                        <InfoBox icon={Award} label="Status" value="Pending" />
-                                    </div>
-                                </div>
-                                <div className="px-12 py-6 bg-black text-white rounded-[32px] font-black text-xs uppercase tracking-widest flex items-center gap-4 shadow-2xl group-hover:bg-gray-800 transition-all">
-                                    <Eye className="w-5 h-5 text-[#A3E635]" /> Inspect
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                                <Eye className="w-4 h-4 text-primary" /> Full Audit
+                            </button>
+                            <p className="text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">{gym.joined}</p>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
 
-            {/* --- Audit Interaction Layer --- */}
-            {auditTarget && (
-                <div className="fixed inset-0 z-[200] bg-black/98 p-6 flex items-center justify-center overflow-y-auto backdrop-blur-3xl font-sans">
-                    <div className="bg-white w-full max-w-6xl rounded-[80px] overflow-hidden relative shadow-[0_50px_150px_rgba(0,0,0,0.5)] border border-white/5 flex flex-col xl:flex-row max-h-[92vh]">
-                        <button 
-                            onClick={() => setAuditTarget(null)} 
-                            title="Close Audit"
-                            className="absolute top-10 right-10 p-6 bg-gray-50 hover:bg-gray-100 rounded-[32px] transition-all z-[210] shadow-sm"
+            {/* Verification Detail Modal */}
+            <AnimatePresence>
+                {selectedGym && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 100 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 100 }}
+                            className="bg-white w-full max-w-6xl h-[92vh] rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)] border border-white/20"
                         >
-                            <X className="w-8 h-8 text-black" />
-                        </button>
+                            <button
+                                onClick={() => setSelectedGym(null)}
+                                className="absolute top-10 right-10 p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all z-20 shadow-sm"
+                                title="Close Audit"
+                            >
+                                <X className="w-8 h-8 text-black" />
+                            </button>
 
-                        <div className="xl:w-[450px] bg-gray-950 p-16 text-white flex flex-col shrink-0">
-                            <div className="space-y-12">
-                                <div className="aspect-square w-full rounded-[56px] overflow-hidden border-4 border-white/5 shadow-2xl">
-                                    <img src={auditTarget?.displayImage || FALLBACK_IMG} className="w-full h-full object-cover" alt="Venue" />
-                                </div>
-                                <div>
-                                    <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-tight mb-8">{auditTarget?.name || "NULL_ENTITY"}</h3>
-                                    <div className="inline-flex items-center gap-4 px-6 py-2.5 bg-white/5 rounded-full border border-white/10">
-                                        <div className="w-2 h-2 rounded-full bg-[#A3E635] animate-pulse" />
-                                        <p className="text-[10px] font-black text-[#A3E635] uppercase tracking-widest">Live Audit Tracking</p>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 h-full">
+                                    {/* Left: Branding & Specs */}
+                                    <div className="lg:col-span-4 bg-gray-900 p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 blur-[90px] rounded-full" />
+
+                                        <div className="relative z-10 space-y-12">
+                                            <div className="aspect-square w-full rounded-[48px] overflow-hidden border-4 border-white/5 shadow-2xl">
+                                                <img src={selectedGym.images[0]} className="w-full h-full object-cover" alt="Gym" />
+                                            </div>
+
+                                            <div>
+                                                <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">{selectedGym.name}</h3>
+                                                <p className="text-xs font-bold text-primary uppercase tracking-[0.3em]">Institutional Grade Verification</p>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <SideInfoLine label="Entity Type" value="Partnership Firm" icon={Building2} />
+                                                <SideInfoLine label="Est. Year" value={selectedGym.establishedYear} icon={Landmark} />
+                                                <SideInfoLine label="Verification Level" value="Level 4 (High)" icon={Award} />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-12 border-t border-white/10 relative z-10">
+                                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Official Contact</p>
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="p-3 bg-white/10 rounded-xl"><Mail className="w-5 h-5 text-primary" /></div>
+                                                <p className="font-bold text-sm">{selectedGym.ownerEmail}</p>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-white/10 rounded-xl"><Phone className="w-5 h-5 text-primary" /></div>
+                                                <p className="font-bold text-sm">{selectedGym.ownerPhone}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-8 pt-8 border-t border-white/10">
-                                    <SideStat icon={User} label="Principal" value={auditTarget?.ownerName} />
-                                    <SideStat icon={Mail} label="Matrix" value={auditTarget?.ownerEmail} />
-                                    <SideStat icon={Phone} label="Comms" value={auditTarget?.ownerPhone} />
+
+                                    {/* Right: Docs & Compliance */}
+                                    <div className="lg:col-span-8 p-16 space-y-12 bg-white">
+                                        <section>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
+                                                <ShieldCheck className="w-4 h-4" /> Legal Compliance Portfolio
+                                            </h4>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <DocCard label="Trading License" id={selectedGym.documentation.tradingLicense} status="VERIFIED" icon={FileText} />
+                                                <DocCard label="NoC - Fire Safety" id={selectedGym.documentation.fireSafety} status="EXPIRES 2027" icon={Shield} />
+                                                <DocCard label="GST Verification" id={selectedGym.gstNo} status="ACTIVE" icon={Landmark} />
+                                                <DocCard label="Insurance Policy" id={selectedGym.documentation.insurancePolicy} status="GOLD COVER" icon={ShieldCheck} />
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
+                                                <Dumbbell className="w-4 h-4" /> Facility Profile
+                                            </h4>
+                                            <p className="text-lg font-medium text-gray-600 leading-relaxed italic mb-8">
+                                                "{selectedGym.description}"
+                                            </p>
+                                            <div className="flex flex-wrap gap-3">
+                                                {selectedGym.facilities.map((fac, i) => (
+                                                    <span key={i} className="px-6 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-gray-600 flex items-center gap-2">
+                                                        <Check className="w-4 h-4 text-emerald-500" /> {fac}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        <section className="bg-red-50 p-10 rounded-[48px] border border-red-100">
+                                            <div className="flex items-center gap-4 mb-6">
+                                                <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                                                    <AlertCircle className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xl font-black uppercase italic tracking-tighter text-red-900 line-none">Executive Decision</h4>
+                                                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Final onboarding authorization required</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4">
+                                                <button
+                                                    onClick={() => handleAction(selectedGym.id, 'reject')}
+                                                    className="px-10 py-5 bg-white border border-red-200 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-sm hover:bg-red-500 hover:text-white transition-all flex items-center gap-3"
+                                                >
+                                                    <Trash2 className="w-5 h-5" /> Deny Access
+                                                </button>
+                                                <button
+                                                    onClick={() => handleAction(selectedGym.id, 'approve')}
+                                                    className="flex-1 py-5 bg-black text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-black/20 hover:bg-gray-800 transition-all flex items-center justify-center gap-3"
+                                                >
+                                                    <Check className="w-5 h-5 text-primary" /> Authorize & Launch Venue
+                                                </button>
+                                            </div>
+                                        </section>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="flex-1 p-20 space-y-20 bg-white overflow-y-auto custom-scrollbar">
-                            <section className="space-y-12">
-                                <h4 className="text-[12px] font-black uppercase tracking-[0.5em] text-gray-400">Compliance Dossier</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <FileCard icon={FileText} label="Trading License" id={auditTarget?.documentation?.trading} />
-                                    <FileCard icon={Shield} label="Fire Safety Index" id={auditTarget?.documentation?.fire} />
-                                    <FileCard icon={Landmark} label="Direct Tax (GST)" id={auditTarget?.gstNo} />
-                                    <FileCard icon={Award} label="Legal Entity (PAN)" id={auditTarget?.panNo} />
-                                </div>
-                            </section>
-
-                            <section className="space-y-12">
-                                <h4 className="text-[12px] font-black uppercase tracking-[0.5em] text-gray-400">Institutional Dossier</h4>
-                                <p className="text-3xl font-black italic text-gray-900 leading-tight border-l-[12px] border-[#A3E635] pl-12 py-4">
-                                    "{auditTarget?.description || "No classification provided for this hub."}"
-                                </p>
-                                <div className="flex flex-wrap gap-4">
-                                    {Array.isArray(auditTarget?.facilities) && auditTarget.facilities.map((f, i) => (
-                                        <span key={i} className="px-10 py-5 bg-gray-50 border border-gray-100 rounded-[32px] font-black text-[11px] uppercase tracking-widest text-black shadow-sm">
-                                            {String(f || "UNKNOWN").toUpperCase()}
-                                        </span>
-                                    ))}
-                                </div>
-                            </section>
-
-                            <section className="bg-black p-16 rounded-[72px] text-white space-y-12 relative overflow-hidden shadow-2xl">
-                                <div className="absolute top-0 right-0 w-96 h-96 bg-[#A3E635]/20 blur-[120px] rounded-full" />
-                                <div className="relative z-10 flex items-center gap-10">
-                                    <div className="w-24 h-24 bg-white/10 rounded-[40px] flex items-center justify-center text-[#A3E635] shadow-2xl">
-                                        <ShieldCheck className="w-12 h-12" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-4xl font-black uppercase italic tracking-tighter">Clearance Console</h4>
-                                        <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mt-3">Execute final authorization sequence for hub network access.</p>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-                                    <button 
-                                        onClick={() => performAction(auditTarget?._id || "", 'terminate')} 
-                                        className="py-8 bg-white/5 border border-white/10 rounded-[40px] font-black text-xs uppercase tracking-widest hover:bg-red-600 hover:border-red-600 transition-all shadow-sm"
-                                    >
-                                        Deny Protocol
-                                    </button>
-                                    <button 
-                                        onClick={() => performAction(auditTarget?._id || "", 'authorize')} 
-                                        className="py-8 bg-[#A3E635] text-black rounded-[40px] font-black text-xs uppercase tracking-widest shadow-[0_24px_50px_rgba(163,230,53,0.4)] hover:scale-[1.02] transition-all"
-                                    >
-                                        Authorize Node
-                                    </button>
-                                </div>
-                            </section>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-// --- Internal Utilities ---
-function InfoBox({ icon: Icon, label, value }: { icon: any, label: string, value: any }) {
+function MiniStat({ label, value, icon: Icon }: any) {
     return (
-        <div className="space-y-2">
+        <div className="space-y-1">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                {Icon && <Icon className="w-4 h-4" />} {label}
+                <Icon className="w-3 h-3" /> {label}
             </p>
-            <p className="font-black italic text-gray-900 text-[12px] uppercase tracking-tighter truncate">{String(value || "N/A")}</p>
+            <p className="font-black italic text-gray-900 uppercase text-xs tracking-tight">{value}</p>
         </div>
-    );
+    )
 }
 
-function SideStat({ icon: Icon, label, value }: { icon: any, label: string, value: any }) {
+function SideInfoLine({ label, value, icon: Icon }: any) {
     return (
-        <div className="flex items-center gap-6 group">
-            <div className="w-14 h-14 bg-white/5 rounded-[24px] flex items-center justify-center text-[#A3E635] group-hover:bg-[#A3E635] group-hover:text-black transition-all">
-                {Icon && <Icon className="w-6 h-6" />}
-            </div>
+        <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/10 rounded-2xl"><Icon className="w-5 h-5 text-primary" /></div>
             <div>
-                <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">{label}</p>
-                <p className="font-bold text-base text-white truncate max-w-[200px]">{String(value || "NOT LINKED")}</p>
+                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">{label}</p>
+                <p className="font-bold text-sm text-white">{value}</p>
             </div>
         </div>
-    );
+    )
 }
 
-function FileCard({ icon: Icon, label, id }: { icon: any, label: string, id: any }) {
+function DocCard({ label, id, status, icon: Icon }: any) {
     return (
-        <div className="p-10 bg-gray-50 border-2 border-transparent rounded-[56px] hover:border-black hover:bg-white transition-all group shadow-sm">
-            <div className="flex justify-between items-start mb-10">
-                <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center text-gray-300 group-hover:text-black transition-colors shadow-sm">
-                    {Icon && <Icon className="w-7 h-7" />}
+        <div className="p-6 bg-gray-50 border border-transparent rounded-[32px] hover:bg-white hover:border-gray-100 hover:shadow-xl transition-all group">
+            <div className="flex justify-between items-start mb-6">
+                <div className="p-3 bg-white rounded-xl shadow-sm text-gray-400 group-hover:text-black transition-colors">
+                    <Icon className="w-5 h-5" />
                 </div>
-                <div className="flex items-center gap-3 px-5 py-2 bg-emerald-50 rounded-2xl border border-emerald-100">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none">Verified</span>
-                </div>
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest rounded-lg">{status}</span>
             </div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">{label}</p>
-            <p className="font-black italic text-gray-900 text-lg tracking-tighter truncate">{String(id || "MISSING")}</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className="font-black italic text-gray-900 text-sm tracking-tight">{id}</p>
         </div>
-    );
+    )
 }

@@ -1,14 +1,15 @@
-import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Loader2, Landmark, X } from "lucide-react";
-import { useState, useEffect, Component, ReactNode, ErrorInfo } from "react";
-import { fetchGyms, fetchDashboardStats } from "../lib/api";
+import { TrendingUp, Users, Building2, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, MoreVertical, Ban, MoreHorizontal, Search, Info, Target, MousePointer2, BarChart3, PieChart, LineChart, Inbox, HelpCircle, Briefcase, Zap, Globe, CheckSquare, Landmark, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect } from "react";
+import { fetchDashboardStats } from "../lib/api";
 
 interface GymMetric {
     id: string;
     name: string;
     logo: string;
-    revenue: string;
-    platformIncome: string;
-    contributionScore: number;
+    revenue: string;           // Total money gym MADE from users
+    platformIncome: string;    // Total money Gymkaana MADE from this gym (15% commission)
+    contributionScore: number; // Percentage of total platform revenue
     growth: string;
     members: number;
     retention: string;
@@ -18,375 +19,629 @@ interface GymMetric {
     yieldPerMember: string;
 }
 
-interface DashboardErrorBoundaryProps {
-    children: ReactNode;
-}
-
-interface DashboardErrorBoundaryState {
-    hasError: boolean;
-    error: Error | null;
-}
-
-class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, DashboardErrorBoundaryState> {
-    constructor(props: DashboardErrorBoundaryProps) {
-        super(props);
-        this.state = { hasError: false, error: null };
-    }
-
-    static getDerivedStateFromError(error: Error) {
-        console.error("📊 Dashboard Error Boundary caught:", error);
-        return { hasError: true, error };
-    }
-
-    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("📊 Dashboard componentDidCatch:", error, errorInfo);
-    }
-
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className="p-20 text-center space-y-4">
-                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
-                    <h2 className="text-2xl font-black uppercase text-red-900">Dashboard Rendering Error</h2>
-                    <code className="block p-4 bg-gray-900 text-primary rounded-xl text-xs overflow-auto break-words">{this.state.error?.message}</code>
-                    <p className="text-xs text-gray-500">{this.state.error?.stack}</p>
-                    <button onClick={() => window.location.reload()} className="px-8 py-3 bg-black text-white rounded-xl font-bold uppercase tracking-widest">Reload Page</button>
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
-
 export function AdminDashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedPerfGym, setSelectedPerfGym] = useState<GymMetric | null>(null);
-    const [activeView, setActiveView] = useState<'performance' | 'insights' | 'economics' | 'market_analysis'>('performance');
+    const [selectedOwner, setSelectedOwner] = useState<any>(null);
+    const [activeView, setActiveView] = useState<'performance' | 'insights' | 'economics' | 'market_analysis' | 'owners'>('performance');
+
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [gymsPerformance, setGymsPerformance] = useState<GymMetric[]>([]);
-    const [stats, setStats] = useState<any>(null);
-    const [renderError, setRenderError] = useState<string | null>(null);
 
-    useEffect(() => {
-        console.log("📊 AdminDashboard: Component mounted, initiating data sync...");
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const loadStats = async (ownerId?: string) => {
         setLoading(true);
         setError(null);
-        setRenderError(null);
         try {
-            console.log("📊 AdminDashboard: Fetching live market intelligence...");
-            const [gymsData, statsData] = await Promise.all([
-                fetchGyms().catch(e => { console.error("fetchGyms fail", e); return []; }),
-                fetchDashboardStats('all').catch(e => { console.error("fetchStats fail", e); return null; })
-            ]);
-
-            console.log("📊 AdminDashboard: Intelligence packages received", { gymsPresent: !!gymsData, statsPresent: !!statsData });
-
-            // Handle different variations of gymsData structure
-            let dataArray: any[] = [];
-            if (Array.isArray(gymsData)) {
-                dataArray = gymsData;
-            } else if (gymsData && typeof gymsData === 'object') {
-                dataArray = (gymsData as any).gyms || (gymsData as any).data || [];
-            }
-            
-            console.log("📊 AdminDashboard: Processing", dataArray.length, "items");
-
-            const mappedGyms: GymMetric[] = dataArray.map((g: any, index: number) => {
-                try {
-                    if (!g || typeof g !== 'object') return null;
-                    
-                    const revenueNum = Number(g.revenue || 0);
-                    const platformIncomeNum = Number(g.platformIncome || (revenueNum * 0.15));
-                    const safeName = String(g.name || "Unknown Hub");
-                    const nameFirstChar = safeName.charAt(0).toUpperCase() || "?";
-                    
-                    return {
-                        id: String(g._id || g.id || `gym-${index}`),
-                        name: safeName,
-                        logo: nameFirstChar,
-                        revenue: `Rs.${revenueNum.toLocaleString()}`,
-                        platformIncome: `Rs.${platformIncomeNum.toLocaleString()}`,
-                        contributionScore: Number(g.contributionScore || 0),
-                        growth: g.growth || "+0%",
-                        members: Number(g.members || 0),
-                        retention: g.retention || "100%",
-                        status: g.status === 'active' ? "High" : (g.status === 'pending' ? "Critical" : "Solid"),
-                        dailyActive: Number(g.dailyActive || 0),
-                        marketCategory: g.tier || g.marketCategory || 'Standard',
-                        yieldPerMember: `Rs.${Number(g.yieldPerMember || 0).toLocaleString()}`
-                    };
-                } catch (err: any) {
-                    console.error("📊 AdminDashboard: Mapper error at index", index, err);
-                    return null;
-                }
-            }).filter((x): x is GymMetric => x !== null);
-
-            setGymsPerformance(mappedGyms);
-            setStats(statsData);
-
-            console.log("📊 AdminDashboard: Live intelligence synchronized.");
-        } catch (err: any) {
-            console.error("📊 AdminDashboard: Global Failure", err);
-            setError(err.message || "Failed to synchronize intelligence.");
+            console.log('📊 AdminDashboard: Loading stats for owner:', ownerId);
+            const data = await fetchDashboardStats(ownerId);
+            console.log('📊 AdminDashboard: Stats loaded successfully:', data);
+            setStats(data);
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            console.error("❌ AdminDashboard: Failed to load dashboard stats:", errorMsg);
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredGyms = (gymsPerformance || []).filter(g =>
-        g && String(g.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+    // Load stats on component mount
+    useEffect(() => {
+        console.log('📊 AdminDashboard: Component mounted, loading initial stats');
+        loadStats();
+    }, []);
+
+    // Load stats when selectedOwner changes
+    useEffect(() => {
+        if (selectedOwner) {
+            console.log('📊 AdminDashboard: Selected owner changed, loading owner-specific stats');
+            loadStats(selectedOwner._id);
+        }
+    }, [selectedOwner]);
+
+    const gymsPerformance: GymMetric[] = stats?.gymPerformance?.map((g: any, i: number) => ({
+        id: g._id,
+        name: g.name,
+        logo: g.name?.charAt(0) || 'G',
+        revenue: `₹${(g.revenue || 0).toLocaleString()}`,
+        platformIncome: `₹${((g.revenue || 0) * 0.15).toLocaleString()}`,
+        contributionScore: stats.totalRevenue > 0 ? Math.round(((g.revenue || 0) / stats.totalRevenue) * 100) : 0,
+        growth: "+0%", // Placeholder as backend doesn't track historic delta yet
+        members: g.members || 0,
+        retention: "85%", // Placeholder
+        status: (g.revenue || 0) > 10000 ? "High" : "Solid",
+        dailyActive: Math.round((g.members || 0) * 0.3),
+        marketCategory: i % 2 === 0 ? 'Premium' : 'Boutique',
+        yieldPerMember: g.members > 0 ? `₹${Math.round((g.revenue || 0) / g.members)}` : "₹0"
+    })) || [];
+
+    const ownersPerformance = stats?.ownerPerformance || [];
+
+    const filteredGyms = gymsPerformance.filter(g =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[80vh] gap-6">
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                <p className="font-black uppercase tracking-[0.4em] text-[10px] text-gray-400">Synchronizing Command Center...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-8">
-                <div className="bg-red-50 border-2 border-red-100 p-12 rounded-[48px] text-center space-y-4 shadow-sm">
-                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-                    <h3 className="text-xl font-black text-red-900 uppercase italic">Connection Failure</h3>
-                    <p className="text-red-600 font-bold uppercase tracking-widest text-xs">{error}</p>
-                    <button onClick={loadData} className="px-8 py-3 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all">Retry Link</button>
-                </div>
-            </div>
-        );
-    }
+    const formatLakhs = (amt: number) => {
+        if (amt >= 100000) return `₹${(amt / 100000).toFixed(2)}L`;
+        return `₹${amt.toLocaleString()}`;
+    };
 
     return (
-        <DashboardErrorBoundary>
-            <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-black text-primary rounded-2xl shadow-xl shadow-black/10">
-                                <BarChart3 className="w-6 h-6" />
-                            </div>
-                            <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Institutional Command</h2>
+        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-black text-primary rounded-2xl shadow-xl shadow-black/10">
+                            <BarChart3 className="w-6 h-6" />
                         </div>
-                        <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                            <Zap className="w-3 h-3 text-primary" /> REAL-TIME MARKET INTELLIGENCE & REVENUE ATTRIBUTION
-                        </p>
+                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Institutional Command</h2>
+                    </div>
+                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
+                        <Zap className="w-3 h-3 text-primary" /> REAL-TIME MARKET INTELLIGENCE & REVENUE ATTRIBUTION
+                    </p>
+                </div>
+
+                <div className="flex bg-white p-2 rounded-[24px] border border-gray-100 shadow-sm gap-2">
+                    <TabButton active={activeView === 'performance'} onClick={() => setActiveView('performance')} label="Yield Analysis" icon={TrendingUp} />
+                    <TabButton active={activeView === 'owners'} onClick={() => setActiveView('owners')} label="Owner Network" icon={Users} />
+                    <TabButton active={activeView === 'insights'} onClick={() => setActiveView('insights')} label="Market Research" icon={Globe} />
+                    <TabButton active={activeView === 'economics'} onClick={() => setActiveView('economics')} label="Economics" icon={Landmark} />
+                </div>
+            </header>
+
+            {loading && (
+                <div className="p-6 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg">
+                    Loading dashboard data...
+                </div>
+            )}
+
+            {error && (
+                <div className="p-6 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                    Error: {error}
+                </div>
+            )}
+
+            {selectedOwner && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-primary/10 border-2 border-primary rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-primary/5"
+                >
+                    <div className="flex items-center gap-6">
+                        <div className="p-4 bg-black text-primary rounded-2xl shadow-lg">
+                            <Shield className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black italic uppercase tracking-tighter text-gray-900 leading-none mb-1">AUDIT MODE ACTIVE</h3>
+                            <p className="text-[10px] font-black text-primary uppercase tracking-widest">ISOLATING DATA FOR: <span className="text-black">{selectedOwner.name}</span></p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setSelectedOwner(null)}
+                        className="px-10 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-105 transition-all"
+                    >
+                        CLEAR SESSION & RESET
+                    </button>
+                </motion.div>
+            )}
+
+            {/* EDUCATIONAL TOP BAR FOR NEWCOMERS */}
+            <div className="bg-primary/5 border border-primary/20 rounded-[40px] p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full" />
+                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shrink-0 shadow-xl shadow-primary/10">
+                    <HelpCircle className="w-8 h-8 text-primary" />
+                </div>
+                <div className="flex-1">
+                    <h4 className="font-black italic uppercase tracking-tighter text-gray-900 text-lg">Newcomer Guide: How to read this data?</h4>
+                    <p className="text-gray-500 font-medium text-sm leading-relaxed max-w-2xl mt-1">
+                        We track <b>Gross Partner Revenue</b> (Total money gym makes) vs <b>Platform Yield</b> (Gymkaana's 15% cut).
+                        A high "Contribution Score" means that gym is a pillar of our current revenue ecosystem.
+                    </p>
+                </div>
+                <button className="px-8 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all">
+                    Generate Insights
+                </button>
+            </div>
+
+            {activeView === 'performance' && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+                    {/* PLATFORM WIDE STATS - DETAILED */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <YieldCard label="Total Network GMV" value={formatLakhs(stats?.totalRevenue || 0)} sub="Gross flow through platform" icon={Inbox} color="black" help="Combined revenue of all gyms" />
+                        <YieldCard label="Gymkaana Income" value={formatLakhs(stats?.platformIncome || 0)} sub="15% Transactional Yield" icon={Target} color="primary" help="Our net platform revenue" />
+                        <YieldCard label="Pending Onboarding" value={stats?.pendingOnboarding?.toString().padStart(2, '0') || "00"} sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
+                        <YieldCard label="Active User Reach" value={(stats?.activeMembers || 0).toLocaleString()} sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
+                        <YieldCard label="Yield per Member" value={`₹${Math.round((stats?.totalRevenue || 0) / (stats?.activeMembers || 1))}`} sub="Avg. contribution/user" icon={Zap} color="orange" help="Revenue health per customer" />
                     </div>
 
-                    <div className="flex bg-white p-2 rounded-[24px] border border-gray-100 shadow-sm gap-2">
-                        <TabButton active={activeView === 'performance'} onClick={() => setActiveView('performance')} label="Performance" icon={Activity} />
-                        <TabButton active={activeView === 'economics'} onClick={() => setActiveView('economics')} label="Economics" icon={DollarSign} />
-                        <TabButton active={activeView === 'insights'} onClick={() => setActiveView('insights')} label="Insights" icon={Target} />
-                    </div>
-                </header>
-
-                {activeView === 'performance' && (
-                    <div className="space-y-12">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                            <YieldCard
-                                label="Total GMV"
-                                value={stats?.totalRevenue ? `Rs.${Number(stats.totalRevenue).toLocaleString()}` : "Rs.0"}
-                                sub="Platform Gross"
-                                icon={DollarSign}
-                                color="black"
-                                help="Aggregate revenue across all active hubs"
-                            />
-                            <YieldCard
-                                label="Platform Income"
-                                value={stats?.platformIncome ? `Rs.${Number(stats.platformIncome).toLocaleString()}` : "Rs.0"}
-                                sub="Net Commission (15%)"
-                                icon={TrendingUp}
-                                color="primary"
-                                help="15% platform management fee"
-                            />
-                            <YieldCard
-                                label="Daily Check-ins"
-                                value={String(stats?.checkinsToday || "0")}
-                                sub="Real-time Traffic"
-                                icon={Users}
-                                color="emerald"
-                                help="Member entries recorded in last 24h"
-                            />
-                            <YieldCard
-                                label="Active Hubs"
-                                value={String(stats?.activeGyms || "0")}
-                                sub="Live Partner Network"
-                                icon={Building2}
-                                color="primary"
-                                help="Verified gyms currently transacting"
-                            />
-
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                            <div className="lg:col-span-12 bg-white border border-gray-100 rounded-[48px] p-10 shadow-sm space-y-10">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <h3 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900">Partner Contribution Index</h3>
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Gym Revenue vs Platform Net Income</p>
-                                    </div>
-                                    <div className="relative group">
-                                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors" />
-                                        <input
-                                            type="text"
-                                            placeholder="FILTER BY PARTNER HUB..."
-                                            className="pl-14 pr-8 py-4 bg-gray-50 border border-transparent rounded-[24px] text-[10px] font-black outline-none focus:ring-4 focus:ring-black/5 w-80 shadow-sm transition-all uppercase tracking-widest"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                        />
-                                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        {/* DETAILED GYM CONTRIBUTION TABLE */}
+                        <div className="lg:col-span-12 bg-white border border-gray-100 rounded-[48px] p-10 shadow-sm space-y-10">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900">Partner Contribution Index</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Gym Revenue vs Platform Net Income</p>
                                 </div>
+                                <div className="relative group">
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors" />
+                                    <input
+                                        type="text"
+                                        placeholder="FILTER BY PARTNER HUB..."
+                                        className="pl-14 pr-8 py-4 bg-gray-50 border border-transparent rounded-[24px] text-[10px] font-black outline-none focus:ring-4 focus:ring-black/5 w-80 shadow-sm transition-all uppercase tracking-widest"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                            </div>
 
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-gray-50/50 rounded-2xl">
-                                            <tr>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Partner Hub</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Market Cat</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Gross GMV</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Our Income (15%)</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Contribution</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-right">Yield Health</th>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50/50 rounded-2xl">
+                                        <tr>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Partner Hub</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Market Cat</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Gross GMV</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Our Income (15%)</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-center">Contribution</th>
+                                            <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-right">Yield Health</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {filteredGyms.map((gym) => (
+                                            <tr
+                                                key={gym.id}
+                                                className="hover:bg-gray-50/50 transition-all cursor-pointer group"
+                                                onClick={() => setSelectedPerfGym(gym)}
+                                            >
+                                                <td className="p-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center font-black italic text-sm group-hover:bg-primary transition-colors">
+                                                            {gym.logo}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-gray-900 uppercase italic tracking-tight">{gym.name}</p>
+                                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{gym.members} ACTIVE</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-6">
+                                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${gym.marketCategory === 'Premium' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                                        gym.marketCategory === 'Boutique' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-600 border-gray-100'
+                                                        }`}>
+                                                        {gym.marketCategory}
+                                                    </span>
+                                                </td>
+                                                <td className="p-6 text-center font-black text-gray-900">{gym.revenue}</td>
+                                                <td className="p-6 text-center font-black text-primary">{gym.platformIncome}</td>
+                                                <td className="p-6 text-center">
+                                                    <div className="w-full max-w-[100px] mx-auto space-y-2">
+                                                        <div className="flex justify-between text-[8px] font-black text-gray-500 uppercase">
+                                                            <span>Impact</span>
+                                                            <span>{gym.contributionScore}%</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${gym.contributionScore}%` }}
+                                                                className="h-full bg-black rounded-full"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-6 text-right">
+                                                    <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${gym.status === 'High' ? 'bg-emerald-100 text-emerald-600' :
+                                                        gym.status === 'Solid' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'
+                                                        }`}>
+                                                        {gym.status}
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {filteredGyms.map((gym) => (
-                                                <tr
-                                                    key={gym.id}
-                                                    className="hover:bg-gray-50/50 transition-all cursor-pointer group"
-                                                    onClick={() => setSelectedPerfGym(gym)}
-                                                >
-                                                    <td className="p-6">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center font-black italic text-sm group-hover:bg-primary transition-colors">
-                                                                {String(gym.logo || "?").charAt(0)}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-black text-gray-900 uppercase italic tracking-tight">{gym.name}</p>
-                                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{gym.members} ACTIVE</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${gym.marketCategory === 'Premium' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                                                            gym.marketCategory === 'Boutique' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-600 border-gray-100'
-                                                            }`}>
-                                                            {gym.marketCategory}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-6 text-center font-black text-gray-900">{gym.revenue}</td>
-                                                    <td className="p-6 text-center font-black text-primary">{gym.platformIncome}</td>
-                                                    <td className="p-6 text-center">
-                                                        <div className="w-full max-w-[100px] mx-auto space-y-2">
-                                                            <div className="flex justify-between text-[8px] font-black text-gray-500 uppercase">
-                                                                <span>Impact</span>
-                                                                <span>{gym.contributionScore}%</span>
-                                                            </div>
-                                                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    style={{ width: `${gym.contributionScore}%` }}
-                                                                    className="h-full bg-black rounded-full"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-6 text-right">
-                                                        <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${gym.status === 'High' ? 'bg-emerald-100 text-emerald-600' :
-                                                            gym.status === 'Solid' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'
-                                                            }`}>
-                                                            {gym.status}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                )}
+                </motion.div>
+            )}
 
-                {activeView === 'insights' && (
-                    <div className="space-y-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-8">
-                                <div className="bg-gray-900 rounded-[48px] p-10 text-white relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[100px] rounded-full" />
-                                    <div className="relative z-10">
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 italic">Network Intelligence</h4>
-                                        <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-8">Strategic Growth Vectors</h3>
-                                        <div className="grid grid-cols-2 gap-8">
-                                            <InsightPoint label="Market Expansion" text="High demand detected in Southern sectors. Current saturation: 42%." />
-                                            <InsightPoint label="User Retention" text="Premium tier members show 24% higher stickiness than budget hubs." />
-                                            <InsightPoint label="Revenue Optim" text="Dynamic pricing recommendation for 06:00 - 09:00 peak hours." />
-                                            <InsightPoint label="Acquisition" text="Inbound partner inquiries up 15% WoW. Vetting backlog: 4 hubs." />
+            {/* OWNER NETWORK VIEW */}
+            {activeView === 'owners' && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {ownersPerformance.map((owner: any) => (
+                            <div key={owner._id} className="bg-white border-2 border-gray-50 rounded-[48px] p-10 hover:border-black transition-all shadow-sm group">
+                                <div className="flex items-center gap-6 mb-8">
+                                    <div className="w-16 h-16 bg-gray-900 text-primary rounded-3xl flex items-center justify-center font-black italic text-xl shadow-xl group-hover:-rotate-6 transition-all">
+                                        {owner.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black italic uppercase tracking-tighter text-gray-900">{owner.name}</h3>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{owner.email}</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">
+                                        <span>Assets Managed</span>
+                                        <span className="text-black">{owner.gymCount} Hubs</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {owner.gyms.map((gym: string, i: number) => (
+                                            <span key={i} className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                {gym}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setSelectedOwner(owner);
+                                        setActiveView('performance');
+                                    }}
+                                    className="w-full mt-10 py-5 bg-gray-900 text-white rounded-3xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all"
+                                >
+                                    Audit Owner Profile
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
+            {/* MARKET RESEARCH VIEW */}
+            {activeView === 'insights' && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            <div className="bg-gray-900 rounded-[48px] p-10 text-white relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[100px] rounded-full" />
+                                <div className="relative z-10">
+                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-8">Hub Demand Forecasting</h3>
+                                    <div className="flex items-end justify-between h-48 gap-4 px-2 mb-8">
+                                        {(gymsPerformance.slice(0, 10)).map((gym, i) => (
+                                            <div key={i} className="flex-1 bg-white/10 rounded-t-xl relative group">
+                                                <motion.div
+                                                    initial={{ height: 0 }}
+                                                    animate={{ height: `${Math.min((gym.members / (stats?.activeMembers || 1)) * 100 + 10, 100)}%` }}
+                                                    className="w-full bg-primary rounded-t-xl"
+                                                />
+                                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-black text-white/40">{gym.name.slice(0, 3)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest italic">Projected visit surges based on historical regional velocity</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <ResearchStat label="Network Scale" value={stats?.totalGyms || "0"} sub="Total Managed Hubs" icon={Target} />
+                                <ResearchStat label="Booking Velocity" value={stats?.totalBookingCount || "0"} sub="Total Lifetime Passes" icon={Zap} />
+                            </div>
+                        </div>
+
+                        <div className="bg-white border border-gray-100 rounded-[48px] p-10 shadow-sm">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 px-2">Competitive Tiering Analysis</h4>
+                            <div className="space-y-6">
+                                <TierRow label="Premium Hubs" count={gymsPerformance.filter(g => g.marketCategory === 'Premium').length} growth="+5%" impact={42} color="bg-purple-500" />
+                                <TierRow label="Boutique Studios" count={gymsPerformance.filter(g => g.marketCategory === 'Boutique').length} growth="+12%" impact={28} color="bg-blue-500" />
+                                <TierRow label="Active Hubs" count={stats?.totalGyms || 0} growth="+8%" impact={30} color="bg-gray-900" />
+                                <TierRow label="Pending Vetting" count={stats?.pendingOnboarding || 0} growth="+18%" impact={15} color="bg-emerald-500" />
+                            </div>
+                            <button
+                                onClick={() => setActiveView('market_analysis')}
+                                className="w-full mt-10 py-5 bg-gray-50 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all"
+                            >
+                                Deep-Dive Geo-Spatial Map
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* NETWORK ECONOMICS VIEW */}
+            {activeView === 'economics' && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-12">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <YieldCard label="Collective Revenue" value={formatLakhs(stats?.totalRevenue || 0)} sub={`Growth: ${stats?.revenueTrend || "+0%"}`} icon={DollarSign} color="emerald" help="Aggregated GMV from all active bookings" />
+                        <YieldCard label="Net Platform Yield" value={formatLakhs(stats?.platformIncome || 0)} sub="Transactional Revenue (15%)" icon={TrendingUp} color="emerald" help="Projected 15% revenue" />
+                        <YieldCard label="Network Liability" value={formatLakhs((stats?.totalRevenue || 0) * 0.85)} sub="Awaiting Partner Payout" icon={AlertCircle} color="orange" help="Total outstanding to gyms" />
+                    </div>
+
+                    <div className="bg-white border border-gray-100 rounded-[48px] p-10 shadow-sm">
+                        <div className="flex justify-between items-center mb-10">
+                            <div>
+                                <h3 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900">Partner Payout Telemetry</h3>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Real-time liquidity attribution per active hub</p>
+                            </div>
+                            <button className="px-6 py-3 bg-primary/10 text-primary rounded-xl font-black text-[10px] uppercase tracking-widest">Recalculate Yield</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {gymsPerformance.slice(0, 5).map((gym, i) => {
+                                const rawRevenue = parseInt(gym.revenue.replace(/[^0-9]/g, '')) || 0;
+                                return (
+                                    <div key={i} className="flex items-center justify-between p-6 bg-gray-50 rounded-3xl border border-gray-100 hover:border-primary/20 transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-black italic text-xs">{gym.logo}</div>
+                                            <div>
+                                                <p className="font-black text-sm uppercase italic">{gym.name}</p>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase">Gross: {gym.revenue}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-12 text-right">
+                                            <div>
+                                                <p className="text-[8px] font-black text-gray-400 uppercase">Partner Payout (85%)</p>
+                                                <p className="text-sm font-black italic">₹{(rawRevenue * 0.85).toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[8px] font-black text-gray-400 uppercase">Platform Yield (15%)</p>
+                                                <p className="text-sm font-black italic text-primary">₹{(rawRevenue * 0.15).toLocaleString()}</p>
+                                            </div>
+                                            <div className="w-24">
+                                                <span className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${rawRevenue > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                                                    {rawRevenue > 0 ? 'Verified' : 'Pending'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* ADVANCED GYM ANALYTICS MODAL - DETAILED FOR MARKET RESEARCH */}
+            {activeView === 'market_analysis' && (
+                <motion.div initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} className="space-y-12">
+                    <header className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setActiveView('performance')}
+                                title="Back to performance"
+                                className="p-3 bg-gray-100 rounded-2xl hover:bg-black hover:text-white transition-all"
+                            >
+                                <Search className="w-6 h-6 rotate-180" />
+                            </button>
+                            <div>
+                                <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Market Analysis Centre</h2>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Deep-dive regional metrics & demand tiering</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <button className="px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-black/20">Generate Report</button>
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <ResearchStat label="Regional Dominance" value={stats?.research?.regionalDominance || "0%"} sub="Active Network Density" icon={Target} />
+                        <ResearchStat label="Avg. Order Surge" value={stats?.research?.orderSurge || "+0%"} sub="Network Velocity" icon={Zap} />
+                        <ResearchStat label="Churn Resistance" value={stats?.research?.churnResistance || "Solid"} sub="Client Stickiness" icon={Briefcase} />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <div className="bg-gray-900 rounded-[56px] p-12 text-white relative overflow-hidden h-[500px] flex flex-col justify-between">
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[120px] rounded-full" />
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2 italic">Demand Heatmap</h4>
+                                <h3 className="text-2xl font-black italic uppercase tracking-tighter">Geo-Spatial Density</h3>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                                <div className="relative w-64 h-64">
+                                    <div className="absolute inset-0 border-4 border-white/5 rounded-full" />
+                                    <div className="absolute inset-4 border-2 border-white/10 rounded-full" />
+                                    <div className="absolute top-1/4 left-1/4 w-12 h-12 bg-primary/80 blur-xl rounded-full animate-pulse" />
+                                    <div className="absolute bottom-1/3 right-1/4 w-8 h-8 bg-emerald-400/80 blur-lg rounded-full animate-bounce" />
+                                    <div className="absolute top-1/2 right-1/2 w-16 h-16 bg-blue-500/30 blur-2xl rounded-full" />
                                 </div>
+                            </div>
+                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest text-center">Data refreshed 12 minutes ago from global Hub API</p>
+                        </div>
+
+                        <div className="bg-white border border-gray-100 rounded-[56px] p-12 shadow-sm space-y-10">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Competitive Tiering Analysis</h4>
+                            <div className="space-y-6">
+                                <TierRow label="Premium Outlets" count={stats?.tiers?.premium || 0} growth="+0%" impact={stats?.totalGyms > 0 ? Math.round((stats.tiers.premium / stats.totalGyms) * 100) : 0} color="bg-black" />
+                                <TierRow label="Active Hubs" count={stats?.tiers?.active || 0} growth="+0%" impact={stats?.totalGyms > 0 ? Math.round((stats.tiers.active / stats.totalGyms) * 100) : 0} color="bg-primary" />
+                                <TierRow label="Boutique Studios" count={stats?.tiers?.boutique || 0} growth="+0%" impact={stats?.totalGyms > 0 ? Math.round((stats.tiers.boutique / stats.totalGyms) * 100) : 0} color="bg-emerald-500" />
+                                <TierRow label="Value Centers" count={stats?.tiers?.value || 0} growth="+0%" impact={stats?.totalGyms > 0 ? Math.round((stats.tiers.value / stats.totalGyms) * 100) : 0} color="bg-blue-500" />
+                            </div>
+                            <div className="pt-8 border-t border-gray-50 flex justify-between items-center px-4">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Market Saturation</p>
+                                    <p className="text-2xl font-black italic uppercase">Moderate</p>
+                                </div>
+                                <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-2">
+                                    View Expansion Roadmap <ArrowUpRight className="w-3 h-3" />
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
+                </motion.div>
+            )}
 
-                {activeView === 'economics' && (
-                    <div className="space-y-12">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <YieldCard label="Platform Reserve" value={stats?.platformReserve !== undefined ? `Rs.${Number(stats.platformReserve).toLocaleString()}` : "Rs.0"} sub="Liquidity Pool Balance" icon={Inbox} color="black" help="Platform's treasury for gym payouts" />
-                                <YieldCard label="Net Yield Projection" value={stats?.projectedIncome !== undefined ? `Rs.${Number(stats.projectedIncome).toLocaleString()}` : "Rs.0"} sub="Expected Next Month" icon={TrendingUp} color="emerald" help="Projected 15% revenue" />
-                                <YieldCard label="Network Liability" value={stats?.totalPendingPayout !== undefined ? `Rs.${Number(stats.totalPendingPayout).toLocaleString()}` : "Rs.0"} sub="Awaiting Partner Payout" icon={AlertCircle} color="orange" help="Total outstanding to gyms" />
-                        </div>
-                    </div>
-                )}
-
-                {/* MODAL */}
+            <AnimatePresence>
                 {selectedPerfGym && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                        <div className="bg-white w-full max-w-6xl h-[90vh] rounded-[64px] overflow-hidden flex flex-col relative border border-white/20">
-                            <button onClick={() => setSelectedPerfGym(null)} className="absolute top-10 right-10 p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl z-20 shadow-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 100 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 100 }}
+                            className="bg-white w-full max-w-6xl h-[90vh] rounded-[64px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)] border border-white/20"
+                        >
+                            <button
+                                onClick={() => setSelectedPerfGym(null)}
+                                className="absolute top-10 right-10 p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all z-20 shadow-sm"
+                                title="Close Intelligence Report"
+                            >
                                 <X className="w-8 h-8 text-black" />
                             </button>
 
                             <div className="p-16 overflow-y-auto custom-scrollbar">
                                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 px-4">
                                     <div className="flex items-center gap-8">
-                                        <div className="w-24 h-24 bg-black text-white rounded-[40px] flex items-center justify-center text-4xl font-black italic shadow-2xl">
-                                            {String(selectedPerfGym.logo || "?").charAt(0)}
+                                        <div className="w-24 h-24 bg-black text-white rounded-[40px] flex items-center justify-center text-4xl font-black italic shadow-2xl group hover:bg-primary hover:text-black transition-all">
+                                            {selectedPerfGym.logo}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-4">
                                                 <h3 className="text-4xl font-black uppercase italic tracking-tighter text-gray-900">{selectedPerfGym.name}</h3>
+                                                <span className="px-3 py-1 bg-gray-100 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-400">Hub ID: #KNA-{selectedPerfGym.id}</span>
                                             </div>
+                                            <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mt-2 italic flex items-center gap-2">
+                                                Market Insight Report <MousePointer2 className="w-3 h-3" />
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-900 px-8 py-6 rounded-[32px] text-white flex gap-12">
+                                        <div>
+                                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">PLATFORM REVENUE PILLAR</p>
+                                            <p className="text-2xl font-black italic text-primary">{selectedPerfGym.contributionScore}% <span className="text-[10px] text-white/60">OF TOTAL</span></p>
+                                        </div>
+                                        <div className="w-px h-10 bg-white/10 self-center" />
+                                        <div>
+                                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">MEMBER YIELD</p>
+                                            <p className="text-2xl font-black italic">{selectedPerfGym.yieldPerMember} <span className="text-[10px] text-white/60">/CAPITA</span></p>
                                         </div>
                                     </div>
                                 </header>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <InsightCard label="Market Position" value={selectedPerfGym.marketCategory} type="info" icon={Building2} sub="Category" />
-                                    <InsightCard label="Retention" value={selectedPerfGym.retention} type="success" icon={Activity} sub="Stickiness" />
-                                    <InsightCard label="Income" value={selectedPerfGym.platformIncome} type="primary" icon={DollarSign} sub="Yield" />
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+                                    {/* DETAILED STAT CARDS */}
+                                    <InsightCard label="Market Position" value={selectedPerfGym.marketCategory} sub="Facility categorization" icon={Landmark} type="info" />
+                                    <InsightCard label="Member Retention" value={selectedPerfGym.retention} sub="Monthly stickiness rate" icon={TrendingUp} type="success" />
+                                    <InsightCard label="Platform Yield" value={selectedPerfGym.platformIncome} sub="Our net commission revenue" icon={DollarSign} type="primary" />
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                    <div className="bg-gray-900 rounded-[48px] p-12 text-white relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 blur-[100px] rounded-full" />
+                                        <div className="relative z-10 space-y-12">
+                                            <div>
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-2">Usage Heatmap Analysis</h4>
+                                                <h3 className="text-2xl font-black italic uppercase tracking-tighter">Peak Traffic Distribution</h3>
+                                            </div>
+
+                                            <div className="flex items-end justify-between h-48 gap-4 px-2">
+                                                {[45, 30, 85, 95, 60, 40, 75, 55, 90, 80, 65, 50].map((h, i) => (
+                                                    <div key={i} className="flex-1 group relative">
+                                                        <motion.div
+                                                            initial={{ height: 0 }}
+                                                            animate={{ height: `${h}%` }}
+                                                            transition={{ duration: 1, delay: i * 0.05 }}
+                                                            className={`rounded-t-xl transition-all group-hover:bg-white ${i % 3 === 0 ? 'bg-primary' : 'bg-primary/30'}`}
+                                                        />
+                                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black p-2 rounded-lg text-[8px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
+                                                            {h}% Load
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="flex justify-between items-center bg-white/5 p-6 rounded-[28px] border border-white/10">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                                                        <Activity className="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Optimal Throughput</p>
+                                                        <p className="font-bold text-sm">82% Operational Efficiency</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest">Trend</p>
+                                                    <p className="font-bold text-sm text-emerald-400">UPWARD</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-8">
+                                        <div className="bg-gray-50 p-10 rounded-[48px] border border-gray-100">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-6 flex items-center gap-2">
+                                                <Briefcase className="w-4 h-4" /> Market Research Summary
+                                            </h4>
+                                            <div className="space-y-6">
+                                                <InsightPoint label="Growth Opportunity" text="Membership yield is 12% above platform average. Possible upsell for premium tiering." />
+                                                <InsightPoint label="Retention Risk" text="Morning slot retention is dropping. Recommend gym owner to add more cardio classes." />
+                                                <InsightPoint label="Competitor Data" text="This hub is currently the dominant player in its specific 5km radius." />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-10 border-t border-gray-100 mb-10">
+                                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mb-8">Operational Actions</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <button className="py-5 bg-black text-white rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-2xl transition-all">
+                                                    <Activity className="w-4 h-4 text-primary" /> Sync Hub State
+                                                </button>
+                                                <button className="py-5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-600 hover:text-white transition-all">
+                                                    <Target className="w-4 h-4" /> Optimization Pulse
+                                                </button>
+                                                <button className="py-5 bg-red-50 text-red-600 border border-red-100 rounded-3xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-600 hover:text-white transition-all">
+                                                    <AlertCircle className="w-4 h-4" /> Force Suspension
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedPerfGym(null);
+                                                    setActiveView('market_analysis');
+                                                }}
+                                                className="flex-1 py-6 bg-gray-900 text-white rounded-[32px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 hover:bg-black transition-all"
+                                            >
+                                                <PieChart className="w-5 h-5 text-primary" /> Full Market Analysis
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedPerfGym(null)}
+                                                className="px-12 py-6 bg-gray-100 rounded-[32px] font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all"
+                                            >
+                                                Dismiss
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 )}
-            </div>
-        </DashboardErrorBoundary>
+            </AnimatePresence>
+        </div>
     );
 }
 
 function InsightCard({ label, value, sub, icon: Icon, type }: any) {
-    const colors: any = { primary: 'bg-primary/10 text-primary', success: 'bg-emerald-50 text-emerald-600', info: 'bg-blue-50 text-blue-600' };
+    const colors: any = {
+        primary: 'bg-primary/10 text-primary',
+        success: 'bg-emerald-50 text-emerald-600',
+        info: 'bg-blue-50 text-blue-600',
+    };
     return (
-        <div className="p-8 bg-white border border-gray-200 rounded-[40px] hover:border-black transition-all group shadow-sm">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-sm ${colors[type]}`}>
+        <div className="p-8 bg-white border border-gray-200 rounded-[40px] hover:bg-white hover:border-black hover:shadow-2xl transition-all group shadow-sm">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform ${colors[type]}`}>
                 <Icon className="w-6 h-6" />
             </div>
             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 italic">{label}</p>
@@ -408,13 +663,19 @@ function InsightPoint({ label, text }: { label: string, text: string }) {
 function YieldCard({ label, value, sub, icon: Icon, color, help }: any) {
     const textColor = color === 'primary' ? 'text-primary' : color === 'emerald' ? 'text-emerald-500' : color === 'orange' ? 'text-orange-500' : 'text-gray-900';
     const bg = color === 'primary' ? 'bg-primary/10' : color === 'emerald' ? 'bg-emerald-50' : color === 'orange' ? 'bg-orange-50' : 'bg-gray-50';
+
     return (
         <div className="bg-white p-8 rounded-[40px] border border-gray-200 shadow-sm flex flex-col group hover:shadow-2xl hover:border-black transition-all relative overflow-hidden">
             <div className="flex justify-between items-start mb-10">
                 <div className={`p-4 rounded-2xl ${bg} ${textColor} group-hover:bg-black group-hover:text-white transition-all`}>
                     <Icon className="w-6 h-6" />
                 </div>
-                <HelpCircle className="w-4 h-4 text-gray-300 cursor-help" />
+                <div className="relative group/tooltip">
+                    <HelpCircle className="w-4 h-4 text-gray-300 cursor-help hover:text-gray-400" />
+                    <div className="absolute right-0 top-full mt-2 w-48 p-3 bg-black text-white text-[9px] font-bold uppercase rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-20 shadow-2xl">
+                        {help}
+                    </div>
+                </div>
             </div>
             <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-2 italic">{label}</p>
@@ -429,8 +690,59 @@ function YieldCard({ label, value, sub, icon: Icon, color, help }: any) {
 
 function TabButton({ active, onClick, label, icon: Icon }: any) {
     return (
-        <button onClick={onClick} className={`flex items-center gap-3 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all ${active ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}>
-            <Icon className="w-4 h-4" /> {label}
+        <button
+            onClick={onClick}
+            className={`flex items-center gap-3 px-6 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all ${active ? 'bg-black text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                }`}
+        >
+            <Icon className="w-4 h-4" />
+            {label}
         </button>
     )
 }
+
+function X({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    )
+}
+
+function ResearchStat({ label, value, sub, icon: Icon }: any) {
+    return (
+        <div className="bg-white p-8 rounded-[40px] border border-gray-200 shadow-sm flex flex-col justify-between h-40 hover:border-black transition-all">
+            <div className="flex justify-between items-start">
+                <div className="p-3 bg-gray-50 rounded-xl text-primary">
+                    <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">+4.2%</span>
+            </div>
+            <div>
+                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{label}</p>
+                <h3 className="text-3xl font-black italic tracking-tighter text-gray-900">{value}</h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{sub}</p>
+            </div>
+        </div>
+    )
+}
+
+function TierRow({ label, count, growth, impact, color }: any) {
+    return (
+        <div className="flex items-center justify-between p-6 bg-gray-50 rounded-3xl border border-gray-50">
+            <div className="flex items-center gap-4">
+                <div className={`w-3 h-3 rounded-full ${color}`} />
+                <div>
+                    <p className="text-xs font-black uppercase text-gray-900">{label}</p>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{count} HUBS ACROSS NETWORK</p>
+                </div>
+            </div>
+            <div className="text-right">
+                <p className="text-xs font-black text-gray-900 italic">{impact}% IMPACT</p>
+                <p className={`text-[9px] font-black uppercase ${growth.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>{growth} GROWTH</p>
+            </div>
+        </div>
+    )
+}
+
+

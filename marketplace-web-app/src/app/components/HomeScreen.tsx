@@ -69,36 +69,6 @@ export function HomeScreen({
     }
   }, [initialSearch]);
 
-  const HERO_CONTENT = useMemo(() => [
-    {
-      heading: <>FUEL THE <br /><span className="text-secondary-foreground opacity-90 underline decoration-primary decoration-8 underline-offset-[12px]">PASSION.</span></>,
-      subline: "Universal access to the city's finest fitness venues"
-    },
-    {
-      heading: <>LEVEL UP <br /><span className="text-secondary-foreground opacity-90 underline decoration-primary decoration-8 underline-offset-[12px]">YOUR GAME.</span></>,
-      subline: "Direct access to elite training grounds near you"
-    },
-    {
-      heading: <>UNLEASH THE <br /><span className="text-secondary-foreground opacity-90 underline decoration-primary decoration-8 underline-offset-[12px]">BEAST.</span></>,
-      subline: "Your universal ticket to premium fitness hubs"
-    },
-    {
-      heading: <>MASTER YOUR <br /><span className="text-secondary-foreground opacity-90 underline decoration-primary decoration-8 underline-offset-[12px]">CRAFT.</span></>,
-      subline: "Discover top-tier yoga, crossfit & MMA studios"
-    },
-    {
-      heading: <>DOMINATE THE <br /><span className="text-secondary-foreground opacity-90 underline decoration-primary decoration-8 underline-offset-[12px]">DAY.</span></>,
-      subline: "Elite gym access at your fingertips, anytime"
-    }
-  ], []);
-
-  const [activeHero, setActiveHero] = useState(HERO_CONTENT[0]);
-
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * HERO_CONTENT.length);
-    setActiveHero(HERO_CONTENT[randomIndex]);
-  }, [HERO_CONTENT]);
-
   const parseDistance = (location: string) => {
     const match = location.match(/(\d+(\.\d+)?)\s*km/);
     return match ? parseFloat(match[1]) : 0;
@@ -149,42 +119,33 @@ export function HomeScreen({
         title="Find Top Gyms & Studios"
         description="Book memberships and classes at elite fitness venues near you. Your universal pass to the best gyms, yoga, and CrossFit studios."
       />
-      {/* Hyper-Attractive Hero Section */}
-      <div className="mx-6 mt-8 mb-8 p-8 md:p-12 rounded-[40px] border border-secondary shadow-[0_32px_64px_-16px_rgba(30,41,59,0.4)] relative overflow-hidden bg-secondary">
-        {/* Dynamic Glow Elements */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 blur-[130px] rounded-full -mr-48 -mt-48 animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 blur-[100px] rounded-full -ml-32 -mb-32" />
-
+      {/* Hero Section */}
+      <div className="mx-6 mt-8 mb-8 p-8 md:p-12 bg-white rounded-[40px] border border-gray-100 shadow-xl relative overflow-hidden bg-gradient-to-br from-white to-gray-50/50">
         <div className="relative z-10">
           <motion.div
-            key={activeHero.subline}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <h1 className="text-4xl md:text-8xl font-black tracking-tighter text-white italic mb-4 leading-none">
-              {activeHero.heading}
-            </h1>
-            <p className="text-xs md:text-lg font-bold uppercase tracking-[0.4em] text-white/40 mb-12">
-              {activeHero.subline}
-            </p>
+            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 italic mb-4 leading-tight">ELEVATE YOUR <br /><span className="text-primary underline decoration-black decoration-8 underline-offset-[12px]">LIFESTYLE</span></h1>
+            <p className="text-xs md:text-base font-bold uppercase tracking-[0.3em] text-gray-400 mb-12">Universal access to the finest fitness venues</p>
           </motion.div>
 
-          {/* Elevated Search Experience */}
-          <div className="flex flex-col md:flex-row gap-4 max-w-4xl relative">
+          {/* Integrated Search & Filter Experience */}
+          <div className="flex flex-col md:flex-row gap-4 max-w-4xl">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex-1 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-[28px] p-5 flex items-center gap-5 shadow-2xl group focus-within:bg-white/20 transition-all"
+              className="flex-1 bg-white border-2 border-gray-100 rounded-3xl p-5 flex items-center gap-5 shadow-2xl group focus-within:border-black transition-all"
             >
-              <Search className="w-6 h-6 text-white group-focus-within:text-primary transition-colors" />
+              <Search className="w-6 h-6 text-gray-400 group-focus-within:text-black transition-colors" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search venues, yoga or areas..."
-                className="flex-1 bg-transparent outline-none text-base font-black text-white placeholder:text-white/30 placeholder:italic"
+                placeholder="Search gyms, yoga studios or areas..."
+                className="flex-1 bg-transparent outline-none text-base font-black text-gray-900 placeholder:text-gray-300 placeholder:italic"
               />
             </motion.div>
 
@@ -192,10 +153,10 @@ export function HomeScreen({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-3 px-8 rounded-[28px] font-black uppercase tracking-widest text-sm transition-all shadow-xl ${showFilters ? 'bg-primary text-secondary' : 'bg-white text-secondary hover:bg-primary'}`}
+              className={`flex items-center gap-3 px-8 rounded-3xl font-black uppercase tracking-widest text-sm border-2 transition-all ${showFilters ? 'bg-black text-white border-black shadow-lg shadow-black/20' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
             >
               <SlidersHorizontal className="w-5 h-5" />
-              {showFilters ? 'Radius' : 'Radius'}
+              {showFilters ? 'Close Radius' : 'Radius Filter'}
             </motion.button>
           </div>
 
@@ -203,69 +164,63 @@ export function HomeScreen({
             {showFilters && (
               <motion.div
                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginTop: 20 }}
+                animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
                 exit={{ height: 0, opacity: 0, marginTop: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white rounded-3xl p-6 shadow-xl border border-border/60">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+                <div className="bg-gray-900 rounded-[32px] p-8 shadow-2xl relative">
+                  <div className="flex justify-between items-center mb-6">
                     <div>
-                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Search Radius</h4>
-                      <p className="text-xl font-black text-secondary italic uppercase tracking-tighter">{maxDistance} KM</p>
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-1">Maximum Distance</h4>
+                      <p className="text-2xl font-black text-primary italic">{maxDistance} KM RADIUS</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {[5, 10, 15, 25, 50].map(d => (
+                    <div className="flex gap-2">
+                      {[5, 10, 15, 25].map(d => (
                         <button
                           key={d}
                           onClick={() => setMaxDistance(d)}
-                          className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${maxDistance === d ? 'bg-secondary border-secondary text-white shadow-lg' : 'bg-muted border-border/40 text-muted-foreground hover:border-secondary hover:text-secondary'}`}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${maxDistance === d ? 'bg-primary text-white' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
                         >
-                          {d} KM
+                          {d}KM
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="relative h-1.5 w-full bg-slate-100 rounded-full">
-                    <motion.div
-                      className="absolute h-full bg-primary rounded-full transition-all duration-300"
-                      initial={false}
-                      animate={{ width: `${Math.min((maxDistance / 50) * 100, 100)}%` }}
-                    />
-                    <input
-                      type="range"
-                      min="1"
-                      max="50"
-                      step="1"
-                      value={maxDistance}
-                      onChange={(e) => setMaxDistance(parseFloat(e.target.value))}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      title="Distance Radius Slider"
-                    />
+                  <input
+                    type="range"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value={maxDistance}
+                    onChange={(e) => setMaxDistance(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary"
+                    title="Distance Radius Slider"
+                  />
+                  <div className="flex justify-between mt-4 text-[9px] font-black text-white/20 tracking-tighter uppercase">
+                    <span>1 KM</span>
+                    <span>50 KM (Anywhere in City)</span>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="mt-8 pt-8 border-t border-border/60">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Specialized Disciplines</h3>
+          <div className="mt-8 pt-8 border-t border-gray-100/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Browse Disciplines</h3>
               {selectedDisciplines.length > 0 && (
-                <button
-                  onClick={() => setSelectedDisciplines([])}
-                  className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
-                >
-                  Clear All ({selectedDisciplines.length})
-                </button>
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">
+                  {selectedDisciplines.length} Selected
+                </span>
               )}
             </div>
-            <div className="overflow-x-auto pb-4 -mx-2 px-2 no-scrollbar">
-              <div className="flex gap-2.5 min-w-max">
+            <div className="overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
+              <div className="flex gap-2 min-w-max">
                 {SPECIALIZATIONS.map((discipline, index) => (
                   <motion.button
                     key={index}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       setSelectedDisciplines(prev =>
                         prev.includes(discipline)
@@ -273,18 +228,19 @@ export function HomeScreen({
                           : [...prev, discipline]
                       );
                     }}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-full border-2 transition-all ${selectedDisciplines.includes(discipline)
-                      ? 'bg-secondary border-secondary text-white shadow-xl'
-                      : 'bg-white border-border/80 text-muted-foreground hover:border-secondary hover:text-secondary'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${selectedDisciplines.includes(discipline)
+                      ? 'bg-black border-black text-white shadow-lg'
+                      : 'bg-white border-gray-200 text-gray-400 hover:border-black hover:text-black'
                       }`}
                   >
-                    <span className="text-[11px] font-black uppercase tracking-[0.1em]">{discipline}</span>
+                    <span className="text-[10px] font-black uppercase tracking-wider">{discipline}</span>
                   </motion.button>
                 ))}
               </div>
             </div>
           </div>
         </div>
+        <Dumbbell className="absolute -right-16 -bottom-16 w-80 h-80 text-gray-100/50 rotate-[-15deg] hidden lg:block" />
       </div>
 
       <div id="featured-venues" className="px-6 max-w-7xl mx-auto">
@@ -293,7 +249,7 @@ export function HomeScreen({
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">
               {searchQuery || showFilters ? 'Search Intelligence' : 'Handpicked for You'}
             </h3>
-            <p className="text-3xl font-black italic tracking-tight text-foreground uppercase">
+            <p className="text-3xl font-black italic tracking-tight text-gray-900 uppercase">
               {searchQuery && filteredGyms.length === 0 ? 'Protocol Notification' : searchQuery || showFilters ? `Venues near you (${filteredGyms.length})` : 'Featured Venues'}
             </p>
           </div>

@@ -2,39 +2,43 @@ const mongoose = require('mongoose');
 
 const gymSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    description: { type: String },
     address: { type: String, required: true },
+    location: { type: String }, // specific area
+    rating: { type: Number, default: 0 },
+    reviews: { type: Number, default: 0 },
+    status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Active', 'Inactive'], default: 'Pending' },
+    description: { type: String },
     phone: { type: String },
     email: { type: String },
-    city: { type: String },
-    zipCode: { type: String },
-    landmark: { type: String },
-    googleMapsLink: { type: String },
-    headTrainer: { type: String },
-    experience: { type: String },
-    specializations: { type: [{ type: String }], default: [] },
-    openingHoursWeekdays: { type: String },
-    openingHoursWeekends: { type: String },
-    facilities: { type: [{ type: String }], default: [] },
-    rating: { type: Number, default: 0 },
-    status: { type: String, enum: ['pending', 'active', 'inactive', 'rejected'], default: 'pending' },
+    timings: { type: String },
+    images: [{ type: String }], // Array of strings for multiple images
     members: { type: Number, default: 0 },
-    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    image: { type: String },
-    images: { type: [{ type: String }], default: [] },
-    bankDetails: {
-        accountName: String,
-        accountNumber: String,
-        ifscCode: String,
-        bankName: String
-    },
-    gstNo: { type: String, default: "" },
-    panNo: { type: String, default: "" },
+    checkins: { type: Number, default: 0 },
+    baseDayPassPrice: { type: Number, default: 0 },
+    revenues: { type: String }, // Keeping as string to match "₹45K" format if needed, or number
+    facilities: [{ type: String }],
+    specializations: [{ type: String }],
+    trainers: [{ type: String }], // Keeping for backward compatibility
+    trainerDetails: [{
+        name: { type: String },
+        experience: { type: String },
+        specialization: { type: String },
+        photo: { type: String }
+    }],
+    houseRules: [{ type: String }],
     documentation: {
-        tradingLicense: { type: String, default: "" },
-        fireSafety: { type: String, default: "" },
-        insurancePolicy: { type: String, default: "" }
+        tradingLicense: { type: String },
+        fireSafety: { type: String },
+        insurancePolicy: { type: String },
+        bankStatement: { type: String }
     },
+    bankDetails: {
+        accountName: { type: String },
+        accountNumber: { type: String },
+        ifscCode: { type: String },
+        bankName: { type: String }
+    },
+    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now }
 });
 

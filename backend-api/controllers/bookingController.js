@@ -1,18 +1,23 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
-const { sendBookingConfirmation } = require('../utils/emailService');
 const Gym = require('../models/Gym');
-const Plan = require('../models/Plan');
-const User = require('../models/User');
+const { logActivity } = require('./activityController');
 
 exports.getAllBookings = async (req, res) => {
     try {
-        const bookings = await Booking.find()
+        let filter = {};
+        if (req.user.role === 'owner') {
+            const myGyms = await Gym.find({ ownerId: req.user._id });
+            filter = { gymId: { $in: myGyms.map(g => g._id) } };
+        }
+
+        const bookings = await Booking.find(filter)
             .populate('gymId')
             .populate('planId')
-            .populate('userId', 'name email phoneNumber profileImage'); // Populate user details
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 });
         res.json(bookings);
     } catch (err) {
-        console.error('Error fetching bookings:', err.message);
         res.status(500).json({ message: err.message });
     }
 };
@@ -21,143 +26,205 @@ exports.getBookingsByGym = async (req, res) => {
     try {
         const bookings = await Booking.find({ gymId: req.params.gymId })
             .populate('planId')
-            .populate('userId', 'name email phoneNumber profileImage');
+            .populate('userId', 'name email');
         res.json(bookings);
     } catch (err) {
-        console.error('Error fetching gym bookings:', err.message);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getMyBookings = async (req, res) => {
+    try {
+        const bookings = await Booking.find({ userId: req.user._id })
+            .populate('gymId')
+            .populate('planId')
+            .sort({ createdAt: -1 });
+        res.json(bookings);
+
+    } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
 exports.createBooking = async (req, res) => {
     try {
-        const booking = new Booking({
-            ...req.body,
-            status: 'pending'
-        });
-        const newBooking = await booking.save();
-        
-        // Push notification via email in background
-        try {
-            const gym = await Gym.findById(newBooking.gymId);
-            const plan = await Plan.findById(newBooking.planId);
-            const user = await User.findById(newBooking.userId);
-            
-            if (user && user.email) {
-                await sendBookingConfirmation(user.email, {
-                    gymName: gym ? gym.name : 'Gymkaana Partner',
-                    planName: plan ? plan.name : 'Subscription Plan',
-                    startDate: newBooking.startDate,
-                    amount: newBooking.amount
-                });
-            }
-        } catch (emailErr) {
-            console.warn('Booking confirmation email failed:', emailErr.message);
+        console.log('===== BOOKING CREATION DEBUG =====');
+        console.log('Body:', req.body);
+
+        // Validate required fields
+        const requiredFields = ['gymId', 'planId', 'userId', 'memberName', 'memberEmail', 'amount', 'startDate', 'endDate'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
+
+        if (missingFields.length > 0) {
+            console.error('Missing required fields:', missingFields);
+            return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
         }
 
-        res.status(201).json(newBooking);
+        const booking = new Booking({
+            gymId: req.body.gymId,
+            planId: req.body.planId,
+            userId: req.body.userId,
+            memberName: req.body.memberName,
+            memberEmail: req.body.memberEmail,
+            amount: req.body.amount,
+            startDate: req.body.startDate,
+            endDate: req.body.endDate,
+            status: req.body.status || 'upcoming'
+        });
+
+        console.log('Booking object created:', booking);
+        const newBooking = await booking.save();
+        console.log('Booking saved successfully:', newBooking._id);
+
+        // Populate and return
+        const populated = await Booking.findById(newBooking._id).populate('gymId planId');
+        console.log('Booking populated:', populated);
+
+        // Log activity asynchronously (don't block response)
+        logActivity({
+            userId: req.body.userId,
+            gymId: req.body.gymId,
+            action: 'Booking Created',
+            description: `New booking for ₹${req.body.amount} secured.`,
+            type: 'success'
+        }).catch(err => console.error("Activity log failed:", err.message));
+
+        res.status(201).json(populated);
     } catch (err) {
-        console.error('Error creating booking:', err.message);
+        console.error("===== BOOKING ERROR =====");
+        console.error("Error message:", err.message);
+        console.error("Full Error:", err);
         res.status(400).json({ message: err.message });
     }
 };
 
-// @desc    Get bookings for logged in user
-// @route   GET /api/bookings/my
-// @access  Private
-exports.getMyBookings = async (req, res) => {
+exports.getBookingById = async (req, res) => {
     try {
-        const bookings = await Booking.find({ userId: req.user._id })
-            .populate('gymId', 'name location images')
-            .populate('planId', 'name price duration')
-            .sort({ createdAt: -1 });
-        res.json(bookings);
+        const booking = await Booking.findById(req.params.id)
+            .populate('gymId')
+            .populate('planId')
+            .populate('userId', 'name email phoneNumber');
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        res.json(booking);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-// @desc    Request a refund for a booking
-// @route   PUT /api/bookings/:id/request-refund
-// @access  Private
-exports.requestRefund = async (req, res) => {
+exports.verifyBooking = async (req, res) => {
     try {
-        const booking = await Booking.findOne({ _id: req.params.id, userId: req.user._id });
+        const { bookingId } = req.body;
+        let booking;
 
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
+        // Try searching by full ObjectId first
+        if (mongoose.Types.ObjectId.isValid(bookingId)) {
+            booking = await Booking.findById(bookingId)
+                .populate('gymId')
+                .populate('planId');
         }
 
-        if (booking.status === 'cancelled' || booking.paymentStatus === 'refunded') {
-            return res.status(400).json({ message: 'Booking already cancelled or refunded' });
+        // Fallback: If not found or if bookingId is short (8 chars), try to find by short display ID
+        if (!booking && (bookingId.length === 8 || bookingId.length === 24)) {
+            const regex = new RegExp(bookingId + '$', 'i');
+            booking = await Booking.findOne({
+                $expr: {
+                    $regexMatch: {
+                        input: { $toString: "$_id" },
+                        regex: regex
+                    }
+                }
+            }).populate('gymId').populate('planId');
         }
 
-        // Logic check: within 1hr or before check-in (upcoming)
-        const ONE_HOUR = 60 * 60 * 1000;
-        const isWithinOneHour = (Date.now() - new Date(booking.createdAt).getTime()) < ONE_HOUR;
-        const isUpcoming = booking.status === 'upcoming' || booking.status === 'active'; // Assuming active means pass is valid but not necessarily checked in
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-        if (!isWithinOneHour && booking.status !== 'upcoming') {
-            return res.status(400).json({ message: 'Cancellation policy: must be within 1hr of booking or before start date.' });
+        // Security Check: Only the gym owner or an admin can verify this booking
+        if (req.user.role === 'owner') {
+            const gymId = booking.gymId._id || booking.gymId;
+            const gym = await Gym.findById(gymId);
+            if (!gym || gym.ownerId.toString() !== req.user._id.toString()) {
+                console.warn(`Unauthorized verification attempt by owner ${req.user._id} for booking at gym ${gymId}`);
+                return res.status(403).json({ message: 'Authorization Failed: You can only verify check-ins for your own gym.' });
+            }
         }
 
-        booking.status = 'pending_refund';
-        booking.refundRequestedAt = Date.now();
-        booking.cancellationReason = req.body.reason || 'User requested refund';
-        
+        // Update status to completed
+        booking.status = 'completed';
         await booking.save();
 
-        res.json({ 
-            message: 'Refund requested. Administration will decide within 48hr. If approved, refund will be processed in 14 days.',
-            booking 
-        });
+        // Log activity asynchronously
+        logActivity({
+            userId: booking.userId,
+            gymId: booking.gymId,
+            action: 'Check-in Verified',
+            description: `Member ${booking.memberName} checked in successfully.`,
+            type: 'info'
+        }).catch(err => console.error("Activity log failed:", err.message));
+
+        res.json({ message: 'Booking verified successfully', booking });
     } catch (err) {
+        console.error("Verification Error:", err);
         res.status(500).json({ message: err.message });
     }
 };
 
-// @desc    Admin approve refund
-// @route   PUT /api/bookings/:id/approve-refund
-// @access  Private/Admin
-exports.approveRefund = async (req, res) => {
+exports.cancelBooking = async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
+        // Security check
+        if (booking.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        const now = new Date();
+        const bookingTime = new Date(booking.createdAt);
+        const diffMs = now - bookingTime;
+        const diffHrs = diffMs / (1000 * 60 * 60);
+
+        let canCancel = false;
+        let reason = "";
+
+        // Within 1 hour of booking OR before checking in (upcoming status)
+        if (booking.status === 'upcoming') {
+            canCancel = true;
+            reason = "Before check-in";
+        } else if (diffHrs <= 1 && booking.status !== 'cancelled') {
+            // This case handles edge cases where status might have changed but still within 1hr cooling off
+            // though usually check-in happens after 1hr unless it's a very quick walk-in
+            canCancel = true;
+            reason = "Within 1 hour of booking";
+        }
+
+        if (!canCancel) {
+            return res.status(400).json({
+                message: 'Cancellation policy: Must be before check-in or within 1 hour of booking. Otherwise, please contact support.',
+                requiresChat: true
+            });
         }
 
         booking.status = 'cancelled';
-        booking.paymentStatus = 'refunded'; // Or 'refund_processing'
-        booking.refundApprovedAt = Date.now();
-        booking.refundStatus = 'approved';
-        
         await booking.save();
 
-        res.json({ message: 'Refund approved successfully. Funds will be returned within 14 days.', booking });
+        logActivity({
+            userId: booking.userId,
+            gymId: booking.gymId,
+            action: 'Booking Cancelled',
+            description: `Booking ${booking._id} cancelled by user. Reason: ${reason}`,
+            type: 'warning'
+        }).catch(err => console.error("Activity log failed:", err.message));
+
+        res.json({ message: 'Booking cancelled successfully', booking });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-// @desc    Admin reject refund
-// @route   PUT /api/bookings/:id/reject-refund
-// @access  Private/Admin
-exports.rejectRefund = async (req, res) => {
+exports.updateBookingDate = async (req, res) => {
     try {
-        const booking = await Booking.findById(req.params.id);
-
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
-        }
-
-        booking.status = 'active'; // Restore to active or previous state
-        booking.refundStatus = 'rejected';
-        booking.adminRemarks = req.body.remarks || 'Refund policy not met';
-        
-        await booking.save();
-
-        res.json({ message: 'Refund request rejected', booking });
+        // Option removed as per user request
+        return res.status(400).json({ message: 'Date modification is no longer allowed. Please cancel and re-book if needed.' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

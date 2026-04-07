@@ -4,55 +4,41 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
     let token;
 
-    const authHeader = req.headers.authorization;
-    const cookieToken = req.cookies ? req.cookies.accessToken : null;
-
-    if ((authHeader && authHeader.startsWith('Bearer')) || cookieToken) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            token = authHeader ? authHeader.split(' ')[1] : cookieToken;
-            console.log('🔓 Auth Token found, verifying...');
-
-            if (!process.env.JWT_SECRET) {
-                console.error('❌ CRITICAL: JWT_SECRET is not defined in .env');
-                return res.status(500).json({ message: 'Server configuration error: JWT_SECRET missing' });
-            }
-
+            token = req.headers.authorization.split(' ')[1];
+            console.log('Auth Token found, verifying...');
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            console.log('✅ Token decoded correctly for user id:', decoded.id);
+            console.log('Token decoded:', decoded);
             req.user = await User.findById(decoded.id).select('-password');
-
+            
             if (!req.user) {
-                console.error('❌ User not found in database for token id:', decoded.id);
-                return res.status(401).json({ message: 'User not found or account deactivated' });
+                console.error('User not found in database for token id:', decoded.id);
+                return res.status(401).json({ message: 'User not found' });
             }
-
-            console.log('👤 User authenticated:', req.user._id, 'roles:', req.user.roles);
+            
+            console.log('User authenticated:', req.user._id);
             return next();
         } catch (error) {
-            console.error('❌ Auth Verification Error:', error.message);
+            console.error('Auth Error:', error.message);
             return res.status(401).json({ message: 'Not authorized, token failed: ' + error.message });
         }
     }
 
-    console.error('🚫 No token found in authorization header or cookies');
-    return res.status(401).json({ message: 'Not authorized, no session found. Please login.' });
+    console.error('No token found in authorization header');
+    return res.status(401).json({ message: 'Not authorized, no token' });
 };
 
 const admin = (req, res, next) => {
-    const roles = (req.user && req.user.roles) ? req.user.roles.map(r => r.toLowerCase()) : [];
-    if (roles.includes('admin')) {
+    if (req.user && req.user.role === 'admin') {
         return next();
     } else {
-        console.error('🛡️ Admin Check Failed | User:', req.user?._id, '| Roles:', req.user?.roles);
-        return res.status(403).json({
-            message: 'Not authorized as an admin',
-            userRoles: req.user?.roles
-        });
+        return res.status(401).json({ message: 'Not authorized as an admin' });
     }
 };
 
 const owner = (req, res, next) => {
-    if (req.user && req.user.roles && (req.user.roles.includes('owner') || req.user.roles.includes('admin'))) {
+    if (req.user && (req.user.role === 'owner' || req.user.role === 'admin')) {
         return next();
     } else {
         return res.status(401).json({ message: 'Not authorized as an owner' });
@@ -62,10 +48,9 @@ const owner = (req, res, next) => {
 const protectOptional = async (req, res, next) => {
     let token;
 
-    const authHeader = req.headers.authorization;
-    if ((authHeader && authHeader.startsWith('Bearer')) || req.cookies.accessToken) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            token = authHeader ? authHeader.split(' ')[1] : req.cookies.accessToken;
+            token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await User.findById(decoded.id).select('-password');
         } catch (error) {

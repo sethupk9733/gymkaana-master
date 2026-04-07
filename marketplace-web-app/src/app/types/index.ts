@@ -42,8 +42,6 @@ export interface Booking {
     gymId?: string;
     planId?: string;
     status: "completed" | "cancelled" | "upcoming";
-    cancellationReason?: string;
-    cancelledBy?: string;
 }
 
 export interface ActivePass {

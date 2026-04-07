@@ -1,65 +1,90 @@
-import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, X, Loader2 } from "lucide-react";
+import { Search, DollarSign, Download, Filter, ArrowUpRight, ArrowDownRight, Printer, MoreHorizontal, Calendar, CreditCard, Wallet, Banknote, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { approveRefund, rejectRefund, fetchAdminAccounting } from "../lib/api";
+import { motion, AnimatePresence } from "motion/react";
+import { fetchAdminAccounting } from "../lib/api";
 
 interface Transaction {
     id: string;
     user: string;
     email: string;
     gym: string;
-    amount: string;
+    amount: any;
     date: string;
     time: string;
-    status: 'Completed' | 'Refunded' | 'Pending' | 'Failed' | 'Pending Refund';
+    status: 'Completed' | 'Refunded' | 'Pending' | 'Failed';
     type: string;
     method: 'UPI' | 'Card' | 'Wallet' | 'Net Banking';
-    commission: string;
-    netPayout: string;
-    rawId?: string;
+    commission: any;
+    netPayout: any;
 }
-
 
 export function RefundManagement() {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
     const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [stats, setStats] = useState<any>(null);
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        loadData();
+        const loadFinanceData = async () => {
+            try {
+                setLoading(true);
+                const result = await fetchAdminAccounting();
+                setData(result);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadFinanceData();
     }, []);
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const accountingData = await fetchAdminAccounting();
-            
-            setTransactions(accountingData.transactions || []);
-            setStats(accountingData.stats || null);
-        } catch (err) {
-            console.error('Failed to load financial records:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const transactions: Transaction[] = data?.transactions?.map((t: any) => ({
+        ...t,
+        amount: `₹${Number(t.amount).toLocaleString()}`,
+        commission: `₹${Number(t.commission).toLocaleString()}`,
+        netPayout: `₹${Number(t.netPayout).toLocaleString()}`
+    })) || [];
 
-    const formatCurrency = (amount: any) => {
-        if (!amount) return '₹0';
-        return `₹${amount.toLocaleString('en-IN')}`;
+    const stats = data?.stats || {
+        grossRevenue: 0,
+        totalCommission: 0,
+        totalRefunds: 0,
+        settledPayouts: 0
     };
 
     const filteredTransactions = transactions.filter(txn => {
-        const matchesSearch = String(txn.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            String(txn.user || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            String(txn.gym || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesFilter = filterStatus === "All" || txn.status === filterStatus;
+        const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            txn.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            txn.gym.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesFilter = filterStatus === "All"
+            ? true
+            : filterStatus === "Payouts"
+                ? txn.type === "Payout"
+                : txn.status === filterStatus;
+
         return matchesSearch && matchesFilter;
     });
 
+    const formatLakhs = (amt: number) => {
+        if (amt >= 100000) return `₹${(amt / 100000).toFixed(2)}L`;
+        return `₹${amt.toLocaleString()}`;
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Syncing Financial Ledger...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
+        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Financial Ledger</h2>
@@ -77,10 +102,10 @@ export function RefundManagement() {
 
             {/* Platform Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FinanceStat label="Gross Revenue" value={formatCurrency(stats?.grossRevenue)} trend="+8%" sub="MTD Performance" color="black" />
-                <FinanceStat label="Total Commission" value={formatCurrency(stats?.totalCommission)} trend="+12%" sub="Platform Earnings" color="primary" />
-                <FinanceStat label="Total Refunds" value={formatCurrency(stats?.totalRefunds)} trend="-2%" sub="User Reversals" color="red" />
-                <FinanceStat label="Settled Payouts" value={formatCurrency(stats?.settledPayouts)} trend="+5%" sub="Paid to Gyms" color="emerald" />
+                <FinanceStat label="Gross Revenue" value={formatLakhs(stats.grossRevenue)} trend="+0%" sub="Live Network GMV" color="black" />
+                <FinanceStat label="Total Yield" value={formatLakhs(stats.totalCommission)} trend="+0%" sub="Platform (15%)" color="primary" />
+                <FinanceStat label="Total Refunds" value={formatLakhs(stats.totalRefunds)} trend="-0%" sub="User Reversals" color="red" />
+                <FinanceStat label="Settled Payouts" value={formatLakhs(stats.settledPayouts)} trend="+0%" sub="Paid to Gyms" color="emerald" />
             </div>
 
             {/* Custom Search & Filters */}
@@ -98,7 +123,7 @@ export function RefundManagement() {
                     </div>
 
                     <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar w-full lg:w-auto">
-                        {['All', 'Completed', 'Refunded', 'Pending Refund', 'Pending', 'Failed'].map(status => (
+                        {['All', 'Completed', 'Refunded', 'Pending', 'Failed', 'Payouts'].map(status => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
@@ -111,7 +136,6 @@ export function RefundManagement() {
                             </button>
                         ))}
                     </div>
-
                 </div>
 
                 <div className="overflow-x-auto">
@@ -136,7 +160,7 @@ export function RefundManagement() {
                                     <td className="py-6 px-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[10px] font-black italic">
-                                                {String(txn.gym || "?").charAt(0).toUpperCase()}
+                                                {txn.gym.charAt(0)}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900 text-sm">{txn.gym}</p>
@@ -168,106 +192,77 @@ export function RefundManagement() {
             </div>
 
             {/* Transaction Detail Panel */}
-            {selectedTxn && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-                    <div
-                        className="bg-white w-full max-w-2xl rounded-[48px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]"
-                    >
-                        <button
-                            onClick={() => setSelectedTxn(null)}
-                            className="absolute top-8 right-8 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all z-10"
-                            title="Close"
+            <AnimatePresence>
+                {selectedTxn && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                            className="bg-white w-full max-w-2xl rounded-[48px] overflow-hidden flex flex-col relative shadow-[0_32px_64px_rgba(0,0,0,0.5)]"
                         >
-                            <X className="w-5 h-5" />
-                        </button>
+                            <button
+                                onClick={() => setSelectedTxn(null)}
+                                className="absolute top-8 right-8 p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all z-10"
+                                title="Close"
+                            >
+                                <Printer className="w-5 h-5" />
+                            </button>
 
-                        <div className="p-12 overflow-y-auto custom-scrollbar">
-                            <div className="text-center mb-10">
-                                <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                                    }`}>
-                                    <CreditCard className="w-10 h-10" />
-                                </div>
-                                <h3 className="text-3xl font-black italic uppercase tracking-tighter">Transaction Detail</h3>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn.id}</p>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-100 grid grid-cols-2 gap-8">
-                                    <SummaryItem label="Customer" value={selectedTxn.user} sub={selectedTxn.email} />
-                                    <SummaryItem label="Gym Venue" value={selectedTxn.gym} sub="Primary Partner" />
-                                    <SummaryItem label="Payment Info" value={selectedTxn.method} sub={selectedTxn.type} />
-                                    <SummaryItem label="Timestamp" value={selectedTxn.date} sub={selectedTxn.time} />
-                                </div>
-
-                                <div className="p-8 bg-black text-white rounded-[32px] space-y-4">
-                                    <div className="flex justify-between items-center text-white/40 font-black text-[10px] uppercase tracking-widest border-b border-white/5 pb-4">
-                                        <span>Ledger Breakdown</span>
-                                        <span>Amount (INR)</span>
+                            <div className="p-12 overflow-y-auto custom-scrollbar">
+                                <div className="text-center mb-10">
+                                    <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                                        }`}>
+                                        <CreditCard className="w-10 h-10" />
                                     </div>
-                                    <LedgerLine label="Order Amount" value={selectedTxn.amount} />
-                                    <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn.commission}`} color="text-primary" />
-                                    <LedgerLine label="GST @ 18%" value="- ₹89.00" />
-                                    <div className="pt-4 border-t border-white/10 flex justify-between items-end">
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase text-white/40">Net Partner Payout</p>
-                                            <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn.netPayout}</p>
+                                    <h3 className="text-3xl font-black italic uppercase tracking-tighter">Transaction Detail</h3>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn.id}</p>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-100 grid grid-cols-2 gap-8">
+                                        <SummaryItem label="Customer" value={selectedTxn.user} sub={selectedTxn.email} />
+                                        <SummaryItem label="Gym Venue" value={selectedTxn.gym} sub="Primary Partner" />
+                                        <SummaryItem label="Payment Info" value={selectedTxn.method} sub={selectedTxn.type} />
+                                        <SummaryItem label="Timestamp" value={selectedTxn.date} sub={selectedTxn.time} />
+                                    </div>
+
+                                    <div className="p-8 bg-black text-white rounded-[32px] space-y-4">
+                                        <div className="flex justify-between items-center text-white/40 font-black text-[10px] uppercase tracking-widest border-b border-white/5 pb-4">
+                                            <span>Ledger Breakdown</span>
+                                            <span>Amount (INR)</span>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black uppercase text-white/40">Settlement Code</p>
-                                            <p className="font-mono text-xs font-bold">SET-90129XP</p>
+                                        <LedgerLine label="Order Amount" value={selectedTxn.amount} />
+                                        <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn.commission}`} color="text-primary" />
+                                        <LedgerLine label="GST @ 18%" value="- ₹89.00" />
+                                        <div className="pt-4 border-t border-white/10 flex justify-between items-end">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-white/40">Net Partner Payout</p>
+                                                <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn.netPayout}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black uppercase text-white/40">Settlement Code</p>
+                                                <p className="font-mono text-xs font-bold">SET-90129XP</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="mt-10 flex gap-4">
-                                {selectedTxn.status === 'Pending Refund' && (
-                                    <>
-                                        <button 
-                                            onClick={async () => {
-                                                if(!selectedTxn.rawId) return;
-                                                setLoading(true);
-                                                try {
-                                                    await approveRefund(selectedTxn.rawId);
-                                                    alert("REFUND AUTHORIZED: The reversal has been initiated. Funds will be credited to the original payment method within 14 business days.");
-                                                    setSelectedTxn(null);
-                                                    loadData();
-                                                } catch(e:any) { alert(e.message); }
-                                                finally { setLoading(false); }
-                                            }}
-                                            className="flex-1 py-5 bg-emerald-50 text-emerald-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-100 transition-all"
-                                        >
-                                            Approve Refund
+                                <div className="mt-10 flex gap-4">
+                                    {selectedTxn.status === 'Completed' && (
+                                        <button className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all flex items-center justify-center gap-3">
+                                            Reverse Payment (Refund)
                                         </button>
-                                        <button 
-                                            onClick={async () => {
-                                                if(!selectedTxn.rawId) return;
-                                                const reason = prompt("Enter rejection reason:");
-                                                if(!reason) return;
-                                                setLoading(true);
-                                                try {
-                                                    await rejectRefund(selectedTxn.rawId, reason);
-                                                    alert("Refund Rejected.");
-                                                    setSelectedTxn(null);
-                                                    loadData();
-                                                } catch(e:any) { alert(e.message); }
-                                                finally { setLoading(false); }
-                                            }}
-                                            className="flex-1 py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-100 transition-all"
-                                        >
-                                            Reject
-                                        </button>
-                                    </>
-                                )}
-                                <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all flex-1">
-                                    Close Ledger
-                                </button>
+                                    )}
+                                    <button onClick={() => setSelectedTxn(null)} className="px-10 py-5 bg-gray-50 text-gray-900 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all">
+                                        Close Ledger
+                                    </button>
+                                </div>
                             </div>
-
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -299,9 +294,7 @@ function StatusBadge({ status }: { status: string }) {
         Refunded: 'bg-red-50 text-red-600 border-red-100 line-through',
         Pending: 'bg-orange-50 text-orange-600 border-orange-100',
         Failed: 'bg-gray-50 text-gray-400 border-gray-100',
-        'Pending Refund': 'bg-purple-50 text-purple-600 border-purple-100 animate-pulse',
     };
-
     return (
         <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${colors[status]}`}>
             {status}

@@ -112,18 +112,18 @@ export function MembershipPlansScreen({
             className="w-full pb-20"
         >
             {/* Page Header */}
-            <div className="bg-background border-b border-border py-12 mb-12">
+            <div className="bg-white border-b border-gray-100 py-12 mb-12">
                 <div className="px-6 max-w-7xl mx-auto text-center">
                     <button
                         onClick={onBack}
-                        className="inline-flex items-center gap-2 text-xs font-black text-muted-foreground uppercase tracking-widest hover:text-foreground mb-6 transition-colors"
+                        className="inline-flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-black mb-6 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" /> Back to Gym Details
                     </button>
-                    <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-foreground uppercase mb-4">
+                    <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-gray-900 uppercase mb-4">
                         Choose Your <span className="text-primary">Plan</span>
                     </h1>
-                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest max-w-xl mx-auto">
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest max-w-xl mx-auto">
                         Unlock your potential with premium facilities and expert guidance
                     </p>
                 </div>
@@ -134,71 +134,93 @@ export function MembershipPlansScreen({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {plans.map((plan, index) => (
                         <motion.div
-                            key={index}
-                            initial={{ y: 30, opacity: 0 }}
+                            key={plan.id}
+                            initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: index * 0.1 }}
                             onClick={() => {
                                 localStorage.setItem('last_selected_plan', JSON.stringify(plan));
                                 onSelectPlan(plan);
                             }}
-                            className={`relative border rounded-[40px] p-10 transition-all hover:-translate-y-4 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] cursor-pointer group flex flex-col ${plan.popular
-                                ? 'bg-secondary border-secondary text-white shadow-2xl scale-105 z-10'
-                                : 'bg-white border-border/60 text-secondary hover:border-primary'
+                            className={`relative border rounded-[32px] p-8 transition-all hover:-translate-y-2 hover:shadow-2xl cursor-pointer group flex flex-col ${plan.popular
+                                ? 'bg-gray-900 border-gray-900 text-white shadow-xl ring-4 ring-primary/20 scale-105 z-10'
+                                : 'bg-white border-gray-100 text-gray-900 hover:border-gray-300'
                                 }`}
                         >
                             {plan.popular && (
-                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black px-8 py-2.5 rounded-full uppercase tracking-[0.3em] shadow-2xl shadow-primary/40 italic">
-                                    MOST POPULAR
+                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl shadow-lg flex items-center gap-2">
+                                    <Zap className="w-3 h-3 fill-current" />
+                                    Most Popular
                                 </div>
                             )}
 
-                            <div className="flex flex-col items-center text-center mb-10">
-                                <h4 className={`font-black text-3xl italic uppercase tracking-tighter mb-4 ${plan.popular ? 'text-primary' : 'text-secondary'}`}>
+                            <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                                {plan.extraDiscountLabel && (
+                                    <div className="bg-primary text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
+                                        <Zap className="w-3 h-3 fill-current" /> {plan.extraDiscountLabel}
+                                    </div>
+                                )}
+                                {plan.savingsLabel && (
+                                    <div className="bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg shadow-lg">
+                                        {plan.savingsLabel}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col items-center text-center mb-8">
+                                <h4 className={`font-black text-2xl italic uppercase tracking-tight mb-2 ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
                                     {plan.name}
                                 </h4>
-                                <div className="flex flex-col items-center gap-2 mb-8">
+                                <div className="flex flex-col items-center gap-1 mb-6">
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-7xl font-black italic tracking-tighter">{plan.price}</span>
-                                        <span className={`text-[10px] uppercase font-bold tracking-[0.2em] opacity-40 uppercase`}>
+                                        <span className="text-5xl font-black italic tracking-tighter">{plan.price}</span>
+                                        <span className={`text-xs uppercase font-bold tracking-widest ${plan.popular ? 'text-white/40' : 'text-gray-400'}`}>
                                             {plan.duration}
                                         </span>
                                     </div>
-
-                                    {/* Discount Badges */}
-                                    <div className="flex flex-wrap justify-center gap-2 mt-2">
-                                        {plan.stage1Discount > 0 && (
-                                            <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest italic">
-                                                {plan.stage1Discount}% OFF
-                                            </span>
+                                    <div className="flex flex-col items-center gap-1 mt-1">
+                                        {plan.showDayPassStrike && plan.stage1Discount > 0 && (
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest line-through ${plan.popular ? 'text-white/30' : 'text-gray-400'}`}>
+                                                    {plan.dayPassTotal}
+                                                </span>
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                                    {plan.stage1Discount}% OFF
+                                                </span>
+                                            </div>
                                         )}
-                                        {plan.stage2Discount > 0 && (
-                                            <span className="bg-primary/10 text-primary text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest italic">
-                                                EXTRA {plan.stage2Discount}%
-                                            </span>
+                                        {plan.showPlanBaseStrike && (
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest line-through ${plan.popular ? 'text-white/30' : 'text-gray-400'}`}>
+                                                    {plan.planBasePrice}
+                                                </span>
+                                                <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                                                    {plan.stage2Discount}% EXTRA DISCOUNT
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className={`w-full py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] transition-all shadow-xl italic ${plan.popular
-                                        ? 'bg-primary text-white shadow-primary/30'
-                                        : 'bg-secondary text-white hover:bg-primary'
+                                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-colors ${plan.popular
+                                        ? 'bg-primary text-white hover:bg-primary/90'
+                                        : 'bg-black text-white hover:bg-gray-800'
                                         }`}
                                 >
-                                    BOOK NOW
+                                    Select Plan
                                 </motion.button>
                             </div>
 
-                            <div className="space-y-5 flex-1 pt-8 border-t border-current/10">
+                            <div className="space-y-4 flex-1">
+                                <div className={`h-px w-full my-4 ${plan.popular ? 'bg-white/10' : 'bg-gray-100'}`} />
                                 {plan.features.map((feature, idx) => (
-                                    <div key={idx} className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${plan.popular ? 'bg-primary/20 text-primary' : 'bg-muted text-secondary'}`}>
-                                            <CheckCircle2 className="w-4 h-4" />
+                                    <div key={idx} className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.popular ? 'bg-white/10 text-primary' : 'bg-gray-100 text-black'}`}>
+                                            <CheckCircle2 className="w-3 h-3" />
                                         </div>
-                                        <span className={`text-[11px] font-bold leading-tight uppercase tracking-wider ${plan.popular ? 'text-white/80' : 'text-secondary/70'}`}>
+                                        <span className={`text-sm font-bold leading-tight ${plan.popular ? 'text-white/80' : 'text-gray-600'}`}>
                                             {feature}
                                         </span>
                                     </div>

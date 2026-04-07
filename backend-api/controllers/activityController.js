@@ -3,12 +3,11 @@ const Activity = require('../models/Activity');
 exports.getActivities = async (req, res) => {
     try {
         let filter = {};
-        const roles = req.user.roles || [];
-        if (roles.includes('owner') && !roles.includes('admin')) {
+        if (req.user.role === 'owner') {
             const Gym = require('../models/Gym');
             const myGyms = await Gym.find({ ownerId: req.user._id });
             filter = { gymId: { $in: myGyms.map(g => g._id) } };
-        } else if (roles.includes('user') && !roles.includes('admin') && !roles.includes('owner')) {
+        } else if (req.user.role === 'user') {
             filter = { userId: req.user._id };
         }
 

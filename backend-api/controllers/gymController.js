@@ -1,12 +1,137 @@
 const Gym = require('../models/Gym');
+const { logActivity } = require('./activityController');
 
 exports.getAllGyms = async (req, res) => {
     try {
-        const filter = {};
-        if (req.query.status) {
-            filter.status = req.query.status.toLowerCase();
+        let query = {};
+        if (req.user) {
+            if (req.user.role === 'owner') {
+                query.ownerId = req.user._id;
+            } else if (req.user.role === 'admin') {
+                // Admin sees all
+            } else {
+                // Regular user sees only approved/active
+                query.status = { $in: ['Approved', 'Active'] };
+            }
+        } else {
+            // Public sees only approved/active
+            query.status = { $in: ['Approved', 'Active'] };
         }
-        const gyms = await Gym.find(filter).populate('ownerId', 'name email phoneNumber');
+        console.log('Fetching gyms for user:', req.user ? { id: req.user._id, role: req.user.role } : 'Guest');
+        const gyms = await Gym.aggregate([
+            { $match: query },
+            {
+                $lookup: {
+                    from: 'bookings',
+                    localField: '_id',
+                    foreignField: 'gymId',
+                    as: 'gymBookings'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'ownerId',
+                    foreignField: '_id',
+                    as: 'ownerDetails'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'plans',
+                    localField: '_id',
+                    foreignField: 'gymId',
+                    as: 'gymPlans'
+                }
+            },
+            { $unwind: { path: '$ownerDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    address: 1,
+                    location: 1,
+                    rating: 1,
+                    reviews: 1,
+                    status: 1,
+                    description: 1,
+                    phone: 1,
+                    email: 1,
+                    timings: 1,
+                    images: 1,
+                    members: 1,
+                    checkins: 1,
+                    facilities: 1,
+                    specializations: 1,
+                    trainers: 1,
+                    trainerDetails: 1,
+                    houseRules: 1,
+                    documentation: 1,
+                    bankDetails: 1,
+                    baseDayPassPrice: 1,
+                    createdAt: 1,
+                    ownerId: {
+                        _id: '$ownerDetails._id',
+                        name: '$ownerDetails.name',
+                        email: '$ownerDetails.email',
+                        phoneNumber: '$ownerDetails.phoneNumber'
+                    },
+                    revenues: {
+                        $concat: [
+                            "₹",
+                            {
+                                $toString: {
+                                    $sum: {
+                                        $map: {
+                                            input: {
+                                                $filter: {
+                                                    input: '$gymBookings',
+                                                    as: 'b',
+                                                    cond: { $in: ['$$b.status', ['active', 'completed', 'upcoming']] }
+                                                }
+                                            },
+                                            as: 'fb',
+                                            in: '$$fb.amount'
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    liveFootfall: {
+                        $size: {
+                            $filter: {
+                                input: '$gymBookings',
+                                as: 'b',
+                                cond: { $in: ['$$b.status', ['active', 'completed', 'upcoming']] }
+                            }
+                        }
+                    },
+                    bestDiscount: {
+                        $max: {
+                            $map: {
+                                input: '$gymPlans',
+                                as: 'plan',
+                                in: { $ifNull: ['$$plan.discount', 0] }
+                            }
+                        }
+                    },
+                    maxBaseDiscount: {
+                        $max: {
+                            $map: {
+                                input: '$gymPlans',
+                                as: 'plan',
+                                in: { $ifNull: ['$$plan.baseDiscount', 0] }
+                            }
+                        }
+                    }
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ]);
+
+        console.log(`Found ${gyms.length} gyms for query:`, JSON.stringify(query));
+        console.log('DEBUG First Gym:', gyms[0]?.name, { maxBaseDiscount: gyms[0]?.maxBaseDiscount, bestDiscount: gyms[0]?.bestDiscount });
         res.json(gyms);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -14,82 +139,37 @@ exports.getAllGyms = async (req, res) => {
 };
 
 exports.createGym = async (req, res) => {
-    console.log('🏗️ createGym called | Body Keys:', Object.keys(req.body));
-    console.log('👤 Authenticated User:', req.user?._id, 'Roles:', req.user?.roles);
-
-    // Guard: Ensure user is authenticated
-    if (!req.user || !req.user._id) {
-        console.error('❌ Authentication failure: req.user is missing');
-        return res.status(401).json({ message: 'User NOT identified. Please login again.' });
-    }
-
-    // Guard: Ensure the body was actually parsed
-    if (!req.body || Object.keys(req.body).length === 0) {
-        console.error('❌ Request body is empty');
-        return res.status(400).json({ message: 'Empty request body. Ensure Content-Type is application/json.' });
-    }
-
-    // Guard: Check required fields manually before hitting Mongoose
-    if (!req.body.name || String(req.body.name).trim() === '') {
-        return res.status(400).json({ message: 'Gym name is required.' });
-    }
-    if (!req.body.address || String(req.body.address).trim() === '') {
-        return res.status(400).json({ message: 'Gym address is required.' });
-    }
-
-    // Handle specializations: frontend may send a comma-separated string or an array
-    let specializations = req.body.specializations;
-    if (typeof specializations === 'string' && specializations.trim()) {
-        specializations = specializations.split(',').map(s => s.trim()).filter(Boolean);
-    } else if (!Array.isArray(specializations)) {
-        specializations = [];
-    }
-
-    const status = (req.body.status || 'pending').toLowerCase();
-
-    console.log('📝 Creating Gym document for:', req.body.name);
-
-    const gym = new Gym({
-        name: String(req.body.name).trim(),
-        description: req.body.description || '',
-        address: String(req.body.address).trim(),
-        phone: req.body.phone || '',
-        email: req.body.email || '',
-        city: req.body.city || '',
-        zipCode: req.body.zipCode || req.body.zip || '', // Handle both web and mobile keys
-        landmark: req.body.landmark || '',
-        googleMapsLink: req.body.googleMapsLink || req.body.location || '', // Handle location field from mobile
-        headTrainer: req.body.headTrainer || '',
-        experience: req.body.experience || '',
-        specializations,
-        openingHoursWeekdays: req.body.openingHoursWeekdays || req.body.timings || '', // Handle timings field from mobile
-        openingHoursWeekends: req.body.openingHoursWeekends || '',
-        facilities: Array.isArray(req.body.facilities) ? req.body.facilities : [],
-        images: Array.isArray(req.body.images) ? req.body.images : (req.body.image ? [req.body.image] : []),
-        image: req.body.image || (Array.isArray(req.body.images) && req.body.images.length > 0 ? req.body.images[0] : ''),
-        bankDetails: req.body.bankDetails || {}, // Support bank details from mobile/web
-        gstNo: req.body.gstNo || '',
-        panNo: req.body.panNo || '',
-        documentation: {
-            tradingLicense: req.body.documentation?.tradingLicense || req.body.tradingLicense || '',
-            fireSafety: req.body.documentation?.fireSafety || req.body.fireSafety || '',
-            insurancePolicy: req.body.documentation?.insurancePolicy || req.body.insurancePolicy || ''
-        },
-        status,
-        ownerId: req.user._id
-    });
-
     try {
+        const { plans, ...gymData } = req.body;
+
+        const gym = new Gym({
+            ...gymData,
+            ownerId: req.user._id
+        });
+
         const newGym = await gym.save();
-        console.log('✅ Gym saved successfully:', newGym._id);
+
+        // If plans were provided, create them
+        if (plans && Array.isArray(plans)) {
+            const Plan = require('../models/Plan');
+            const plansToCreate = plans.map(plan => ({
+                ...plan,
+                gymId: newGym._id
+            }));
+            await Plan.insertMany(plansToCreate);
+        }
+
+        await logActivity({
+            userId: req.user._id,
+            gymId: newGym._id,
+            action: 'Gym Registered',
+            description: `New hub "${newGym.name}" awaiting clearance.`,
+            type: 'warning'
+        });
+
         res.status(201).json(newGym);
     } catch (err) {
-        console.error('❌ Error saving gym to DB:', err.message);
-        res.status(400).json({
-            message: `Gym validation failed: ${err.message}`,
-            details: err.errors, // Mongoose validation details
-            receivedBody: req.body
-        });
+        res.status(400).json({ message: err.message });
     }
 };
 
@@ -97,7 +177,18 @@ exports.getGymById = async (req, res) => {
     try {
         const gym = await Gym.findById(req.params.id);
         if (!gym) return res.status(404).json({ message: 'Gym not found' });
-        res.json(gym);
+
+        // Fetch real-time stats from bookings
+        const revenueResult = await require('../models/Booking').aggregate([
+            { $match: { gymId: gym._id, status: { $in: ['active', 'completed', 'upcoming'] } } },
+            { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } }
+        ]);
+
+        const gymObj = gym.toObject();
+        gymObj.realRevenue = revenueResult[0]?.total || 0;
+        gymObj.realBookings = revenueResult[0]?.count || 0;
+
+        res.json(gymObj);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -105,16 +196,25 @@ exports.getGymById = async (req, res) => {
 
 exports.updateGym = async (req, res) => {
     try {
-        const updates = { ...req.body };
-        // Sync image fields if either is provided in the update
-        if (updates.images && Array.isArray(updates.images)) {
-            updates.image = updates.images[0] || '';
-        } else if (updates.image && typeof updates.image === 'string') {
-            updates.images = [updates.image];
+        const gym = await Gym.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!gym) return res.status(404).json({ message: 'Gym not found' });
+
+        // If baseDayPassPrice changed, recalculate all plan discounts for this gym
+        if (req.body.baseDayPassPrice !== undefined) {
+            const Plan = require('../models/Plan');
+            const plans = await Plan.find({ gymId: gym._id });
+            const newBasePrice = Number(req.body.baseDayPassPrice);
+
+            for (const plan of plans) {
+                const totalDayValue = newBasePrice * (plan.sessions || 1);
+                if (totalDayValue > 0) {
+                    const calculatedDiscount = Math.round((1 - (plan.price / totalDayValue)) * 100);
+                    plan.baseDiscount = Math.max(0, calculatedDiscount);
+                    await plan.save();
+                }
+            }
         }
 
-        const gym = await Gym.findByIdAndUpdate(req.params.id, updates, { new: true });
-        if (!gym) return res.status(404).json({ message: 'Gym not found' });
         res.json(gym);
     } catch (err) {
         res.status(400).json({ message: err.message });

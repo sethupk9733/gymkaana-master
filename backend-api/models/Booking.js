@@ -1,25 +1,30 @@
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    transactionId: { type: String, unique: true, sparse: true },
     gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym', required: true },
     planId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', required: true },
-    memberName: { type: String }, // Optional if userId exists
-    memberEmail: { type: String },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    memberName: { type: String, required: true },
+    memberEmail: { type: String, required: true },
     amount: { type: Number, required: true },
-    status: {
-        type: String,
-        enum: ['pending', 'active', 'upcoming', 'completed', 'cancelled', 'rejected'],
-        default: 'pending'
-    },
-    paymentStatus: { type: String, enum: ['unpaid', 'paid', 'refunded'], default: 'unpaid' },
-    paymentId: { type: String }, // Razorpay Payment ID / Stripe Payment Intent
-    orderId: { type: String }, // Razorpay Order ID
+    status: { type: String, enum: ['active', 'cancelled', 'completed', 'upcoming'], default: 'upcoming' },
     bookingDate: { type: Date, default: Date.now },
-    bookingTime: { type: String },
     startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-    createdAt: { type: Date, default: Date.now }
-});
+    endDate: { type: Date, required: true }
+}, { timestamps: true });
+
+// Transaction ID is now generated in the direct endpoint, so we don't need this pre-save hook
+// Disabling to avoid any "next is not a function" issues
+// bookingSchema.pre('save', function (next) {
+//     if (!this.transactionId) {
+//         const date = new Date();
+//         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+//         const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+//         this.transactionId = `GYM-${dateStr}-${randomStr}`;
+//         console.log('✓ Transaction ID generated:', this.transactionId);
+//     }
+//     next();
+// });
 
 module.exports = mongoose.model('Booking', bookingSchema);

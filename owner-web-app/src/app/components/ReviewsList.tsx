@@ -87,7 +87,7 @@ export function ReviewsList() {
                                     title="View Member Profile"
                                 >
                                     <div className="w-12 h-12 bg-black text-primary rounded-2xl flex items-center justify-center font-black text-lg italic uppercase tracking-tighter">
-                                        {String(review.userId?.name || 'U').charAt(0).toUpperCase()}
+                                        {(review.userId?.name || 'U').charAt(0)}
                                     </div>
                                     <div>
                                         <h4 className="font-black text-gray-900 uppercase italic tracking-tighter leading-tight">{review.userId?.name || 'Unknown'}</h4>
@@ -175,7 +175,7 @@ export function ReviewsList() {
                     <div className="bg-white rounded-[40px] p-8 w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <div className="text-center mb-8">
                             <div className="w-24 h-24 bg-black text-white rounded-[32px] flex items-center justify-center font-black text-4xl shadow-xl italic mx-auto mb-6 transform -rotate-3">
-                                {String(selectedUser.name || "?").charAt(0).toUpperCase()}
+                                {selectedUser.name?.charAt(0)}
                             </div>
                             <h3 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900">{selectedUser.name}</h3>
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Valued Member</p>

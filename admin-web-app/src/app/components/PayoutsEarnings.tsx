@@ -1,60 +1,54 @@
-import { ArrowLeft, TrendingUp, DollarSign, Calendar, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, DollarSign, Calendar, Download, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "./ui/button";
-import { useState, useEffect } from 'react';
-import { fetchAdminAccounting, fetchAllPayouts } from '../lib/api';
 
 interface PayoutsEarningsProps {
   onBack: () => void;
 }
 
 export function PayoutsEarnings({ onBack }: PayoutsEarningsProps) {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  const [payouts, setPayouts] = useState<any[]>([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [accountingData, payoutsData] = await Promise.all([
-        fetchAdminAccounting(),
-        fetchAllPayouts()
-      ]);
-      setStats(accountingData);
-      setPayouts(payoutsData);
-    } catch (err) {
-      console.error('Failed to load financial data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const summaryCards = [
-    { label: "Total Platform Revenue", value: stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0", change: stats?.revenueTrend || "+0%", trend: stats?.revenueTrend?.includes('-') ? "down" : "up" },
-    { label: "Net Platform Commission", value: stats?.netCommission ? `₹${stats.netCommission.toLocaleString()}` : "₹0", change: stats?.commissionTrend || "+0%", trend: stats?.commissionTrend?.includes('-') ? "down" : "up" },
-    { label: "Pending Payouts", value: stats?.totalPendingPayout ? `₹${stats.totalPendingPayout.toLocaleString()}` : "₹0", change: "-", trend: null },
+    { label: "Total Earnings", value: "₹1,24,500", change: "+15%", trend: "up" },
+    { label: "This Month", value: "₹45,200", change: "+8%", trend: "up" },
+    { label: "Pending Payouts", value: "₹12,300", change: "-", trend: null },
   ];
 
-  const transactions = payouts.map(p => ({
-    type: "debit",
-    description: `Payout to ${p.gymId?.name || 'Partner'}`,
-    amount: `-₹${p.amount?.toLocaleString()}`,
-    date: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A',
-    time: p.createdAt ? new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-    status: p.status
-  })).slice(0, 10);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-white">
-        <Loader2 className="w-8 h-8 animate-spin text-black mb-4" />
-        <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Syncing Financial Ledger...</p>
-      </div>
-    );
-  }
+  const transactions = [
+    {
+      type: "credit",
+      description: "Monthly membership - Rahul Sharma",
+      amount: "+₹2,500",
+      date: "Jan 4, 2026",
+      time: "10:30 AM",
+    },
+    {
+      type: "credit",
+      description: "Daily pass - Priya Singh",
+      amount: "+₹150",
+      date: "Jan 4, 2026",
+      time: "09:15 AM",
+    },
+    {
+      type: "debit",
+      description: "Payout to bank account",
+      amount: "-₹25,000",
+      date: "Jan 3, 2026",
+      time: "03:00 PM",
+    },
+    {
+      type: "credit",
+      description: "Quarterly plan - Amit Kumar",
+      amount: "+₹6,500",
+      date: "Jan 3, 2026",
+      time: "11:45 AM",
+    },
+    {
+      type: "credit",
+      description: "Monthly membership - Neha Patel",
+      amount: "+₹2,500",
+      date: "Jan 2, 2026",
+      time: "07:20 PM",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">

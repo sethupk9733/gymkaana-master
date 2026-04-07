@@ -19,13 +19,6 @@ const markMessagesAsRead = async (ticket, userId) => {
     }
 };
 
-const getPrimaryRole = (user) => {
-    if (!user.roles || user.roles.length === 0) return 'user';
-    if (user.roles.includes('admin')) return 'admin';
-    if (user.roles.includes('owner')) return 'owner';
-    return 'user';
-};
-
 // Create a unified support conversation (ticket or chat message)
 exports.createTicket = async (req, res) => {
     try {
@@ -55,7 +48,7 @@ exports.createTicket = async (req, res) => {
         const reply = {
             senderId: req.user._id,
             senderName: user.name,
-            senderRole: getPrimaryRole(user),
+            senderRole: user.role,
             message: `**[TICKET]** ${subject}\n\n${description}`
         };
 
@@ -66,7 +59,7 @@ exports.createTicket = async (req, res) => {
         await ticket.save();
         const updated = await Ticket.findById(ticket._id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name roles');
+            .populate('replies.senderId', 'name role');
 
         res.status(201).json(updated);
     } catch (err) {
@@ -79,13 +72,13 @@ exports.getAllTickets = async (req, res) => {
     try {
         // Check if user is admin
         const user = await User.findById(req.user._id);
-        if (!user.roles || !user.roles.includes('admin')) {
+        if (user.role !== 'admin') {
             return res.status(403).json({ message: 'Only admins can view all tickets' });
         }
 
         const tickets = await Ticket.find({})
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name roles')
+            .populate('replies.senderId', 'name role')
             .sort({ updatedAt: -1 });
 
         res.json(tickets);
@@ -111,7 +104,7 @@ exports.getTicket = async (req, res) => {
     try {
         const ticket = await Ticket.findById(req.params.id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name roles');
+            .populate('replies.senderId', 'name role');
 
         if (!ticket) {
             return res.status(404).json({ message: 'Ticket not found' });
@@ -119,7 +112,7 @@ exports.getTicket = async (req, res) => {
 
         // Check authorization - user can view their own tickets, admins can view all
         const user = await User.findById(req.user._id);
-        if ((!user.roles || !user.roles.includes('admin')) && ticket.userId.toString() !== req.user._id.toString()) {
+        if (user.role !== 'admin' && ticket.userId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to view this ticket' });
         }
 
@@ -144,14 +137,14 @@ exports.addReply = async (req, res) => {
 
         // Check authorization
         const user = await User.findById(req.user._id);
-        if ((!user.roles || !user.roles.includes('admin')) && ticket.userId.toString() !== req.user._id.toString()) {
+        if (user.role !== 'admin' && ticket.userId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to reply to this ticket' });
         }
 
         const reply = {
             senderId: req.user._id,
             senderName: user.name,
-            senderRole: getPrimaryRole(user),
+            senderRole: user.role,
             message
         };
 
@@ -159,7 +152,7 @@ exports.addReply = async (req, res) => {
         ticket.updatedAt = Date.now();
 
         // If admin is replying, set status to in-progress
-        if (user.roles && user.roles.includes('admin') && ticket.status === 'open') {
+        if (user.role === 'admin' && ticket.status === 'open') {
             ticket.status = 'in-progress';
         }
 
@@ -181,7 +174,7 @@ exports.updateTicketStatus = async (req, res) => {
         const { status } = req.body;
         const user = await User.findById(req.user._id);
 
-        if (!user.roles || !user.roles.includes('admin')) {
+        if (user.role !== 'admin') {
             return res.status(403).json({ message: 'Only admins can update ticket status' });
         }
 
@@ -210,7 +203,7 @@ exports.deleteTicket = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
 
-        if (!user.roles || !user.roles.includes('admin')) {
+        if (user.role !== 'admin') {
             return res.status(403).json({ message: 'Only admins can delete tickets' });
         }
 
@@ -234,7 +227,7 @@ exports.getSupportChat = async (req, res) => {
             subject: 'Support Conversation'
         })
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name roles');
+            .populate('replies.senderId', 'name role');
 
         // If no conversation exists, create one
         if (!ticket) {
@@ -283,7 +276,7 @@ exports.sendChatMessage = async (req, res) => {
         const reply = {
             senderId: req.user._id,
             senderName: user.name,
-            senderRole: getPrimaryRole(user),
+            senderRole: user.role,
             message
         };
 
@@ -294,7 +287,7 @@ exports.sendChatMessage = async (req, res) => {
 
         const updatedTicket = await Ticket.findById(ticket._id)
             .populate('userId', 'name email phoneNumber')
-            .populate('replies.senderId', 'name roles');
+            .populate('replies.senderId', 'name role');
 
         res.json(updatedTicket);
     } catch (err) {
@@ -309,7 +302,7 @@ exports.getUnreadCount = async (req, res) => {
         const user = await User.findById(userId);
         let count = 0;
 
-        if (user.roles && user.roles.includes('admin')) {
+        if (user.role === 'admin') {
             const tickets = await Ticket.find({ status: { $ne: 'closed' } });
             tickets.forEach(ticket => {
                 const isUnread = ticket.replies.some(reply => {

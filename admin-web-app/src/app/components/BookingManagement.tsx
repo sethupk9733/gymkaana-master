@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { fetchBookings } from "../lib/api";
-import { Search, Activity, CheckCircle, XCircle, Clock, Calendar, Building2, User, CreditCard } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, Clock, Calendar, Building2, User } from "lucide-react";
 
 interface BookingDetail {
     id: string;
     transactionId?: string;
-    paymentId?: string;
-    orderId?: string;
-    paymentStatus?: string;
     memberName: string;
     memberEmail: string;
     gymName: string;
@@ -17,11 +14,6 @@ interface BookingDetail {
     startDate: string;
     endDate: string;
     bookingDate: string;
-    cancellationReason?: string;
-    cancellationDate?: string;
-    refundStatus?: string;
-    duration?: string;
-    cancelledBy?: string;
 }
 
 export function BookingManagement() {
@@ -37,9 +29,6 @@ export function BookingManagement() {
             const mappedBookings = data.map((b: any) => ({
                 id: b._id,
                 transactionId: b.transactionId,
-                paymentId: b.paymentId,
-                orderId: b.orderId,
-                paymentStatus: b.paymentStatus || 'unpaid',
                 memberName: b.userId?.name || b.memberName || "Unknown",
                 memberEmail: b.userId?.email || b.memberEmail || "N/A",
                 gymName: b.gymId?.name || "Unknown Gym",
@@ -48,12 +37,7 @@ export function BookingManagement() {
                 status: b.status || "Unknown",
                 startDate: new Date(b.startDate).toLocaleDateString(),
                 endDate: new Date(b.endDate).toLocaleDateString(),
-                bookingDate: new Date(b.bookingDate).toLocaleDateString(),
-                cancellationReason: b.cancellationReason,
-                cancellationDate: b.cancellationDate ? new Date(b.cancellationDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : undefined,
-                refundStatus: b.refundDetails?.status,
-                duration: b.planId?.duration,
-                cancelledBy: b.cancelledBy
+                bookingDate: new Date(b.bookingDate).toLocaleDateString()
             }));
 
             // Remove duplicates by ID
@@ -93,152 +77,119 @@ export function BookingManagement() {
         }
     };
 
-    const getPaymentStatusColor = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case 'paid': return 'bg-emerald-500 text-white border-emerald-600';
-            case 'unpaid': return 'bg-amber-500 text-white border-amber-600';
-            case 'refunded': return 'bg-purple-500 text-white border-purple-600';
-            default: return 'bg-gray-400 text-white border-gray-500';
-        }
-    };
-
     return (
-        <>
-            <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Booking Matrix</h2>
-                        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1">Live Transactional Monitoring</p>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className="relative group w-full md:w-80">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="SEARCH BOOKINGS..."
-                                className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-[28px] text-[10px] font-black outline-none focus:ring-4 focus:ring-black/5 shadow-sm transition-all uppercase tracking-widest"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </header>
-
-                {/* Filter Tabs */}
-                <div className="flex bg-white p-2 rounded-[24px] border border-gray-100 shadow-sm w-fit">
-                    {['All', 'Active', 'Completed', 'Cancelled'].map((status) => (
-                        <button
-                            key={status}
-                            onClick={() => setFilterStatus(status as any)}
-                            className={`px-8 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all ${filterStatus === status
-                                ? 'bg-black text-white shadow-lg'
-                                : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-                                }`}
-                        >
-                            {status}
-                        </button>
-                    ))}
+        <div className="p-8 max-w-7xl mx-auto space-y-12 pb-20 font-sans">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Booking Matrix</h2>
+                    <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1">Live Transactional Monitoring</p>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white border border-gray-100 rounded-[48px] shadow-sm overflow-hidden min-h-[400px]">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-full p-20">
-                            <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin" />
+                <div className="flex gap-4">
+                    <div className="relative group w-full md:w-80">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="SEARCH BOOKINGS..."
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-[28px] text-[10px] font-black outline-none focus:ring-4 focus:ring-black/5 shadow-sm transition-all uppercase tracking-widest"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </header>
+
+            {/* Filter Tabs */}
+            <div className="flex bg-white p-2 rounded-[24px] border border-gray-100 shadow-sm w-fit">
+                {['All', 'Active', 'Completed', 'Cancelled'].map((status) => (
+                    <button
+                        key={status}
+                        onClick={() => setFilterStatus(status as any)}
+                        className={`px-8 py-3 rounded-[20px] font-black text-[10px] uppercase tracking-widest transition-all ${filterStatus === status
+                            ? 'bg-black text-white shadow-lg'
+                            : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                            }`}
+                    >
+                        {status}
+                    </button>
+                ))}
+            </div>
+
+            {/* Table */}
+            <div className="bg-white border border-gray-100 rounded-[48px] shadow-sm overflow-hidden min-h-[400px]">
+                {loading ? (
+                    <div className="flex items-center justify-center h-full p-20">
+                        <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : filteredBookings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-20 text-center">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <Activity className="w-6 h-6 text-gray-300" />
                         </div>
-                    ) : filteredBookings.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-20 text-center">
-                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                <Activity className="w-6 h-6 text-gray-300" />
-                            </div>
-                            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No bookings found matching criteria</p>
-                        </div>
-                    ) : (
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50/50 border-b border-gray-100">
-                                <tr>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Member ID</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Hub Detail</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Finances</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-center">Status</th>
-                                    <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Tenure / Cancellation</th>
+                        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No bookings found matching criteria</p>
+                    </div>
+                ) : (
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Member ID</th>
+                                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Hub Detail</th>
+                                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Plan Terms</th>
+                                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-center">Status</th>
+                                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 text-right">Validity</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filteredBookings.map((booking) => (
+                                <tr
+                                    key={booking.id}
+                                    className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                                    onClick={() => setSelectedBooking(booking)}
+                                >
+                                    <td className="p-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm group-hover:bg-primary group-hover:text-black transition-colors">
+                                                {booking.memberName.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-gray-900 uppercase italic tracking-tighter">{booking.memberName}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{booking.memberEmail}</p>
+                                                {booking.transactionId && (
+                                                    <p className="text-[9px] font-bold text-blue-600 mt-0.5">{booking.transactionId}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-8">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="w-4 h-4 text-gray-300" />
+                                            <span className="font-bold text-sm text-gray-700">{booking.gymName}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-8">
+                                        <div className="flex flex-col">
+                                            <span className="font-black uppercase italic text-gray-900">{booking.planName}</span>
+                                            <span className="text-[10px] font-bold text-emerald-600">₹{booking.amount}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-8 text-center">
+                                        <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusColor(booking.status)}`}>
+                                            {booking.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-8 text-right">
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                Valid Until
+                                            </span>
+                                            <span className="font-black text-sm">{booking.endDate}</span>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {filteredBookings.map((booking) => (
-                                    <tr
-                                        key={booking.id}
-                                        className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
-                                        onClick={() => setSelectedBooking(booking)}
-                                    >
-                                        <td className="p-8">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-black italic text-sm transition-colors group-hover:bg-primary group-hover:text-black">
-                                                    {String(booking.memberName || "?").charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="font-black text-gray-900 uppercase italic tracking-tighter">{booking.memberName}</p>
-                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{booking.memberEmail}</p>
-                                                    {(booking.transactionId || booking.paymentId) && (
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-1 rounded">PAY-ID: {booking.paymentId || booking.transactionId}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-8">
-                                            <div className="flex items-center gap-2">
-                                                <Building2 className="w-4 h-4 text-gray-300" />
-                                                <span className="font-bold text-sm text-gray-700">{booking.gymName}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-8">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-black uppercase italic text-gray-900 leading-none">{booking.planName}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black text-emerald-600">₹{booking.amount}</span>
-                                                    <span className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest flex items-center gap-1 ${getPaymentStatusColor(booking.paymentStatus || 'unpaid')}`}>
-                                                        <CreditCard size={8} />
-                                                        {booking.paymentStatus}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-8 text-center">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${getStatusColor(booking.status)}`}>
-                                                    {booking.status}
-                                                </span>
-                                                {booking.status.toLowerCase() === 'cancelled' && booking.cancellationReason && (
-                                                    <p className="text-[8px] font-bold text-red-500 italic max-w-[120px] leading-tight">
-                                                        "{booking.cancellationReason}"
-                                                    </p>
-                                                )}
-                                                {booking.status.toLowerCase() === 'cancelled' && (
-                                                    <span className="text-[7px] font-black uppercase tracking-widest text-red-300 bg-red-50 px-2 py-0.5 rounded leading-none">
-                                                        BY {booking.cancelledBy || 'SYSTEM'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="p-8 text-right">
-                                            <div className="flex flex-col items-end gap-1">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                    {booking.status.toLowerCase() === 'cancelled' ? 'Terminated On' : 'Valid Until'}
-                                                </span>
-                                                <span className={`font-black text-sm ${booking.status.toLowerCase() === 'cancelled' ? 'text-red-600' : ''}`}>
-                                                    {booking.status.toLowerCase() === 'cancelled' ? booking.cancellationDate : booking.endDate}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Selected Booking Modal */}
@@ -256,21 +207,9 @@ export function BookingManagement() {
                         <div className="space-y-8">
                             <div>
                                 <h3 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900">Protocol Assignment Detail</h3>
-                                <div className="flex flex-col gap-1 mt-2">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                        Booking ID: #{String(selectedBooking.id || "").slice(-8).toUpperCase()}
-                                    </p>
-                                    {selectedBooking.paymentId && (
-                                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-                                            Payment Reference: {selectedBooking.paymentId}
-                                        </p>
-                                    )}
-                                    {selectedBooking.orderId && (
-                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
-                                            Gateway Order: {selectedBooking.orderId}
-                                        </p>
-                                    )}
-                                </div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                    Transaction ID: {selectedBooking.transactionId || `#${selectedBooking.id.slice(-8)}`}
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-8">
@@ -286,12 +225,9 @@ export function BookingManagement() {
                             </div>
 
                             <div className="p-8 bg-gray-50 rounded-[32px] border border-gray-100 flex justify-between items-center">
-                                <div className="space-y-1 flex flex-col">
+                                <div className="space-y-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Tier</p>
                                     <p className="font-black text-xl uppercase italic text-gray-900">{selectedBooking.planName}</p>
-                                    <span className={`mt-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border text-center ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
-                                        {selectedBooking.paymentStatus}
-                                    </span>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Settlement</p>
@@ -314,36 +250,14 @@ export function BookingManagement() {
                                 </div>
                             </div>
 
-                            {selectedBooking.status.toLowerCase() === 'cancelled' && (
-                                <div className="p-8 bg-red-50 border border-red-100 rounded-[32px] space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Cancellation Insight</p>
-                                        <span className="text-[10px] font-black bg-red-600 text-white px-3 py-1 rounded-full uppercase">
-                                            {selectedBooking.refundStatus || 'Pending Refund'}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-[9px] font-bold text-red-300 uppercase">Reason</p>
-                                            <p className="font-bold text-red-900 italic text-sm">"{selectedBooking.cancellationReason || 'Standard Termination'}"</p>
-                                            <p className="text-[8px] font-black text-red-400 uppercase mt-2 tracking-widest">Initiated By: {selectedBooking.cancelledBy || 'System'}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[9px] font-bold text-red-300 uppercase">Termination Date</p>
-                                            <p className="font-bold text-red-900 text-sm">{selectedBooking.cancellationDate || selectedBooking.endDate}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="flex gap-4">
-                                <button className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-xl transition-transform active:scale-95">Contact Client</button>
-                                <button className="flex-1 py-5 bg-gray-100 text-gray-900 rounded-[24px] font-black text-[10px] uppercase tracking-widest transition-transform active:scale-95">Gateway Dashboard</button>
+                                <button className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[10px] uppercase tracking-widest shadow-xl">Contact Client</button>
+                                <button className="flex-1 py-5 bg-gray-100 text-gray-900 rounded-[24px] font-black text-[10px] uppercase tracking-widest">Sync Permissions</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }

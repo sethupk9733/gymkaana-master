@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "./components/Layout";
 import { OwnerLogin } from "./components/OwnerLogin";
 import { Dashboard } from "./components/Dashboard";
@@ -15,53 +15,46 @@ import { QRCheckIn } from "./components/QRCheckIn";
 import { PayoutsEarnings } from "./components/PayoutsEarnings";
 import { Notifications } from "./components/Notifications";
 import { Profile } from "./components/Profile";
-import { checkSession } from "./lib/api";
+import { Accounting } from "./components/Accounting";
+import { SupportChat } from "./components/SupportChat";
+import { ReviewsList } from "./components/ReviewsList";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentScreen, setCurrentScreen] = useState("main");
   const [selectedGymId, setSelectedGymId] = useState<string | number | null>(null);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | number | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    const init = async () => {
+  // Session restore logic
+  useState(() => {
+    const token = localStorage.getItem('gymkaana_token');
+    const userStr = localStorage.getItem('gymkaana_user');
+    if (token && userStr) {
       try {
-        const user = await checkSession();
-        if (user) {
+        const user = JSON.parse(userStr);
+        // Ensure the user object has a role property and it's either 'owner' or 'admin'
+        if (user && (user.role === 'owner' || user.role === 'admin')) {
           setIsLoggedIn(true);
         } else {
-          // Fallback check to localStorage if cookie-based refresh fails
-          const savedUser = localStorage.getItem('gymkaana_owner_user');
-          if (savedUser) setIsLoggedIn(true);
+          // If user data is invalid or role is not authorized, clear session
+          localStorage.removeItem('gymkaana_token');
+          localStorage.removeItem('gymkaana_user');
+          setIsLoggedIn(false);
         }
-      } catch (err) {
-        console.error("Session check failed:", err);
-      } finally {
-        setLoading(false);
+      } catch (e) {
+        // Handle JSON parsing error
+        console.error("Failed to parse user data from localStorage", e);
+        localStorage.removeItem('gymkaana_token');
+        localStorage.removeItem('gymkaana_user');
+        setIsLoggedIn(false);
       }
-    };
-    init();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm font-bold text-gray-500 uppercase tracking-widest italic">Authenticating...</p>
-      </div>
-    );
-  }
+    }
+  });
 
   if (!isLoggedIn) {
-    return <OwnerLogin onLogin={(isNew?: boolean) => {
-        setIsLoggedIn(true);
-        if (isNew) {
-            setCurrentScreen('addGym');
-            setActiveTab('dashboard');
-        }
-    }} />;
+    return <OwnerLogin onLogin={() => setIsLoggedIn(true)} />;
   }
 
   const handleGymSelect = (gymId: string | number) => {
@@ -69,7 +62,7 @@ export default function App() {
     setCurrentScreen("gymDetails");
   };
 
-  const handleBookingSelect = (bookingId: string | number) => {
+  const handleBookingSelect = (bookingId: number) => {
     setSelectedBookingId(bookingId);
     setCurrentScreen("bookingDetails");
   };
@@ -78,7 +71,7 @@ export default function App() {
     if (currentScreen === "gymDetails" && selectedGymId !== null) {
       return (
         <GymDetails
-          gymId={selectedGymId}
+          gymId={String(selectedGymId)}
           onBack={() => setCurrentScreen("main")}
           onEdit={() => setCurrentScreen("editGym")}
           onManagePlans={() => setCurrentScreen("membershipPlans")}
@@ -87,29 +80,38 @@ export default function App() {
     }
 
     if (currentScreen === "editGym" && selectedGymId !== null) {
-      return <EditGym gymId={selectedGymId} onBack={() => setCurrentScreen("gymDetails")} />;
+      return (
+        <EditGym
+          gymId={String(selectedGymId)}
+          onBack={() => setCurrentScreen("gymDetails")}
+        />
+      );
     }
 
     if (currentScreen === "addGym") {
       return <AddGym onBack={() => setCurrentScreen("main")} />;
     }
 
-    if (currentScreen === "membershipPlans") {
+    if (currentScreen === "membershipPlans" && selectedGymId !== null) {
       return (
         <MembershipPlans
+          gymId={String(selectedGymId)}
           onBack={() => setCurrentScreen("gymDetails")}
           onAddPlan={() => setCurrentScreen("addPlan")}
-          onEditPlan={() => setCurrentScreen("editPlan")}
+          onEditPlan={(planId: string) => {
+            setSelectedPlanId(planId);
+            setCurrentScreen("editPlan");
+          }}
         />
       );
     }
 
-    if (currentScreen === "editPlan") {
-      return <EditPlan onBack={() => setCurrentScreen("membershipPlans")} />;
+    if (currentScreen === "editPlan" && selectedPlanId !== null) {
+      return <EditPlan planId={selectedPlanId} onBack={() => setCurrentScreen("membershipPlans")} />;
     }
 
     if (currentScreen === "addPlan") {
-      return <AddPlan onBack={() => setCurrentScreen("main")} />;
+      return <AddPlan gymId={selectedGymId ? String(selectedGymId) : undefined} onBack={() => setCurrentScreen("membershipPlans")} />;
     }
 
     if (currentScreen === "bookingDetails" && selectedBookingId !== null) {
@@ -132,6 +134,10 @@ export default function App() {
       return <Notifications onBack={() => setCurrentScreen("main")} />;
     }
 
+    if (currentScreen === "accounting") {
+      return <Accounting onBack={() => setCurrentScreen("main")} />;
+    }
+
     switch (activeTab) {
       case "dashboard":
         return (
@@ -139,14 +145,22 @@ export default function App() {
             onNavigateToNotifications={() => setCurrentScreen("notifications")}
             onNavigateToPayouts={() => setCurrentScreen("payouts")}
             onNavigateToQR={() => setCurrentScreen("qrCheckIn")}
+            onNavigateToAccounting={() => setCurrentScreen("accounting")}
+            onNavigateToBookings={() => setActiveTab("bookings")}
             onAddGym={() => setCurrentScreen("addGym")}
             onAddPlan={() => setCurrentScreen("addPlan")}
+            onManagePlans={(gymId: string) => {
+              setSelectedGymId(gymId);
+              setCurrentScreen("membershipPlans");
+            }}
           />
         );
       case "gyms":
         return <GymsList onGymSelect={handleGymSelect} onAddGym={() => setCurrentScreen("addGym")} />;
       case "bookings":
         return <BookingsList onBookingSelect={handleBookingSelect} />;
+      case "reviews":
+        return <ReviewsList />;
       case "profile":
         return <Profile onLogout={() => setIsLoggedIn(false)} />;
       default:
@@ -155,8 +169,14 @@ export default function App() {
             onNavigateToNotifications={() => setCurrentScreen("notifications")}
             onNavigateToPayouts={() => setCurrentScreen("payouts")}
             onNavigateToQR={() => setCurrentScreen("qrCheckIn")}
+            onNavigateToAccounting={() => setCurrentScreen("accounting")}
+            onNavigateToBookings={() => setActiveTab("bookings")}
             onAddGym={() => setCurrentScreen("addGym")}
             onAddPlan={() => setCurrentScreen("addPlan")}
+            onManagePlans={(gymId: string) => {
+              setSelectedGymId(gymId);
+              setCurrentScreen("membershipPlans");
+            }}
           />
         );
     }
@@ -168,6 +188,9 @@ export default function App() {
       setActiveTab={setActiveTab}
       setCurrentScreen={setCurrentScreen}>
       {renderScreen()}
+      <SupportChat minimized={true} />
     </Layout>
   );
 }
+
+// FORCE_REDEPLOY_SYNC: 2026-04-07 14:12:34
