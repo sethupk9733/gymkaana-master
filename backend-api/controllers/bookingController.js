@@ -6,7 +6,10 @@ const { logActivity } = require('./activityController');
 exports.getAllBookings = async (req, res) => {
     try {
         let filter = {};
-        if (req.user.role === 'owner') {
+        const isOwner = req.user.roles && req.user.roles.includes('owner');
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+        
+        if (isOwner && !isAdmin) {
             const myGyms = await Gym.find({ ownerId: req.user._id });
             filter = { gymId: { $in: myGyms.map(g => g._id) } };
         }
@@ -139,7 +142,10 @@ exports.verifyBooking = async (req, res) => {
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
         // Security Check: Only the gym owner or an admin can verify this booking
-        if (req.user.role === 'owner') {
+        const isOwner = req.user.roles && req.user.roles.includes('owner');
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+        if (isOwner && !isAdmin) {
             const gymId = booking.gymId._id || booking.gymId;
             const gym = await Gym.findById(gymId);
             if (!gym || gym.ownerId.toString() !== req.user._id.toString()) {
@@ -174,7 +180,8 @@ exports.cancelBooking = async (req, res) => {
         if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
         // Security check
-        if (booking.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+        if (booking.userId.toString() !== req.user._id.toString() && !isAdmin) {
             return res.status(403).json({ message: 'Not authorized' });
         }
 

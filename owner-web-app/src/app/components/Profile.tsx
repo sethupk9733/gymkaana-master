@@ -359,7 +359,7 @@ export function Profile({ onLogout }: ProfileProps) {
               </div>
               <div className="flex-1">
                 <h2 className="text-lg font-bold">{profile?.name || 'Owner Name'}</h2>
-                <p className="text-sm text-gray-600 mb-3">{profile?.role === 'owner' ? 'Premium Account' : 'Account'}</p>
+                <p className="text-sm text-gray-600 mb-3">{profile?.roles?.includes('owner') ? 'Premium Account' : 'Account'}</p>
                 <Button
                   variant="outline"
                   size="sm"

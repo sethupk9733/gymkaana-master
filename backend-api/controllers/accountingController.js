@@ -90,7 +90,7 @@ const getAccountingData = async (req, res) => {
 
 const getAdminAccountingData = async (req, res) => {
     try {
-        if (req.user.role !== 'admin') {
+        if (!req.user.roles || !req.user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Access denied' });
         }
 

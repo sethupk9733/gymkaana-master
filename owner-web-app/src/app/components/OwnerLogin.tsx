@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Mail, Lock, User, Phone, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -35,7 +35,8 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
       console.log('Google Auth Response:', response);
       const res = await googleLogin({ idToken: response.credential, role: 'owner' });
       if (res.accessToken) {
-        localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
+        localStorage.setItem('gymkaana_token', res.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(res));
         onLogin(false); // Can't easily determine if new without backend flag, assume default
       } else {
         setError(res.message || "Google Authentication failed");
@@ -64,7 +65,8 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
           // Immediately log them in if no verification
           const loginRes = await login({ email: formData.email, password: formData.password });
           if (loginRes.accessToken) {
-              localStorage.setItem('gymkaana_owner_user', JSON.stringify(loginRes));
+              localStorage.setItem('gymkaana_token', loginRes.accessToken);
+              localStorage.setItem('gymkaana_user', JSON.stringify(loginRes));
               onLogin(true); // Is a new registration
           } else {
               setError(loginRes.message || "Authentication failed after registration");
@@ -75,7 +77,8 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
             setShowOTP(true);
             setMessage("Please verify your account first.");
           } else if (res.accessToken) {
-            localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
+            localStorage.setItem('gymkaana_token', res.accessToken);
+            localStorage.setItem('gymkaana_user', JSON.stringify(res));
             onLogin(false);
           } else {
             setError(res.message || "Authentication failed");
@@ -95,7 +98,8 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
     try {
       const res = await verifyOTP(formData.email, otp);
       if (res.accessToken) {
-        localStorage.setItem('gymkaana_owner_user', JSON.stringify(res));
+        localStorage.setItem('gymkaana_token', res.accessToken);
+        localStorage.setItem('gymkaana_user', JSON.stringify(res));
         onLogin();
       } else {
         setError(res.message || 'Verification failed');
@@ -309,12 +313,12 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
         <div className="px-8 py-8">
           {error && (
             <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 rounded text-red-700 text-[10px] font-bold uppercase tracking-tight">
-              ΓÜá∩╕Å {error}
+              ⚠️ {error}
             </div>
           )}
           {message && (
             <div className="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-blue-700 text-[10px] font-bold uppercase tracking-tight">
-              Γä╣∩╕Å {message}
+              ℹ️ {message}
             </div>
           )}
 
@@ -377,7 +381,7 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
                 <Input
                   name="password"
                   type="password"
-                  placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+                  placeholder="••••••••"
                   value={formData.password}
                   onChange={handleInputChange}
                   className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gray-50/50 font-bold"

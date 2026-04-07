@@ -15,18 +15,30 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    role: {
-        type: String,
+    roles: {
+        type: [String],
         enum: ['user', 'owner', 'admin'],
-        default: 'user'
+        default: ['user']
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    otp: String,
+    otpExpires: Date,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
     gyms: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Gym'
     }],
     photo: String,
     profileImage: String,
-    phoneNumber: String
+    phoneNumber: String,
+    gender: String,
+    age: Number,
+    address: String,
+    occupation: String
 }, { timestamps: true });
 
 // Hash password before saving

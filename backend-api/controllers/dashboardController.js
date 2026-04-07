@@ -3,14 +3,18 @@ const Booking = require('../models/Booking');
 
 exports.getStats = async (req, res) => {
     try {
-        console.log('🔐 User Role:', req.user.role, '| User ID:', req.user._id, '| User Name:', req.user.name);
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+        const isOwner = req.user.roles && req.user.roles.includes('owner');
 
-        if (req.user.role === 'owner') {
+        console.log('🔐 User Roles:', req.user.roles, '| User ID:', req.user._id, '| User Name:', req.user.name);
+
+        if (isOwner && !isAdmin) {
             const { gymId } = req.query;
             console.log('📊 OWNER DASHBOARD - Owner:', req.user.name, '| GymId Filter:', gymId);
 
-            let query = { ownerId: req.user._id };
-            if (gymId && gymId !== 'all') query._id = gymId;
+            const mongoose = require('mongoose');
+            let query = { ownerId: new mongoose.Types.ObjectId(req.user._id) };
+            if (gymId && gymId !== 'all') query._id = new mongoose.Types.ObjectId(gymId);
 
             const myGyms = await Gym.find(query);
             const gymIds = myGyms.map(g => g._id);
@@ -115,7 +119,7 @@ exports.getStats = async (req, res) => {
 
         const totalGyms = await Gym.countDocuments(gymQuery);
         const pendingOnboarding = await Gym.countDocuments({ ...gymQuery, status: 'Pending' });
-        const totalOwners = await require('../models/User').countDocuments({ role: 'owner' });
+        const totalOwners = await require('../models/User').countDocuments({ roles: 'owner' });
 
         const totalMembersResult = await Gym.aggregate([
             { $match: gymQuery },
@@ -184,7 +188,7 @@ exports.getStats = async (req, res) => {
 
         // Owner Performance - How much each owner is bringing in
         const ownerPerformance = await require('../models/User').aggregate([
-            { $match: { role: 'owner' } },
+            { $match: { roles: 'owner' } },
             {
                 $lookup: {
                     from: 'gyms',

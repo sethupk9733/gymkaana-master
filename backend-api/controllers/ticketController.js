@@ -48,7 +48,7 @@ exports.createTicket = async (req, res) => {
         const reply = {
             senderId: req.user._id,
             senderName: user.name,
-            senderRole: user.role,
+            senderRole: (user.roles && user.roles.length > 0) ? user.roles[0] : 'user',
             message: `**[TICKET]** ${subject}\n\n${description}`
         };
 
@@ -72,7 +72,7 @@ exports.getAllTickets = async (req, res) => {
     try {
         // Check if user is admin
         const user = await User.findById(req.user._id);
-        if (user.role !== 'admin') {
+        if (!user.roles || !user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Only admins can view all tickets' });
         }
 
@@ -112,7 +112,8 @@ exports.getTicket = async (req, res) => {
 
         // Check authorization - user can view their own tickets, admins can view all
         const user = await User.findById(req.user._id);
-        if (user.role !== 'admin' && ticket.userId.toString() !== req.user._id.toString()) {
+        const isAdmin = user.roles && user.roles.includes('admin');
+        if (!isAdmin && ticket.userId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to view this ticket' });
         }
 
@@ -137,7 +138,8 @@ exports.addReply = async (req, res) => {
 
         // Check authorization
         const user = await User.findById(req.user._id);
-        if (user.role !== 'admin' && ticket.userId.toString() !== req.user._id.toString()) {
+        const isAdmin = user.roles && user.roles.includes('admin');
+        if (!isAdmin && ticket.userId.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to reply to this ticket' });
         }
 
@@ -152,7 +154,7 @@ exports.addReply = async (req, res) => {
         ticket.updatedAt = Date.now();
 
         // If admin is replying, set status to in-progress
-        if (user.role === 'admin' && ticket.status === 'open') {
+        if (user.roles && user.roles.includes('admin') && ticket.status === 'open') {
             ticket.status = 'in-progress';
         }
 
@@ -174,7 +176,7 @@ exports.updateTicketStatus = async (req, res) => {
         const { status } = req.body;
         const user = await User.findById(req.user._id);
 
-        if (user.role !== 'admin') {
+        if (!user.roles || !user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Only admins can update ticket status' });
         }
 
@@ -203,7 +205,7 @@ exports.deleteTicket = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
 
-        if (user.role !== 'admin') {
+        if (!user.roles || !user.roles.includes('admin')) {
             return res.status(403).json({ message: 'Only admins can delete tickets' });
         }
 
@@ -302,7 +304,7 @@ exports.getUnreadCount = async (req, res) => {
         const user = await User.findById(userId);
         let count = 0;
 
-        if (user.role === 'admin') {
+        if (user.roles && user.roles.includes('admin')) {
             const tickets = await Ticket.find({ status: { $ne: 'closed' } });
             tickets.forEach(ticket => {
                 const isUnread = ticket.replies.some(reply => {

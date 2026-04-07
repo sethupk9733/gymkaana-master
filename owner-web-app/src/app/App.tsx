@@ -34,8 +34,9 @@ export default function App() {
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        // Ensure the user object has a role property and it's either 'owner' or 'admin'
-        if (user && (user.role === 'owner' || user.role === 'admin')) {
+        // Ensure the user object has roles and it includes 'owner' or 'admin'
+        const roles = user.roles || (user.role ? [user.role] : []);
+        if (roles.includes('owner') || roles.includes('admin')) {
           setIsLoggedIn(true);
         } else {
           // If user data is invalid or role is not authorized, clear session

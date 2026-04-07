@@ -374,3 +374,48 @@ export const fetchActivities = async () => {
     if (!response.ok) throw new Error('Failed to fetch activities');
     return await response.json();
 };
+
+export const googleLogin = async (data: { idToken: string; role: string }) => {
+    const response = await fetch(`${BASE_URL}/auth/google-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return await response.json();
+};
+
+export const verifyOTP = async (email: string, otp: string) => {
+    const response = await fetch(`${BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+    });
+    return await response.json();
+};
+
+export const resendOTP = async (email: string) => {
+    const response = await fetch(`${BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    return await response.json();
+};
+
+export const forgotPassword = async (email: string) => {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    return await response.json();
+};
+
+export const resetPassword = async (data: any) => {
+    const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return await response.json();
+};

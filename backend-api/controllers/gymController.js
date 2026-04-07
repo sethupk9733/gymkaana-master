@@ -5,9 +5,14 @@ exports.getAllGyms = async (req, res) => {
     try {
         let query = {};
         if (req.user) {
-            if (req.user.role === 'owner') {
-                query.ownerId = req.user._id;
-            } else if (req.user.role === 'admin') {
+            const hasOwnerRole = req.user.roles && req.user.roles.includes('owner');
+            const hasAdminRole = req.user.roles && req.user.roles.includes('admin');
+
+            if (hasOwnerRole && !hasAdminRole) {
+                // Strictly filter by ownerId for non-admins
+                const mongoose = require('mongoose');
+                query.ownerId = new mongoose.Types.ObjectId(req.user._id);
+            } else if (hasAdminRole) {
                 // Admin sees all
             } else {
                 // Regular user sees only approved/active
@@ -17,7 +22,7 @@ exports.getAllGyms = async (req, res) => {
             // Public sees only approved/active
             query.status = { $in: ['Approved', 'Active'] };
         }
-        console.log('Fetching gyms for user:', req.user ? { id: req.user._id, role: req.user.role } : 'Guest');
+        console.log('Fetching gyms for user:', req.user ? { id: req.user._id, roles: req.user.roles } : 'Guest');
         const gyms = await Gym.aggregate([
             { $match: query },
             {
@@ -74,7 +79,8 @@ exports.getAllGyms = async (req, res) => {
                         _id: '$ownerDetails._id',
                         name: '$ownerDetails.name',
                         email: '$ownerDetails.email',
-                        phoneNumber: '$ownerDetails.phoneNumber'
+                        phoneNumber: '$ownerDetails.phoneNumber',
+                        roles: '$ownerDetails.roles'
                     },
                     revenues: {
                         $concat: [
