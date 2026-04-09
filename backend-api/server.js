@@ -30,15 +30,24 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// MongoDB Connection
+// MongoDB Connection Options for Atlas Stability
 mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000 // 5 second timeout
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 50
 })
-    .then(() => console.log('MongoDB connected successfully'))
+    .then(() => console.log('✅ MongoDB securely connected to Atlas'))
     .catch(err => {
-        console.error('MongoDB connection error:', err.message);
-        console.log('CRITICAL: Ensure MongoDB is running on localhost:27017 or update MONGODB_URI in .env');
+        console.error('❌ MongoDB FATAL connection error:', err);
+        process.exit(1);
     });
+
+mongoose.connection.on('disconnected', () => {
+    console.log('⚠️ MongoDB disconnected... attempting reconnect');
+});
+mongoose.connection.on('error', (err) => {
+    console.error('⚠️ MongoDB runtime error:', err);
+});
 
 // Basic Route
 app.get('/', (req, res) => {
