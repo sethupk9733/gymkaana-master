@@ -19,6 +19,7 @@ app.use(cors({
         'https://www.gymkaana.com',
         'https://owner.gymkaana.com',
         'https://admin.gymkaana.com',
+        'https://app.gymkaana.com',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:3000',
