@@ -33,24 +33,6 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Disable buffering to catch connection errors immediately
 mongoose.set('bufferCommands', false);
 
-// MongoDB Connection Options for Atlas Stability
-mongoose.connect(process.env.MONGODB_URI, {
-    connectTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-    maxPoolSize: 50
-})
-    .then(() => console.log('✅ MongoDB securely connected to Atlas'))
-    .catch(err => {
-        console.error('❌ MongoDB connection error:', err);
-        // Removed process.exit(1) to prevent 502 gateway crashes
-    });
-
-mongoose.connection.on('disconnected', () => {
-    console.log('⚠️ MongoDB disconnected... attempting reconnect');
-});
-mongoose.connection.on('error', (err) => {
-    console.error('⚠️ MongoDB runtime error:', err);
-});
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -169,9 +151,28 @@ app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// MongoDB Connection & Server Start
+const startServer = async () => {
+    try {
+        console.log('⏳ Connecting to MongoDB Atlas...');
+        await mongoose.connect(process.env.MONGODB_URI, {
+            connectTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 50
+        });
+        console.log('✅ MongoDB connected successfully');
+
+        app.listen(PORT, () => {
+            console.log(`🚀 Server is running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error('❌ FATAL: Could not connect to MongoDB:', err.message);
+        // Don't exit, but server won't start listening. 
+        // This will result in a 502 which is correct if DB is down.
+    }
+};
+
+startServer();
 
 // Global Error Handler
 app.use((err, req, res, next) => {
