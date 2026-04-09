@@ -38,8 +38,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
     .then(() => console.log('✅ MongoDB securely connected to Atlas'))
     .catch(err => {
-        console.error('❌ MongoDB FATAL connection error:', err);
-        process.exit(1);
+        console.error('❌ MongoDB connection error:', err);
+        // Removed process.exit(1) to prevent 502 gateway crashes
     });
 
 mongoose.connection.on('disconnected', () => {
