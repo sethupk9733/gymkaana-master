@@ -195,3 +195,11 @@ export const fetchAllReviews = async () => {
     if (!response.ok) throw new Error('Failed to fetch reviews');
     return await response.json();
 };
+
+export const fetchDeclarationByGymId = async (gymId: string) => {
+    const response = await fetch(`${BASE_URL}/gyms/declaration/${gymId}`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch declaration');
+    return await response.json();
+};

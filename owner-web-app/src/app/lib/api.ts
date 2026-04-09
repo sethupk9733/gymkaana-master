@@ -419,3 +419,25 @@ export const resetPassword = async (data: any) => {
     });
     return await response.json();
 };
+
+export const submitDeclaration = async (declarationData: any) => {
+    const response = await fetch(`${BASE_URL}/gyms/declaration`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify(declarationData)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to submit declaration');
+    return data;
+};
+
+export const fetchDeclarationByGymId = async (gymId: string | number) => {
+    const response = await fetch(`${BASE_URL}/gyms/declaration/${gymId}`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch declaration');
+    return await response.json();
+};

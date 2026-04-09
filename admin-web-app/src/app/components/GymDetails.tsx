@@ -1,7 +1,7 @@
-import { ArrowLeft, MapPin, Star, Phone, Mail, Clock, Edit, Dumbbell, Wifi, Droplets, User, Shield } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Phone, Mail, Clock, Edit, Dumbbell, Wifi, Droplets, User, Shield, Info, FileCheck } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { fetchGymById, fetchPlansByGym } from "../lib/api";
+import { fetchGymById, fetchPlansByGym, fetchDeclarationByGymId } from "../lib/api";
 import { useEffect, useState } from "react";
 
 interface GymDetailsProps {
@@ -14,16 +14,19 @@ interface GymDetailsProps {
 export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsProps) {
   const [gym, setGym] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
+  const [declaration, setDeclaration] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetchGymById(gymId),
-      fetchPlansByGym(gymId)
+      fetchPlansByGym(gymId),
+      fetchDeclarationByGymId(gymId).catch(() => null)
     ])
-      .then(([gymData, plansData]) => {
+      .then(([gymData, plansData, declarationData]) => {
         setGym(gymData);
         setPlans(plansData);
+        setDeclaration(declarationData);
         setLoading(false);
       })
       .catch(err => {
@@ -108,7 +111,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-auto bg-white border-2 border-gray-300 p-1">
+          <TabsList className="w-full grid grid-cols-5 h-auto bg-white border-2 border-gray-300 p-1">
             <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
               Overview
             </TabsTrigger>
@@ -120,6 +123,9 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
             </TabsTrigger>
             <TabsTrigger value="photos" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
               Photos
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+              Compliance
             </TabsTrigger>
           </TabsList>
 
@@ -212,6 +218,49 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                 [1, 2, 3, 4].map((i) => (
                   <div key={i} className="aspect-square bg-gray-300 rounded-lg"></div>
                 ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="compliance" className="mt-4">
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-6 space-y-6">
+              <div className="flex items-center gap-3 border-b-2 border-gray-100 pb-4">
+                <FileCheck className="text-green-600" size={24} />
+                <h3 className="text-lg font-bold">Partner Declaration</h3>
+              </div>
+
+              {declaration ? (
+                <div className="space-y-6">
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                    {declaration.declarationText}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 pt-4 border-t-2 border-gray-100">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Signed By</p>
+                      <p className="text-sm font-bold uppercase italic">{declaration.signatureName}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Timestamp</p>
+                      <p className="text-sm font-medium">{new Date(declaration.timestamp).toLocaleString('en-IN')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">IP Address</p>
+                      <p className="text-sm font-medium">{declaration.ipAddress || 'Not Captured'}</p>
+                    </div>
+                    <div className="flex items-end">
+                      <div className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-black uppercase tracking-widest">
+                        Verified Identity
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                  <Info size={32} className="mb-2" />
+                  <p className="text-sm">No declaration found for this gym.</p>
+                  <p className="text-[10px] uppercase mt-1">Status: Compliance Incomplete</p>
+                </div>
               )}
             </div>
           </TabsContent>

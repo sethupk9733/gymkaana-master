@@ -1,4 +1,5 @@
 const Gym = require('../models/Gym');
+const PartnerDeclaration = require('../models/PartnerDeclaration');
 const { logActivity } = require('./activityController');
 
 exports.getAllGyms = async (req, res) => {
@@ -232,6 +233,54 @@ exports.deleteGym = async (req, res) => {
         const gym = await Gym.findByIdAndDelete(req.params.id);
         if (!gym) return res.status(404).json({ message: 'Gym not found' });
         res.json({ message: 'Gym deleted' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.submitDeclaration = async (req, res) => {
+    try {
+        const { gymId, signatureName, declarationAccepted, declarationText } = req.body;
+        
+        if (!declarationAccepted) {
+            return res.status(400).json({ message: 'Declaration must be accepted.' });
+        }
+
+        const declaration = new PartnerDeclaration({
+            gymId,
+            ownerId: req.user._id,
+            ownerName: req.user.name,
+            declarationAccepted,
+            signatureName,
+            declarationText,
+            ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            timestamp: new Date()
+        });
+
+        await declaration.save();
+
+        // Update Gym status if needed or just log it
+        await Gym.findByIdAndUpdate(gymId, { status: 'Pending' }); // Ensure it stays pending until admin approval
+
+        await logActivity({
+            userId: req.user._id,
+            gymId: gymId,
+            action: 'Declaration Signed',
+            description: `Legal declaration signed by ${signatureName}.`,
+            type: 'success'
+        });
+
+        res.status(201).json({ message: 'Declaration submitted successfully', declaration });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+exports.getDeclarationByGymId = async (req, res) => {
+    try {
+        const declaration = await PartnerDeclaration.findOne({ gymId: req.params.gymId });
+        if (!declaration) return res.status(404).json({ message: 'Declaration not found' });
+        res.json(declaration);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

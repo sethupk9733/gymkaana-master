@@ -9,4 +9,8 @@ router.get('/:id', gymController.getGymById);
 router.put('/:id', protect, gymController.updateGym);
 router.delete('/:id', protect, gymController.deleteGym);
 
+// Declaration routes
+router.post('/declaration', protect, gymController.submitDeclaration);
+router.get('/declaration/:gymId', protect, gymController.getDeclarationByGymId);
+
 module.exports = router;
