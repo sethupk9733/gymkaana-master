@@ -6,7 +6,10 @@ import {
     TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, fetchPlansByGym, fetchAllPayouts, processPayout } from '../lib/api';
+import { 
+    fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, 
+    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId 
+} from '../lib/api';
 
 interface GymDetail {
     _id: string;
@@ -65,6 +68,8 @@ export function PartnerManagement() {
     const [error, setError] = useState<string | null>(null);
     const [selectedGymPlans, setSelectedGymPlans] = useState<any[]>([]);
     const [isFetchingPlans, setIsFetchingPlans] = useState(false);
+    const [declarationData, setDeclarationData] = useState<any>(null);
+    const [isFetchingDeclaration, setIsFetchingDeclaration] = useState(false);
 
     const loadGyms = async () => {
         setLoading(true);
@@ -97,12 +102,14 @@ export function PartnerManagement() {
                 setIsFetchingBookings(true);
                 setIsFetchingPlans(true);
                 try {
-                    const [bookingsData, plansData] = await Promise.all([
+                    const [bookingsData, plansData, declaration] = await Promise.all([
                         fetchBookingsByGym(selectedGym._id),
-                        fetchPlansByGym(selectedGym._id)
+                        fetchPlansByGym(selectedGym._id),
+                        fetchDeclarationByGymId(selectedGym._id).catch(() => null)
                     ]);
                     setGymBookings(bookingsData);
                     setSelectedGymPlans(plansData);
+                    setDeclarationData(declaration);
                 } catch (err) {
                     console.error('Failed to fetch gym data:', err);
                 } finally {
@@ -485,13 +492,15 @@ export function PartnerManagement() {
                                             </button>
                                             <button onClick={() => setDetailTab('clients')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'clients' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Client Base {detailTab === 'clients' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
-                                            </button>
-                                            <button onClick={() => setDetailTab('ops')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'ops' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
+                                            </b                                             <button onClick={() => setDetailTab('ops')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'ops' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Staff & Ops {detailTab === 'ops' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
+                                            </button>
+                                            <button onClick={() => setDetailTab('legal')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'legal' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
+                                                Legal Desk {detailTab === 'legal' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('preview')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'preview' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Live Preview {detailTab === 'preview' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
-                                            </button>
+                                            </button>/button>
                                         </div>
 
                                         <div className="flex-1 space-y-12 relative z-10 overflow-y-auto pr-4 custom-scrollbar">
@@ -780,6 +789,46 @@ export function PartnerManagement() {
                                                             )}
                                                         </div>
                                                     </section>
+                                                </motion.div>
+                                            )}
+
+                                            {detailTab === 'legal' && (
+                                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                                                    <div className="bg-gray-50 p-10 rounded-[48px] border border-gray-100 space-y-8">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <h4 className="text-xl font-black italic uppercase tracking-tighter">Legal Binding Declaration</h4>
+                                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Institutional Partnership Agreement</p>
+                                                            </div>
+                                                            {declarationData && (
+                                                                <div className="px-6 py-3 bg-[#A3E635]/10 border border-[#A3E635]/20 rounded-2xl flex items-center gap-2">
+                                                                    <ShieldCheck className="w-4 h-4 text-[#A3E635]" />
+                                                                    <span className="text-[10px] font-black text-[#A3E635] uppercase tracking-widest">Digitally Verified</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {declarationData ? (
+                                                            <div className="grid grid-cols-2 gap-8">
+                                                                <div className="space-y-6">
+                                                                    <DetailRow label="Signed By" value={declarationData.signatureName} icon={User} />
+                                                                    <DetailRow label="Signed Date" value={new Date(declarationData.timestamp).toLocaleString()} icon={Calendar} />
+                                                                    <DetailRow label="IP Address" value={declarationData.ipAddress || 'Not Captured'} icon={Activity} />
+                                                                </div>
+                                                                <div className="p-8 bg-white border border-gray-100 rounded-[32px] overflow-y-auto max-h-[300px] shadow-inner">
+                                                                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">Accepted Terms</p>
+                                                                    <p className="text-gray-500 text-xs font-medium leading-[2] whitespace-pre-wrap italic">
+                                                                        {declarationData.declarationText || "Standard Platform Terms and Conditions accepted at the time of onboarding."}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-20 text-center bg-white border-2 border-dashed border-gray-200 rounded-[48px]">
+                                                                <AlertCircle className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No legal declaration found for this institutional partner</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </motion.div>
                                             )}
 
