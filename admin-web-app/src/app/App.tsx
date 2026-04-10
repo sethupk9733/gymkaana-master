@@ -22,7 +22,8 @@ export default function App() {
     const userStr = localStorage.getItem('gymkaana_user');
     if (token && userStr) {
       const user = JSON.parse(userStr);
-      if (user.role === 'admin') {
+      const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
+      if (isAdmin) {
         setIsAuthenticated(true);
         fetchUnreadCount();
       }

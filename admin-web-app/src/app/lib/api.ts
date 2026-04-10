@@ -12,8 +12,9 @@ export const login = async (credentials: any) => {
         body: JSON.stringify(credentials)
     });
     const data = await response.json();
-    if (data.token) {
-        localStorage.setItem('gymkaana_token', data.token);
+    const token = data.accessToken || data.token;
+    if (token) {
+        localStorage.setItem('gymkaana_token', token);
         localStorage.setItem('gymkaana_user', JSON.stringify(data));
     }
     return data;

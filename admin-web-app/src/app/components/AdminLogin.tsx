@@ -19,8 +19,12 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         setError(null);
         try {
             const res = await login({ email: formData.email, password: formData.password });
-            if (res.token) {
-                if (res.role !== 'admin') {
+            const token = res.accessToken || res.token;
+            const roles = res.roles || (res.role ? [res.role] : []);
+            const isAdmin = roles.includes('admin') || res.role === 'admin';
+
+            if (token) {
+                if (!isAdmin) {
                     setError('Access denied: You must be an administrator');
                 } else {
                     onLogin();
