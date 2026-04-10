@@ -114,7 +114,13 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (user && (await user.comparePassword(password))) {
+        
+        // Safety check for password presence (prevents 'Illegal arguments' crash)
+        if (!user || !user.password) {
+             return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        if (await user.comparePassword(password)) {
             if (!user.isVerified) {
                 return res.status(401).json({
                     message: 'Please verify your account first.',
