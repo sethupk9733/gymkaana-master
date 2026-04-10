@@ -17,11 +17,11 @@ exports.getAllGyms = async (req, res) => {
                 // Admin sees all
             } else {
                 // Regular user sees only approved/active
-                query.status = { $in: ['Approved', 'Active'] };
+                query.status = { $in: ['Approved', 'Active', 'approved', 'active'] };
             }
         } else {
             // Public sees only approved/active
-            query.status = { $in: ['Approved', 'Active'] };
+            query.status = { $in: ['Approved', 'Active', 'approved', 'active'] };
         }
         console.log('Fetching gyms for user:', req.user ? { id: req.user._id, roles: req.user.roles } : 'Guest');
         const gyms = await Gym.aggregate([

@@ -160,26 +160,69 @@ app.use((req, res) => {
     });
 });
 
-// MongoDB Connection & Server Start
-const startServer = async () => {
+// Database Seeding Logic
+const seedDatabase = async () => {
     try {
-        console.log('⏳ Connecting to MongoDB Atlas...');
-        await mongoose.connect(process.env.MONGODB_URI, {
-            connectTimeoutMS: 30000,
-            socketTimeoutMS: 45000,
-            maxPoolSize: 50
-        });
-        console.log('✅ MongoDB connected successfully');
+        const User = require('./models/User');
+        const Gym = require('./models/Gym');
+        const bcrypt = require('bcryptjs');
 
-        app.listen(PORT, () => {
-            console.log(`🚀 Server is running on port ${PORT}`);
-        });
+        // 1. Ensure Master Admin exists
+        const masterEmail = 'master@gymkaana.com';
+        const masterExists = await User.findOne({ email: masterEmail });
+        
+        if (!masterExists) {
+            console.log('🌱 Seeding Master Admin...');
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('master@123', salt);
+            await User.create({
+                name: 'Master Admin',
+                email: masterEmail,
+                password: hashedPassword,
+                roles: ['admin'],
+                isVerified: true
+            });
+            console.log('✅ Master Admin Created: master@gymkaana.com / master@123');
+        }
+
+        // 2. Ensure all existing gyms are visible (temporary help)
+        const unpublishedCount = await Gym.countDocuments({ isPublished: false });
+        if (unpublishedCount > 0) {
+            console.log(`🌱 Publishing ${unpublishedCount} hidden gyms...`);
+            await Gym.updateMany({}, { isPublished: true, status: 'Approved' });
+            console.log('✅ All gyms are now live.');
+        }
+
     } catch (err) {
-        console.error('❌ FATAL: Could not connect to MongoDB:', err.message);
+        console.error('❌ Seeding Error:', err.message);
     }
 };
 
-startServer();
+// Connect to MongoDB
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 10
+        });
+        console.log('✅ MongoDB Connected Successfully');
+        
+        // Seed database after connection
+        await seedDatabase();
+        
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error('❌ MongoDB Connection Failed:', err.message);
+        // Retry logic or graceful fallback
+        setTimeout(connectDB, 5000);
+    }
+};
+
+connectDB();
 
 // Global Error Handler
 app.use((err, req, res, next) => {
