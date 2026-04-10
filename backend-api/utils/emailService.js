@@ -67,12 +67,13 @@ const sendOTPEmail = async (to, otp) => {
  * Send Welcome Email
  */
 const sendWelcomeEmail = async (to, name) => {
+    const marketplaceUrl = process.env.MARKETPLACE_URL || 'https://app.gymkaana.com';
     const html = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #000; text-transform: uppercase; letter-spacing: 2px;">Welcome to Gymkaana, ${name}!</h2>
             <p style="color: #666; font-size: 16px;">We're thrilled to have you join our elite fitness ecosystem. Your journey towards more accessible and efficient fitness starts now.</p>
             <div style="background: #000; padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0;">
-                <a href="https://app.gymkaana.com" style="color: #fff; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Start Exploring Venues</a>
+                <a href="${marketplaceUrl}" style="color: #fff; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Start Exploring Venues</a>
             </div>
             <p style="color: #666; font-size: 14px;">Keep an eye out for exclusive offers and new gym openings in your area.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">

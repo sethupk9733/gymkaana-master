@@ -151,6 +151,15 @@ app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 
+// 404 JSON Handler (Prevents "Unexpected token <" HTML errors)
+app.use((req, res) => {
+    console.warn(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ 
+        message: `Route ${req.originalUrl} not found on this server.`,
+        error: 'Not Found'
+    });
+});
+
 // MongoDB Connection & Server Start
 const startServer = async () => {
     try {
@@ -167,8 +176,6 @@ const startServer = async () => {
         });
     } catch (err) {
         console.error('❌ FATAL: Could not connect to MongoDB:', err.message);
-        // Don't exit, but server won't start listening. 
-        // This will result in a 502 which is correct if DB is down.
     }
 };
 

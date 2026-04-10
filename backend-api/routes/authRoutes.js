@@ -8,6 +8,8 @@ const {
     resendOTP,
     forgotPassword,
     resetPassword,
+    refresh,
+    logout,
     getProfile, 
     getAllUsers, 
     updateProfile 
@@ -16,7 +18,9 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/google-login', googleLogin);
+router.post('/google', googleLogin); // Changed from google-login to google to match frontend
+router.post('/refresh', refresh);
+router.post('/logout', logout);
 router.post('/verify-otp', verifyOTP);
 router.post('/resend-otp', resendOTP);
 router.post('/forgot-password', forgotPassword);

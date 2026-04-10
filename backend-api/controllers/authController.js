@@ -46,22 +46,17 @@ const generateRefreshToken = (user) => {
 };
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    res.cookie('accessToken', accessToken, {
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.DOMAIN?.includes('gymkaana.com');
+    const cookieOptions = {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
+        secure: true, // Always true for HTTPS production
+        sameSite: 'none', // Required for cross-site subdomains
+        domain: isProduction ? '.gymkaana.com' : 'localhost',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-        // domain: '.gymkaana.com' removed to prevent session bleeding between owner and user portals
-    });
+    };
+
+    res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 };
 
 exports.register = async (req, res) => {
@@ -113,14 +108,23 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
         
+        console.log(`📡 Login Attempt: ${email}`);
+
         // Safety check for password presence (prevents 'Illegal arguments' crash)
-        if (!user || !user.password) {
+        if (!user) {
+             console.warn(`❌ Login Failed: User not found (${email})`);
+             return res.status(401).json({ message: 'Invalid email or password' });
+        }
+        
+        if (!user.password) {
+             console.warn(`❌ Login Failed: User has no password set (${email}) - Likely Google Login only.`);
              return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         if (await user.comparePassword(password)) {
+            console.log(`✅ Login Success: ${email}`);
             if (!user.isVerified) {
                 return res.status(401).json({
                     message: 'Please verify your account first.',
