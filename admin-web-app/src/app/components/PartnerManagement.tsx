@@ -53,7 +53,7 @@ interface GymDetail {
 export function PartnerManagement() {
     const [activeTab, setActiveTab] = useState<'directory' | 'onboarding' | 'suspended' | 'payouts'>('onboarding');
     const [selectedGym, setSelectedGym] = useState<GymDetail | null>(null);
-    const [detailTab, setDetailTab] = useState<'profile' | 'portfolio' | 'financials' | 'clients' | 'plans' | 'preview' | 'ops'>('profile');
+    const [detailTab, setDetailTab] = useState<'profile' | 'portfolio' | 'financials' | 'clients' | 'plans' | 'preview' | 'ops' | 'legal'>('profile');
     const [isProcessing, setIsProcessing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [showOnboardModal, setShowOnboardModal] = useState(false);
@@ -492,7 +492,8 @@ export function PartnerManagement() {
                                             </button>
                                             <button onClick={() => setDetailTab('clients')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'clients' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Client Base {detailTab === 'clients' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
-                                            </b                                             <button onClick={() => setDetailTab('ops')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'ops' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
+                                            </button>
+                                            <button onClick={() => setDetailTab('ops')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'ops' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Staff & Ops {detailTab === 'ops' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
                                             </button>
                                             <button onClick={() => setDetailTab('legal')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'legal' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
@@ -500,7 +501,7 @@ export function PartnerManagement() {
                                             </button>
                                             <button onClick={() => setDetailTab('preview')} className={`pb-6 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${detailTab === 'preview' ? 'text-black' : 'text-gray-500 hover:text-black'}`}>
                                                 Live Preview {detailTab === 'preview' && <motion.div layoutId="det-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#A3E635] rounded-full" />}
-                                            </button>/button>
+                                            </button>
                                         </div>
 
                                         <div className="flex-1 space-y-12 relative z-10 overflow-y-auto pr-4 custom-scrollbar">
