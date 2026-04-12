@@ -71,7 +71,8 @@ export default function App() {
       {/* Sidebar */}
       <aside className="w-64 bg-black text-white flex flex-col shrink-0">
         <div className="p-8">
-          <h1 className="text-2xl font-black italic uppercase tracking-tighter">Gymkaana <span className="block text-[10px] not-italic font-black tracking-[0.3em] text-[#A3E635] mt-2 uppercase">Command Center</span></h1>
+          <img src="/logo_light.png" alt="Gymkaana" className="h-10 w-auto object-contain mb-2" />
+          <span className="block text-[10px] not-italic font-black tracking-[0.3em] text-[#A3E635] uppercase">Command Center</span>
         </div>
 
         <nav className="flex-1 px-4 space-y-2">

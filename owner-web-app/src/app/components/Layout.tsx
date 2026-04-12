@@ -30,9 +30,9 @@ export function Layout({ children, activeTab, setActiveTab, setCurrentScreen }: 
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-gray-200 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Building2 className="text-primary w-6 h-6" />
-                        <h1 className="text-xl font-black italic uppercase tracking-tighter">Gymkaana Owner</h1>
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+                        <img src="/logo.png" alt="Gymkaana" className="h-8 w-auto object-contain" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-1">Owner</span>
                     </div>
                     {/* Nav */}
                     <nav className="hidden md:flex items-center gap-8">

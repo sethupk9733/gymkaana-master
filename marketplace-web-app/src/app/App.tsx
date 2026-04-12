@@ -361,13 +361,10 @@ export default function App() {
           <div className="flex items-center gap-12">
             <div
               onClick={() => setCurrentScreen('home')}
-              className="cursor-pointer group"
+              onTouchStart={() => setCurrentScreen('home')}
+              className="cursor-pointer group hover:scale-105 active:scale-95 transition-all touch-manipulation"
             >
-              <h1 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center group-hover:scale-105 transition-all duration-300 -skew-x-12">
-                <span className="text-secondary">GYM</span>
-                <span className="text-primary italic ml-0.5">KAA</span>
-                <span className="text-secondary">NA</span>
-              </h1>
+              <img src="/logo.png" alt="Gymkaana" className="h-8 md:h-10 w-auto object-contain" />
             </div>
 
             <nav className="hidden md:flex items-center gap-8">

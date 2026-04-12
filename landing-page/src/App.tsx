@@ -61,35 +61,41 @@ export default function App() {
     const [liveGyms, setLiveGyms] = useState<any[]>([]);
     const [loadingGyms, setLoadingGyms] = useState(true);
     const [liveStats, setLiveStats] = useState<any>(null);
+    const [fetchError, setFetchError] = useState(false);
 
-    const onExplore = () => { window.location.href = URLS.MARKETPLACE; };
+    const onExplore = () => { window.location.href = `${URLS.MARKETPLACE}?screen=home&action=explore`; };
     const onLogin = () => { window.location.href = `${URLS.MARKETPLACE}?action=login`; };
-    const onListGym = () => { window.location.href = `${URLS.MARKETPLACE}?screen=partner`; };
+    const onListGym = () => { window.location.href = `${URLS.OWNER}?action=onboard`; };
     const onOwnerPortal = () => { window.location.href = URLS.OWNER; };
 
-    // Specific screen links for Footer/About
-    const goToMarketplaceScreen = (screen: string) => {
-        window.location.href = `${URLS.MARKETPLACE}?screen=${screen}`;
-    };
+    // Unique navigation points
+    const goToPartner = () => { window.location.href = `${URLS.MARKETPLACE}?screen=partner`; };
 
     useEffect(() => {
         const fetchLandingData = async () => {
             try {
-                // Fetch gyms
-                const gymRes = await fetch(`${URLS.API}/gyms`);
+                // Fetch gyms with a shorter timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const gymRes = await fetch(`${URLS.API}/gyms`, { signal: controller.signal });
                 if (gymRes.ok) {
                     const data = await gymRes.json();
                     setLiveGyms(data.slice(0, 3));
                 }
 
                 // Fetch public stats
-                const statsRes = await fetch(`${URLS.API}/dashboard/public-stats`);
+                const statsRes = await fetch(`${URLS.API}/dashboard/public-stats`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
                 if (statsRes.ok) {
                     const stats = await statsRes.json();
-                    setLiveStats(stats);
+                    // Mark as truly live if we got a response
+                    setLiveStats({ ...stats, isConnected: true });
                 }
             } catch (err) {
-                console.error("Failed to fetch landing data:", err);
+                console.error("Data connection failed:", err);
+                setFetchError(true);
             } finally {
                 setLoadingGyms(false);
             }
@@ -122,14 +128,14 @@ export default function App() {
             </script>
 
             {/* Sticky Navbar */}
-            <header className="fixed top-0 left-0 right-0 h-20 bg-background/80 backdrop-blur-md z-[100] border-b border-slate-200/40">
+            <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-md z-[100] border-b border-slate-200/40">
                 <div className="container mx-auto px-6 h-full flex items-center justify-between">
-                    <div className="-skew-x-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                        <h1 className="text-2xl font-[1000] uppercase flex items-center">
-                            <span className="text-slate-900">GYM</span>
-                            <span className="text-primary italic ml-0.5">KAA</span>
-                            <span className="text-slate-900">NA</span>
-                        </h1>
+                    <div 
+                        className="cursor-pointer hover:scale-105 transition-transform active:scale-95 touch-manipulation" 
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        onTouchStart={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                        <img src="/logo.png" alt="Gymkaana" className="h-8 md:h-10 w-auto object-contain" />
                     </div>
 
                     <nav className="hidden md:flex items-center gap-8">
