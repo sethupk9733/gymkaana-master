@@ -12,6 +12,7 @@ interface AddGymProps {
 export function AddGym({ onBack }: AddGymProps) {
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [images, setImages] = useState<string[]>([]);
     const [form, setForm] = useState({
         name: '',
@@ -70,6 +71,10 @@ export function AddGym({ onBack }: AddGymProps) {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (images.length >= 7) {
+                alert('Maximum 7 photos allowed.');
+                return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImages(prev => [...prev, reader.result as string]);

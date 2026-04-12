@@ -87,6 +87,10 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (images.length >= 7) {
+        alert('Maximum 7 photos allowed.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setImages(prev => [...prev, reader.result as string]);

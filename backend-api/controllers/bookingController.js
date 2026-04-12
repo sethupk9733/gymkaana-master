@@ -49,20 +49,12 @@ exports.getMyBookings = async (req, res) => {
     }
 };
 
+const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
+
 exports.createBooking = async (req, res) => {
     try {
         console.log('===== BOOKING CREATION DEBUG =====');
-        console.log('Body:', req.body);
-
-        // Validate required fields
-        const requiredFields = ['gymId', 'planId', 'userId', 'memberName', 'memberEmail', 'amount', 'startDate', 'endDate'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-
-        if (missingFields.length > 0) {
-            console.error('Missing required fields:', missingFields);
-            return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
-        }
-
+        
         const booking = new Booking({
             gymId: req.body.gymId,
             planId: req.body.planId,
@@ -75,15 +67,29 @@ exports.createBooking = async (req, res) => {
             status: req.body.status || 'upcoming'
         });
 
-        console.log('Booking object created:', booking);
         const newBooking = await booking.save();
-        console.log('Booking saved successfully:', newBooking._id);
+        
+        // Populate deeply to get gym owner info for email
+        const populated = await Booking.findById(newBooking._id)
+            .populate({
+                path: 'gymId',
+                populate: { path: 'ownerId' }
+            })
+            .populate('planId');
 
-        // Populate and return
-        const populated = await Booking.findById(newBooking._id).populate('gymId planId');
-        console.log('Booking populated:', populated);
+        // Send Member Confirmation
+        sendBookingConfirmation(populated.memberEmail, populated).catch(err => 
+            console.error("User email failed:", err.message)
+        );
 
-        // Log activity asynchronously (don't block response)
+        // Send Owner Notification if gym has owner email
+        const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
+        if (ownerEmail) {
+            sendOwnerBookingNotification(ownerEmail, populated).catch(err => 
+                console.error("Owner email failed:", err.message)
+            );
+        }
+
         logActivity({
             userId: req.body.userId,
             gymId: req.body.gymId,
@@ -94,9 +100,7 @@ exports.createBooking = async (req, res) => {
 
         res.status(201).json(populated);
     } catch (err) {
-        console.error("===== BOOKING ERROR =====");
-        console.error("Error message:", err.message);
-        console.error("Full Error:", err);
+        console.error("===== BOOKING ERROR =====", err.message);
         res.status(400).json({ message: err.message });
     }
 };

@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { Building2, User, Menu } from 'lucide-react';
+import { useState, ReactNode } from 'react';
+import { Building2, User, Menu, X } from 'lucide-react';
 
 interface LayoutProps {
     children: ReactNode;
@@ -9,6 +9,22 @@ interface LayoutProps {
 }
 
 export function Layout({ children, activeTab, setActiveTab, setCurrentScreen }: LayoutProps) {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const navItems = [
+        { id: 'dashboard', label: 'Dashboard' },
+        { id: 'gyms', label: 'Gyms' },
+        { id: 'bookings', label: 'Bookings' },
+        { id: 'reviews', label: 'Reviews' },
+        { id: 'profile', label: 'Profile' }
+    ];
+
+    const handleNav = (id: string) => {
+        setActiveTab(id);
+        setCurrentScreen('main');
+        setIsMenuOpen(false);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-black selection:text-white">
             {/* Header */}
@@ -20,48 +36,40 @@ export function Layout({ children, activeTab, setActiveTab, setCurrentScreen }: 
                     </div>
                     {/* Nav */}
                     <nav className="hidden md:flex items-center gap-8">
-                        <button
-                            onClick={() => { setActiveTab('dashboard'); setCurrentScreen('main'); }}
-                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'dashboard' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-                            title="Dashboard"
-                        >
-                            Dashboard
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab('gyms'); setCurrentScreen('main'); }}
-                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'gyms' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-                            title="Gyms"
-                        >
-                            Gyms
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab('bookings'); setCurrentScreen('main'); }}
-                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'bookings' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-                            title="Bookings"
-                        >
-                            Bookings
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab('reviews'); setCurrentScreen('main'); }}
-                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'reviews' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-                            title="Reviews"
-                        >
-                            Reviews
-                        </button>
-                        <button
-                            onClick={() => { setActiveTab('profile'); setCurrentScreen('main'); }}
-                            className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === 'profile' ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
-                            title="Profile"
-                        >
-                            Profile
-                        </button>
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNav(item.id)}
+                                className={`text-sm font-medium uppercase tracking-widest transition-colors ${activeTab === item.id ? 'text-primary' : 'text-gray-500 hover:text-gray-800'}`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
                     </nav>
-                    {/* Mobile menu toggle (optional) */}
-                    <button className="md:hidden p-2" title="Open menu">
-                        <Menu className="w-6 h-6" />
+                    {/* Mobile menu toggle */}
+                    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 text-gray-600 hover:text-black transition-colors" title="Toggle menu">
+                        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
             </header>
+
+            {/* Mobile Menu Overlay */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-40 md:hidden">
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
+                    <nav className="fixed top-16 left-0 right-0 bg-white border-b border-gray-100 p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNav(item.id)}
+                                className={`text-lg font-black italic uppercase tracking-tighter text-left ${activeTab === item.id ? 'text-primary' : 'text-gray-500'}`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+            )}
 
             {/* Main content area */}
             <main className="pt-20 pb-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

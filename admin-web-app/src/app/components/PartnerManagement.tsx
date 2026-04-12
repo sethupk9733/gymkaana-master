@@ -658,7 +658,7 @@ export function PartnerManagement() {
                                                                 <div>
                                                                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Account Number</p>
                                                                     <p className="font-mono font-bold text-lg text-gray-900 tracking-wider">
-                                                                        {selectedGym.bankDetails.accountNumber.replace(/.(?=.{4})/g, '•')}
+                                                                        {selectedGym.bankDetails.accountNumber}
                                                                     </p>
                                                                 </div>
                                                                 <div>

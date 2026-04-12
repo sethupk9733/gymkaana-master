@@ -84,30 +84,64 @@ const sendWelcomeEmail = async (to, name) => {
 };
 
 /**
- * Send Booking Confirmation
+ * Send Booking Confirmation to User (with QR Code)
  */
 const sendBookingConfirmation = async (to, booking) => {
+    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${booking._id}&choe=UTF-8`;
     const html = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
             <h2 style="color: #000; text-transform: uppercase; letter-spacing: 2px;">Booking Confirmed</h2>
             <p style="color: #666; font-size: 16px;">Your fitness session is locked in! Here are your booking details:</p>
+            
             <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #000;">
-                <p style="margin: 5px 0;"><b>Gym:</b> ${booking.gymName}</p>
-                <p style="margin: 5px 0;"><b>Plan:</b> ${booking.planName}</p>
+                <p style="margin: 5px 0;"><b>Gym:</b> ${booking.gymName || (booking.gymId && booking.gymId.name)}</p>
+                <p style="margin: 5px 0;"><b>Plan:</b> ${booking.planName || (booking.planId && booking.planId.name)}</p>
                 <p style="margin: 5px 0;"><b>Date:</b> ${new Date(booking.startDate).toLocaleDateString()}</p>
                 <p style="margin: 5px 0;"><b>Amount:</b> ₹${booking.amount}</p>
+                <p style="margin: 5px 0;"><b>ID:</b> ${booking._id.toString().slice(-8).toUpperCase()}</p>
             </div>
-            <p style="color: #666; font-size: 14px;">Please present your QR code at the venue for verification.</p>
+
+            <div style="text-align: center; margin: 30px 0; padding: 20px; border: 2px dashed #eee; border-radius: 10px;">
+                <p style="text-transform: uppercase; font-weight: bold; font-size: 12px; margin-bottom: 10px; color: #666;">Scan for Check-in</p>
+                <img src="${qrUrl}" alt="Check-in QR" style="width: 200px; height: 200px;" />
+            </div>
+
+            <p style="color: #666; font-size: 14px;">Please present this QR code at the venue for verification.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
             <p style="text-align: center; color: #000; font-weight: bold; font-size: 14px;">Powered by Vuegam Solutions</p>
         </div>
     `;
-    return await sendEmail(to, `Booking Confirmation: ${booking.gymName}`, html);
+    return await sendEmail(to, `Booking Confirmation: ${booking.gymName || 'Your Session'}`, html);
+};
+
+/**
+ * Send New Booking Notification to Owner
+ */
+const sendOwnerBookingNotification = async (to, booking) => {
+    const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #000; text-transform: uppercase; letter-spacing: 2px;">New Sale!</h2>
+            <p style="color: #666; font-size: 16px;">A new booking has been confirmed for your hub:</p>
+            
+            <div style="background: #eefdf5; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <p style="margin: 5px 0;"><b>Customer:</b> ${booking.memberName}</p>
+                <p style="margin: 5px 0;"><b>Plan:</b> ${booking.planName || (booking.planId && booking.planId.name)}</p>
+                <p style="margin: 5px 0;"><b>Amount:</b> ₹${booking.amount}</p>
+                <p style="margin: 5px 0;"><b>Starts:</b> ${new Date(booking.startDate).toLocaleDateString()}</p>
+            </div>
+
+            <p style="color: #666; font-size: 14px;">Prepare your facility for the check-in. You can view full details in your owner dashboard.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="text-align: center; color: #000; font-weight: bold; font-size: 14px;">Powered by Vuegam Solutions</p>
+        </div>
+    `;
+    return await sendEmail(to, `New Sale Alert: ${booking.memberName}`, html);
 };
 
 module.exports = {
     sendEmail,
     sendOTPEmail,
     sendWelcomeEmail,
-    sendBookingConfirmation
+    sendBookingConfirmation,
+    sendOwnerBookingNotification
 };
