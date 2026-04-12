@@ -266,7 +266,8 @@ exports.getStats = async (req, res) => {
 
 exports.getPublicStats = async (req, res) => {
     try {
-        const totalGyms = await Gym.countDocuments({ status: 'Active' });
+        const activeStatuses = ['Active', 'Approved', 'active', 'approved'];
+        const totalGyms = await Gym.countDocuments({ status: { $in: activeStatuses } });
         
         // Count unique users who have bookings
         const activeMembersCount = await Booking.distinct('userId', {
@@ -274,11 +275,10 @@ exports.getPublicStats = async (req, res) => {
         });
 
         // Simple city count - extract from gym locations
-        const gyms = await Gym.find({ status: 'Active' }, 'location');
+        const gyms = await Gym.find({ status: { $in: activeStatuses } }, 'location');
         const cities = new Set();
         gyms.forEach(g => {
             if (g.location) {
-                // Assuming format like 'Indiranagar, Bangalore' or just 'Bangalore'
                 const parts = g.location.split(',');
                 const city = parts[parts.length - 1].trim();
                 if (city) cities.add(city);
@@ -286,10 +286,11 @@ exports.getPublicStats = async (req, res) => {
         });
 
         res.json({
-            totalGyms: totalGyms > 0 ? totalGyms : "500+",
-            activeMembers: activeMembersCount.length > 0 ? `${(activeMembersCount.length / 1000).toFixed(1)}K+` : "12.4K+",
+            totalGyms: totalGyms > 0 ? totalGyms : 0,
+            activeMembers: activeMembersCount.length > 0 ? activeMembersCount.length : 0,
             platformRating: "4.9",
-            citiesCovered: cities.size > 0 ? `${cities.size}+` : "10+"
+            citiesCovered: cities.size > 0 ? cities.size : 0,
+            isLive: totalGyms > 0 // Help the frontend know if this is real data
         });
     } catch (err) {
         console.error('Public Stats error:', err);

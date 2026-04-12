@@ -127,8 +127,8 @@ export function HomeScreen({
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <h1 className="text-3xl md:text-7xl font-black tracking-tighter text-gray-900 italic mb-4 leading-tight">ELEVATE YOUR <br /><span className="text-primary underline decoration-black decoration-4 md:decoration-8 underline-offset-4 md:underline-offset-[12px]">LIFESTYLE</span></h1>
-            <p className="text-[10px] md:text-base font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-gray-400 mb-8 md:mb-12">Universal access to the finest fitness venues</p>
+            <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-gray-900 italic mb-4 leading-tight">ELEVATE YOUR <br /><span className="text-primary underline decoration-black decoration-8 underline-offset-[12px]">LIFESTYLE</span></h1>
+            <p className="text-xs md:text-base font-bold uppercase tracking-[0.3em] text-gray-400 mb-12">Universal access to the finest fitness venues</p>
           </motion.div>
 
           {/* Integrated Search & Filter Experience */}

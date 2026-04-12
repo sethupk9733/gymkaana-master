@@ -286,7 +286,7 @@ export default function App() {
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-black selection:text-white">
       {/* Top Navigation Bar */}
       {currentScreen !== 'splash' && currentScreen !== 'login' && (
-        <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 z-[50] flex items-center justify-between px-4 md:px-12">
+        <header className="fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 z-[50] flex items-center justify-between px-6 lg:px-12">
           <div className="flex items-center gap-12">
             <div
               onClick={() => setCurrentScreen('home')}
