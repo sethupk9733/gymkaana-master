@@ -131,7 +131,7 @@ export default function App() {
             </script>
 
             {/* Sticky Navbar */}
-            <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-md z-[100] border-b border-slate-200/40">
+            <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-md z-[9999] border-b border-slate-200/40">
                 <div className="container mx-auto px-6 h-full flex items-center justify-between">
                     <div 
                         className="cursor-pointer hover:scale-105 transition-transform active:scale-95 touch-manipulation" 
@@ -140,7 +140,7 @@ export default function App() {
                     >
                         <h1 className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
                             <span className="text-slate-900">GYM</span>
-                            <span className="text-primary italic ml-0.5 text-[#A3E635]">KAA</span>
+                            <span className="italic ml-0.5" style={{ color: '#A3E635' }}>KAA</span>
                             <span className="text-slate-900">NA</span>
                         </h1>
                     </div>

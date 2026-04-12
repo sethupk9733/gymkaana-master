@@ -33,7 +33,7 @@ export function Layout({ children, activeTab, setActiveTab, setCurrentScreen }: 
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
                         <h1 className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
                             <span className="text-slate-900">GYM</span>
-                            <span className="text-primary italic ml-0.5 text-[#A3E635]">KAA</span>
+                            <span className="italic ml-0.5" style={{ color: '#A3E635' }}>KAA</span>
                             <span className="text-slate-900">NA</span>
                         </h1>
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-1">Owner</span>
