@@ -135,7 +135,11 @@ export default function App() {
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                         onTouchStart={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
-                        <img src="/logo.png" alt="Gymkaana" className="h-8 md:h-10 w-auto object-contain" />
+                        <h1 className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
+                            <span className="text-slate-900">GYM</span>
+                            <span className="text-primary italic ml-0.5 text-[#A3E635]">KAA</span>
+                            <span className="text-slate-900">NA</span>
+                        </h1>
                     </div>
 
                     <nav className="hidden md:flex items-center gap-8">

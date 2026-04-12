@@ -364,7 +364,11 @@ export default function App() {
               onTouchStart={() => setCurrentScreen('home')}
               className="cursor-pointer group hover:scale-105 active:scale-95 transition-all touch-manipulation"
             >
-              <img src="/logo.png" alt="Gymkaana" className="h-8 md:h-10 w-auto object-contain" />
+              <h1 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
+                <span className="text-secondary text-slate-900">GYM</span>
+                <span className="text-primary italic ml-0.5 text-[#A3E635]">KAA</span>
+                <span className="text-secondary text-slate-900">NA</span>
+              </h1>
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
