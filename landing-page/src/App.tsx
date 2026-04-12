@@ -69,6 +69,9 @@ export default function App() {
     const onOwnerPortal = () => { window.location.href = URLS.OWNER; };
 
     // Unique navigation points
+    const goToMarketplaceScreen = (screen: string) => {
+        window.location.href = `${URLS.MARKETPLACE}?screen=${screen}`;
+    };
     const goToPartner = () => { window.location.href = `${URLS.MARKETPLACE}?screen=partner`; };
 
     useEffect(() => {
