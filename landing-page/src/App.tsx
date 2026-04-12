@@ -152,15 +152,21 @@ export default function App() {
                     </nav>
 
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden lg:flex" onClick={onOwnerPortal}>Owner Portal</Button>
-                        <Button variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden sm:flex" onClick={onLogin}>Sign In</Button>
-                        <Button className="rounded-full px-6 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" onClick={onExplore}>Explore</Button>
+                        <Button asChild variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden lg:flex cursor-pointer">
+                            <a href={URLS.OWNER}>Owner Portal</a>
+                        </Button>
+                        <Button asChild variant="ghost" className="font-black uppercase tracking-widest text-[10px] hidden sm:flex cursor-pointer">
+                            <a href={`${URLS.MARKETPLACE}?action=login`}>Sign In</a>
+                        </Button>
+                        <Button asChild className="rounded-full px-6 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 cursor-pointer">
+                            <a href={`${URLS.MARKETPLACE}?screen=home&action=explore`}>Explore</a>
+                        </Button>
                     </div>
                 </div>
             </header>
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
+            <section id="features" className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="flex flex-col lg:flex-row items-center gap-12">
                         <motion.div
@@ -180,19 +186,23 @@ export default function App() {
                             </p>
                             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                                 <Button
-                                    onClick={onExplore}
+                                    asChild
                                     size="lg"
-                                    className="h-16 px-10 rounded-2xl text-lg font-black bg-primary hover:bg-primary/90 shadow-xl shadow-primary/25 transition-all hover:scale-105 active:scale-95 w-full sm:w-auto uppercase tracking-wider"
+                                    className="h-16 px-10 rounded-2xl text-lg font-black bg-primary hover:bg-primary/90 shadow-xl shadow-primary/25 transition-all hover:scale-105 active:scale-95 w-full sm:w-auto uppercase tracking-wider cursor-pointer"
                                 >
-                                    Explore Gyms <ArrowRight className="ml-2 h-5 w-5" />
+                                    <a href={`${URLS.MARKETPLACE}?screen=home&action=explore`}>
+                                        Explore Gyms <ArrowRight className="ml-2 h-5 w-5" />
+                                    </a>
                                 </Button>
                                 <Button
-                                    onClick={onListGym}
+                                    asChild
                                     variant="outline"
                                     size="lg"
-                                    className="h-16 px-10 rounded-2xl text-lg font-black border-2 hover:bg-slate-50 transition-all w-full sm:w-auto uppercase tracking-wider"
+                                    className="h-16 px-10 rounded-2xl text-lg font-black border-2 hover:bg-slate-50 transition-all w-full sm:w-auto uppercase tracking-wider cursor-pointer"
                                 >
-                                    List Your Gym
+                                    <a href={`${URLS.OWNER}?action=onboard`}>
+                                        List Your Gym
+                                    </a>
                                 </Button>
                             </div>
 
@@ -500,30 +510,36 @@ export default function App() {
             <footer className="py-24 bg-slate-950 border-t border-white/5">
                 <div className="container mx-auto px-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12 mb-20">
-                        <div className="-skew-x-12 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                            <h3 className="text-3xl font-[1000] uppercase flex items-center group-hover:scale-105 transition-transform no-skew-x-0">
-                                <span className="text-white">GYM</span>
-                                <span className="text-primary italic mx-0.5">KAA</span>
-                                <span className="text-white">NA</span>
-                            </h3>
+                        <div className="-skew-x-12 cursor-pointer group">
+                             <a href="/">
+                                <h3 className="text-3xl font-[1000] uppercase flex items-center group-hover:scale-105 transition-transform">
+                                    <span className="text-white">GYM</span>
+                                    <span className="italic mx-0.5" style={{ color: '#A3E635' }}>KAA</span>
+                                    <span className="text-white">NA</span>
+                                </h3>
+                             </a>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:flex gap-x-12 gap-y-6 text-center md:text-left">
                             {[
-                                { label: 'About Us', action: () => goToMarketplaceScreen('about') },
-                                { label: 'Explore Venues', action: onExplore },
-                                { label: 'Partner Program', action: onListGym },
-                                { label: 'Owner Portal', action: onOwnerPortal },
-                                { label: 'Privacy & Security', action: () => goToMarketplaceScreen('privacy') },
-                                { label: 'Terms of Service', action: () => goToMarketplaceScreen('terms') },
-                                { label: 'Help & FAQs', action: () => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }) },
+                                { label: 'About Us', href: `${URLS.MARKETPLACE}?screen=about` },
+                                { label: 'Explore Venues', href: `${URLS.MARKETPLACE}?screen=home&action=explore` },
+                                { label: 'Partner Program', href: `${URLS.OWNER}?action=onboard` },
+                                { label: 'Owner Portal', href: URLS.OWNER },
+                                { label: 'Privacy & Security', href: `${URLS.MARKETPLACE}?screen=privacy` },
+                                { label: 'Terms of Service', href: `${URLS.MARKETPLACE}?screen=terms` },
+                                { label: 'Help & FAQs', href: '#faq' },
                             ].map((link) => (
-                                <button
+                                <a
                                     key={link.label}
-                                    onClick={link.action}
-                                    className="text-[9px] font-[1000] uppercase tracking-[0.2em] text-slate-500 hover:text-primary transition-all"
+                                    href={link.href}
+                                    className="text-[9px] font-[1000] uppercase tracking-[0.2em] text-slate-500 hover:text-primary transition-all cursor-pointer"
+                                    onClick={link.href.startsWith('#') ? (e) => {
+                                        e.preventDefault();
+                                        document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                                    } : undefined}
                                 >
                                     {link.label}
-                                </button>
+                                </a>
                             ))}
                         </div>
                     </div>
