@@ -24,6 +24,7 @@ const paymentMethods = [
 ];
 
 import { createBooking } from "../lib/api";
+import { API_URL } from "../config/api";
 
 export function PaymentScreen({
   gymId,
@@ -99,7 +100,7 @@ export function PaymentScreen({
 
         console.log("📤 Sending booking payload:", bookingPayload);
 
-        const response = await fetch('http://localhost:5000/api/bookings/create-direct', {
+        const response = await fetch(`${API_URL}/bookings/create-direct`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

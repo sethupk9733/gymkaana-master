@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { Building2, ArrowLeft, CheckCircle2, Rocket, BarChart3, Users, ExternalLink, ShieldCheck } from "lucide-react";
 import { SEO } from "./SEO";
+import { OWNER_URL } from "../config/api";
 
 export function PartnerScreen({ onBack }: { onBack: () => void }) {
     const joinSteps = [
@@ -131,7 +132,7 @@ export function PartnerScreen({ onBack }: { onBack: () => void }) {
                         Access the Gymkaana Owner Portal to begin your application and join our elite network of fitness venues.
                     </p>
                     <button
-                        onClick={() => window.open('https://gymkaana-owner.vercel.app', '_blank')}
+                        onClick={() => window.open(OWNER_URL, '_blank')}
                         className="px-16 py-8 bg-primary text-white rounded-[32px] font-black text-sm uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 mx-auto group"
                     >
                         Access Owner Portal

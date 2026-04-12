@@ -84,6 +84,18 @@ export function BookingCard({ booking }: { booking: Booking }) {
                     </div>
                 </div>
 
+                {booking.status === 'cancelled' && (
+                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-2xl">
+                        <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1 flex justify-between">
+                            <span>Termination Ledger</span>
+                            <span className="text-red-600 italic">BY {booking.cancelledBy?.toUpperCase() || 'SYSTEM'}</span>
+                        </p>
+                        <p className="text-xs font-bold text-red-900 italic leading-tight">
+                            "{booking.cancellationReason || 'Standard Termination protocol applied.'}"
+                        </p>
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between bg-gray-50 p-5 rounded-[24px] border border-gray-100 mb-6">
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">

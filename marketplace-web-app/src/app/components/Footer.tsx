@@ -9,7 +9,8 @@ export function Footer({
     onContactClick,
     onCareersClick,
     onTermsClick,
-    onPartnerClick
+    onPartnerClick,
+    onRefundClick
 }: {
     onDisciplineClick?: (discipline: string) => void;
     onAboutClick?: () => void;
@@ -20,6 +21,7 @@ export function Footer({
     onCareersClick?: () => void;
     onTermsClick?: () => void;
     onPartnerClick?: () => void;
+    onRefundClick?: () => void;
 }) {
     const cities = [
         "Gyms in Bangalore",
@@ -50,6 +52,7 @@ export function Footer({
         { label: "Help & Support", href: "#" },
         { label: "FAQs", href: "#" },
         { label: "Terms of Service", href: "#" },
+        { label: "Refund Policy", href: "#" },
         { label: "Partner with Us", href: "#" },
         { label: "Careers", href: "#" }
     ];
@@ -67,7 +70,11 @@ export function Footer({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
                     {/* Brand & Mission */}
                     <div className="space-y-6">
-                        <h2 className="text-3xl font-black tracking-tighter italic uppercase text-primary">Gymkaana</h2>
+                        <h2 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
+                            <span className="text-white">GYM</span>
+                            <span className="text-primary italic mx-0.5">KAA</span>
+                            <span className="text-white">NA</span>
+                        </h2>
                         <p className="text-gray-400 text-sm font-medium leading-relaxed max-w-xs">
                             ELEVATING THE FITNESS ECOSYSTEM. UNIVERSAL ACCESS TO THE FINEST VENUES, POWERED BY INTELLIGENT TECHNOLOGY.
                         </p>
@@ -193,6 +200,9 @@ export function Footer({
                                                     } else if (link.label === "FAQs" && onFAQClick) {
                                                         e.preventDefault();
                                                         onFAQClick();
+                                                    } else if (link.label === "Refund Policy" && onRefundClick) {
+                                                        e.preventDefault();
+                                                        onRefundClick();
                                                     }
                                                 }}
                                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-primary transition-colors"
@@ -210,7 +220,7 @@ export function Footer({
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">
-                        © {new Date().getFullYear()} GYMKAANA TECHNOLOGIES PVT LTD. ALL RIGHTS RESERVED.
+                        © {new Date().getFullYear()} VUEGAM SOLUTIONS. ALL RIGHTS RESERVED.
                     </p>
                     <div className="flex gap-8">
                         <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] hover:text-white cursor-pointer transition-colors">Sitemap</span>
