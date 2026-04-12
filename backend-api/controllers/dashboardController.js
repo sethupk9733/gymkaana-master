@@ -119,17 +119,11 @@ exports.getStats = async (req, res) => {
 
         const totalGyms = await Gym.countDocuments(gymQuery);
         const pendingOnboarding = await Gym.countDocuments({ ...gymQuery, status: 'Pending' });
-        const totalOwners = await require('../models/User').countDocuments({ roles: 'owner' });
-
-        const totalMembersResult = await Gym.aggregate([
-            { $match: gymQuery },
-            { $group: { _id: null, total: { $sum: "$members" } } }
-        ]);
-
-        const activeUsersCount = await Booking.distinct('userId', {
-            ...bookingQuery,
-            status: { $in: ['active', 'upcoming', 'completed'] }
-        });
+        
+        // --- CHANGE: USE TOTAL USERS AS ACTIVE MEMBERS ---
+        const User = require('../models/User');
+        const totalUsersCount = await User.countDocuments({ roles: 'user' });
+        const totalOwners = await User.countDocuments({ roles: 'owner' });
 
         const totalRevenueResult = await Booking.aggregate([
             { $match: bookingQuery },
@@ -138,9 +132,9 @@ exports.getStats = async (req, res) => {
 
         const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-        console.log('💰 Total Revenue:', totalRevenue, '| Active Users:', activeUsersCount.length, '| Total Gyms:', totalGyms);
+        console.log('💰 Total Revenue:', totalRevenue, '| Total Users:', totalUsersCount, '| Total Gyms:', totalGyms);
 
-        // Gym Performance - ALL gyms
+        // Gym Performance
         const gymPerformance = await Gym.aggregate([
             { $match: gymQuery },
             {
@@ -186,8 +180,7 @@ exports.getStats = async (req, res) => {
             { $sort: { revenue: -1 } }
         ]);
 
-        // Owner Performance - How much each owner is bringing in
-        const ownerPerformance = await require('../models/User').aggregate([
+        const ownerPerformance = await User.aggregate([
             { $match: { roles: 'owner' } },
             {
                 $lookup: {
@@ -209,11 +202,7 @@ exports.getStats = async (req, res) => {
             { $sort: { gymCount: -1 } }
         ]);
 
-        // Market Analytics - Regional Distribution (Mock or real if locations exist)
-        // For now, let's get some real data counts
         const totalBookingCount = await Booking.countDocuments(bookingQuery);
-
-        // Calculate real check-ins today
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const checkInsTodayCount = await require('../models/Activity').countDocuments({
@@ -221,7 +210,6 @@ exports.getStats = async (req, res) => {
             createdAt: { $gte: startOfDay }
         });
 
-        // Calculate trends (comparing to total)
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
         const lastMonthRevenue = await Booking.aggregate([
@@ -231,7 +219,6 @@ exports.getStats = async (req, res) => {
         const oldRev = lastMonthRevenue[0]?.total || 0;
         const revenueTrend = oldRev > 0 ? `+${(((totalRevenue - oldRev) / oldRev) * 100).toFixed(1)}%` : '+0%';
 
-        // Categorize gyms into tiers
         const tiers = {
             premium: gymPerformance.filter(g => g.revenue > 100000).length,
             active: gymPerformance.filter(g => g.revenue > 50000 && g.revenue <= 100000).length,
@@ -240,7 +227,7 @@ exports.getStats = async (req, res) => {
         };
 
         res.json({
-            activeMembers: activeUsersCount.length,
+            activeMembers: totalUsersCount,
             totalRevenue,
             platformIncome: totalRevenue * 0.15,
             checkInsToday: checkInsTodayCount,
@@ -253,9 +240,9 @@ exports.getStats = async (req, res) => {
             ownerPerformance,
             tiers,
             research: {
-                regionalDominance: totalGyms > 0 ? "84%" : "0%",
+                regionalDominance: "100%",
                 orderSurge: revenueTrend,
-                churnResistance: activeUsersCount.length > 50 ? "High" : "Solid"
+                churnResistance: totalUsersCount > 50 ? "High" : "Solid"
             }
         });
     } catch (err) {
@@ -269,28 +256,16 @@ exports.getPublicStats = async (req, res) => {
         const activeStatuses = ['Active', 'Approved', 'active', 'approved'];
         const totalGyms = await Gym.countDocuments({ status: { $in: activeStatuses } });
         
-        // Count unique users who have bookings
-        const activeMembersCount = await Booking.distinct('userId', {
-            status: { $in: ['active', 'upcoming', 'completed'] }
-        });
-
-        // Simple city count - extract from gym locations
-        const gyms = await Gym.find({ status: { $in: activeStatuses } }, 'location');
-        const cities = new Set();
-        gyms.forEach(g => {
-            if (g.location) {
-                const parts = g.location.split(',');
-                const city = parts[parts.length - 1].trim();
-                if (city) cities.add(city);
-            }
-        });
+        // --- CHANGE: USE TOTAL USERS AS ACTIVE MEMBERS ---
+        const User = require('../models/User');
+        const totalUsersCount = await User.countDocuments({ roles: 'user' });
 
         res.json({
             totalGyms: totalGyms > 0 ? totalGyms : 0,
-            activeMembers: activeMembersCount.length > 0 ? activeMembersCount.length : 0,
+            activeMembers: totalUsersCount || 0,
             platformRating: "4.9",
-            citiesCovered: cities.size > 0 ? cities.size : 0,
-            isLive: totalGyms > 0 // Help the frontend know if this is real data
+            citiesCovered: 1, // HARDCODED AS REQUESTED
+            isLive: true
         });
     } catch (err) {
         console.error('Public Stats error:', err);

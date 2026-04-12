@@ -171,7 +171,7 @@ export function AdminDashboard() {
                         <YieldCard label="Total Network GMV" value={formatLakhs(stats?.totalRevenue || 0)} sub="Gross flow through platform" icon={Inbox} color="black" help="Combined revenue of all gyms" />
                         <YieldCard label="Gymkaana Income" value={formatLakhs(stats?.platformIncome || 0)} sub="15% Transactional Yield" icon={Target} color="primary" help="Our net platform revenue" />
                         <YieldCard label="Pending Onboarding" value={stats?.pendingOnboarding?.toString().padStart(2, '0') || "00"} sub="Vetting Requests" icon={CheckSquare} color="red" help="New gyms awaiting verification" />
-                        <YieldCard label="Active User Reach" value={(stats?.activeMembers || 0).toLocaleString()} sub="Individual monthly visits" icon={Users} color="emerald" help="Total reach across all hubs" />
+                        <YieldCard label="Total Active Clients" value={(stats?.activeMembers || 0).toLocaleString()} sub="Current Platform Users" icon={Users} color="emerald" help="Total reach across all hubs" />
                         <YieldCard label="Yield per Member" value={`₹${Math.round((stats?.totalRevenue || 0) / (stats?.activeMembers || 1))}`} sub="Avg. contribution/user" icon={Zap} color="orange" help="Revenue health per customer" />
                     </div>
 

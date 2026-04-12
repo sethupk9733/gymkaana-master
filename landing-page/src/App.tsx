@@ -249,8 +249,8 @@ export default function App() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
                         {[
                             { label: "Gyms Listed", value: liveStats ? liveStats.totalGyms : "500+" },
-                            { label: "Active Members", value: liveStats ? liveStats.activeMembers : "1.2k" },
-                            { label: "Cities Covered", value: liveStats ? liveStats.citiesCovered : "10+" },
+                            { label: "Total Active Clients", value: liveStats ? liveStats.activeMembers : "1.2k" },
+                            { label: "Cities Covered", value: liveStats ? liveStats.citiesCovered : "1" },
                             { label: "Success Rate", value: "99.9%" }
                         ].map((stat, i) => (
                             <div key={i}>
