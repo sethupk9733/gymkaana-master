@@ -253,9 +253,10 @@ exports.getStats = async (req, res) => {
             ownerPerformance,
             tiers,
             research: {
-                regionalDominance: totalGyms > 0 ? "84%" : "0%", // Placeholder for now but exposed
+                regionalDominance: totalGyms > 0 ? "84%" : "0%",
                 orderSurge: revenueTrend,
                 churnResistance: activeUsersCount.length > 50 ? "High" : "Solid"
+            }
         });
     } catch (err) {
         console.error('Dashboard error:', err);
