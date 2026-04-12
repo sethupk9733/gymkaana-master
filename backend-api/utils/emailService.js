@@ -138,10 +138,34 @@ const sendOwnerBookingNotification = async (to, booking) => {
     return await sendEmail(to, `New Sale Alert: ${booking.memberName}`, html);
 };
 
+/**
+ * Send Login Notification
+ */
+const sendLoginNotification = async (to, name) => {
+    const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #000; text-transform: uppercase; letter-spacing: 2px;">Security Alert: New Sign-in</h2>
+            <p style="color: #666; font-size: 16px;">Hello ${name}, your Gymkaana account was recently accessed via <b>Google Login</b>.</p>
+            
+            <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #000;">
+                <p style="margin: 5px 0;"><b>Activity:</b> Successful Login</p>
+                <p style="margin: 5px 0;"><b>Date:</b> ${new Date().toLocaleString()}</p>
+                <p style="margin: 5px 0;"><b>Platform:</b> Gymkaana Ecosystem</p>
+            </div>
+
+            <p style="color: #999; font-size: 12px;">If this wasn't you, please secure your account immediately or contact support.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="text-align: center; color: #000; font-weight: bold; font-size: 14px;">Powered by Vuegam Solutions</p>
+        </div>
+    `;
+    return await sendEmail(to, "Security Alert: New Login at Gymkaana", html);
+};
+
 module.exports = {
     sendEmail,
     sendOTPEmail,
     sendWelcomeEmail,
     sendBookingConfirmation,
-    sendOwnerBookingNotification
+    sendOwnerBookingNotification,
+    sendLoginNotification
 };

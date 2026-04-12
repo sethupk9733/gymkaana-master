@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const Session = require('../models/Session');
-const { sendWelcomeEmail, sendOTPEmail } = require('../utils/emailService');
+const { sendWelcomeEmail, sendOTPEmail, sendLoginNotification } = require('../utils/emailService');
 const crypto = require('crypto');
 const OTP = require('../models/OTP');
 
@@ -168,6 +168,7 @@ exports.login = async (req, res) => {
     }
 };
 
+
 exports.googleLogin = async (req, res) => {
     const { idToken, role } = req.body;
     try {
@@ -179,6 +180,7 @@ exports.googleLogin = async (req, res) => {
         const { sub: googleId, email, name, picture } = payload;
 
         let user = await User.findOne({ email });
+        let isNewUser = false;
 
         if (user) {
             if (!user.googleId) {
@@ -194,14 +196,28 @@ exports.googleLogin = async (req, res) => {
             }
             await user.save();
         } else {
+            isNewUser = true;
             user = await User.create({
                 name,
                 email,
                 googleId,
                 roles: role ? [role] : ['user'],
-                profileImage: picture
+                profileImage: picture,
+                isVerified: true // Google users are pre-verified
             });
         }
+
+        // --- ASYNC EMAIL NOTIFICATIONS ---
+        if (isNewUser) {
+            sendWelcomeEmail(user.email, user.name).catch(err => 
+                console.error("Google Welcome Email failed:", err.message)
+            );
+        } else {
+            sendLoginNotification(user.email, user.name).catch(err => 
+                console.error("Google Login Alert failed:", err.message)
+            );
+        }
+        // ---------------------------------
 
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
