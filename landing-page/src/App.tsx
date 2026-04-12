@@ -135,8 +135,8 @@ export default function App() {
                 <div className="container mx-auto px-6 h-full flex items-center justify-between">
                     <div 
                         className="cursor-pointer hover:scale-105 transition-transform active:scale-95 touch-manipulation" 
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        onTouchStart={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        onClick={() => window.location.href = '/'}
+                        onTouchStart={() => window.location.href = '/'}
                     >
                         <h1 className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
                             <span className="text-slate-900">GYM</span>

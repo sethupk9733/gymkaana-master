@@ -122,7 +122,31 @@ app.post('/api/bookings/create-direct', async (req, res) => {
         
         // Populate references
         console.log('Populating references...');
-        const populated = await Booking.findById(savedBooking._id).populate('gymId planId userId');
+        const populated = await Booking.findById(savedBooking._id)
+            .populate({
+                path: 'gymId',
+                populate: { path: 'ownerId' }
+            })
+            .populate('planId')
+            .populate('userId');
+        
+        // Send Confirmation Emails (User & Owner)
+        try {
+            const { sendBookingConfirmation, sendOwnerBookingNotification } = require('./utils/emailService');
+            sendBookingConfirmation(populated.memberEmail, populated).catch(e => 
+                console.error('❌ Member email trigger failed:', e.message)
+            );
+
+            const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
+            if (ownerEmail) {
+                sendOwnerBookingNotification(ownerEmail, populated).catch(e => 
+                    console.error('❌ Owner notification trigger failed:', e.message)
+                );
+            }
+            console.log('📧 Email triggers dispatched');
+        } catch (mailErr) {
+            console.error('⚠️ Could not trigger emails:', mailErr.message);
+        }
         console.log('✅ Booking populated, sending response');
         
         res.status(201).json(populated);
