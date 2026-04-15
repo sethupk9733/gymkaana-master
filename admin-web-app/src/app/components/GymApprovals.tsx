@@ -14,6 +14,8 @@ interface GymDetail {
     status: 'pending' | 'approved' | 'rejected';
     gstNo: string;
     panNo: string;
+    aadhaarNo: string;
+    businessRegistrationNo: string;
     description: string;
     facilities: string[];
     images: string[];
@@ -43,6 +45,8 @@ export function GymApprovals() {
             status: "pending",
             gstNo: "29AAAAA0000A1Z5",
             panNo: "ABCDE1234F",
+            aadhaarNo: "1234 5678 9012",
+            businessRegistrationNo: "CIN-U74900-KA2018-001",
             description: "A premium fitness facility with state-of-the-art equipment and certified trainers. We focus on strength training and community building.",
             facilities: ["Weights", "Cardio", "Locker Room", "Steam Bath", "Personal Training"],
             images: ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48", "https://images.unsplash.com/photo-1540497077202-7c8a3999166f"],
@@ -68,6 +72,8 @@ export function GymApprovals() {
             status: "pending",
             gstNo: "29BBBBB1111B1Z6",
             panNo: "FGHIJ5678K",
+            aadhaarNo: "9876 5432 1098",
+            businessRegistrationNo: "MSME-KA-2021-7788",
             description: "Find your inner peace with our expert yoga sessions. We offer Hatha, Vinyasa, and Ashtanga yoga styles.",
             facilities: ["Yoga Mats", "Meditation Hall", "Organic Juice Bar", "Aroma Therapy"],
             images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b", "https://images.unsplash.com/photo-1552196562-790757a41925"],
@@ -214,8 +220,44 @@ export function GymApprovals() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <DocCard label="Trading License" id={selectedGym.documentation.tradingLicense} status="VERIFIED" icon={FileText} />
                                                 <DocCard label="NoC - Fire Safety" id={selectedGym.documentation.fireSafety} status="EXPIRES 2027" icon={Shield} />
-                                                <DocCard label="GST Verification" id={selectedGym.gstNo} status="ACTIVE" icon={Landmark} />
+                                                <DocCard label="GST Number" id={selectedGym.gstNo} status="ACTIVE" icon={Landmark} />
                                                 <DocCard label="Insurance Policy" id={selectedGym.documentation.insurancePolicy} status="GOLD COVER" icon={ShieldCheck} />
+                                                <DocCard label="Aadhaar Number" id={selectedGym.aadhaarNo} status="IDENTITY" icon={User} />
+                                                <DocCard label="PAN Number" id={selectedGym.panNo} status="TAX ID" icon={FileText} />
+                                                <DocCard label="Business Reg. No." id={selectedGym.businessRegistrationNo} status="REGISTERED" icon={Building2} />
+                                                <DocCard label="Bank Statement" id={selectedGym.documentation.bankStatement} status="ON FILE" icon={Landmark} />
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-8 flex items-center gap-3">
+                                                <User className="w-4 h-4" /> Owner Profile
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-6 mb-8">
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Owner Name</p>
+                                                    <p className="font-black italic text-gray-900 text-sm">{selectedGym.owner}</p>
+                                                </div>
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Phone</p>
+                                                    <p className="font-bold text-gray-900 text-sm">{selectedGym.ownerPhone}</p>
+                                                </div>
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Aadhaar</p>
+                                                    <p className="font-bold font-mono text-gray-900 text-sm">{selectedGym.aadhaarNo}</p>
+                                                </div>
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">PAN</p>
+                                                    <p className="font-bold font-mono uppercase text-gray-900 text-sm">{selectedGym.panNo}</p>
+                                                </div>
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">GST No.</p>
+                                                    <p className="font-bold font-mono uppercase text-gray-900 text-sm">{selectedGym.gstNo}</p>
+                                                </div>
+                                                <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Business Reg. No.</p>
+                                                    <p className="font-bold font-mono text-gray-900 text-sm">{selectedGym.businessRegistrationNo}</p>
+                                                </div>
                                             </div>
                                         </section>
 

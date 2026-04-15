@@ -111,9 +111,15 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 h-auto bg-white border-2 border-gray-300 p-1">
+          <TabsList className="w-full grid grid-cols-7 h-auto bg-white border-2 border-gray-300 p-1">
             <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="kyc" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+              KYC
+            </TabsTrigger>
+            <TabsTrigger value="trainers" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+              Staff
             </TabsTrigger>
             <TabsTrigger value="facilities" className="text-xs data-[state=active]:bg-gray-900 data-[state=active]:text-white">
               Facilities
@@ -150,6 +156,84 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                   <p className="text-xs text-gray-500">Avg Rating</p>
                 </div>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="kyc" className="mt-4">
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-6 space-y-5">
+              <div className="flex items-center gap-2 border-b-2 border-gray-100 pb-4">
+                <Shield size={20} className="text-blue-600" />
+                <h3 className="text-base font-bold">Business KYC Details</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Aadhaar Number</p>
+                  <p className="text-sm font-bold font-mono">{gym.kycDetails?.aadhaarNumber || <span className="text-gray-300 italic">Not Provided</span>}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">PAN Number</p>
+                  <p className="text-sm font-bold font-mono uppercase">{gym.kycDetails?.panNumber || <span className="text-gray-300 italic">Not Provided</span>}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">GST Number</p>
+                  <p className="text-sm font-bold font-mono uppercase">{gym.kycDetails?.gstNumber || <span className="text-gray-300 italic">Not Applicable</span>}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Business Registration No.</p>
+                  <p className="text-sm font-bold font-mono">{gym.kycDetails?.businessRegistrationNumber || <span className="text-gray-300 italic">Not Provided</span>}</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t-2 border-gray-100">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Settlement Bank Account</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Account Name</p><p className="text-sm font-bold">{gym.bankDetails?.accountName || '—'}</p></div>
+                  <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Account No.</p><p className="text-sm font-bold font-mono">{gym.bankDetails?.accountNumber || '—'}</p></div>
+                  <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">IFSC Code</p><p className="text-sm font-bold font-mono">{gym.bankDetails?.ifscCode || '—'}</p></div>
+                  <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-0.5">Bank Name</p><p className="text-sm font-bold">{gym.bankDetails?.bankName || '—'}</p></div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="trainers" className="mt-4">
+            <div className="bg-white border-2 border-gray-300 rounded-lg p-6 space-y-4">
+              <div className="flex items-center gap-2 border-b-2 border-gray-100 pb-4">
+                <User size={20} className="text-blue-600" />
+                <h3 className="text-base font-bold">Trainers & Staff</h3>
+                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                  {((gym.trainerDetails || gym.trainers || []).length)} members
+                </span>
+              </div>
+              {(gym.trainerDetails && gym.trainerDetails.length > 0) ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {gym.trainerDetails.map((trainer: any, i: number) => (
+                    <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-400 rounded-xl flex items-center justify-center text-white font-black text-lg">
+                        {trainer.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-gray-900 uppercase tracking-tight">{trainer.name}</p>
+                        {trainer.specialization && <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">{trainer.specialization}</p>}
+                        {trainer.experience && <p className="text-[10px] text-gray-400 font-bold uppercase">{trainer.experience}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (gym.trainers && gym.trainers.length > 0) ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {gym.trainers.map((name: string, i: number) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center font-black text-blue-600">{name.charAt(0)}</div>
+                      <p className="text-sm font-bold text-gray-900">{name}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-10 text-center text-gray-400">
+                  <User size={32} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-bold">No trainers or staff listed</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 

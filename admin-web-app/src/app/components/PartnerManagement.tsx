@@ -48,6 +48,12 @@ interface GymDetail {
         ifscCode: string;
         bankName: string;
     };
+    kycDetails?: {
+        aadhaarNumber?: string;
+        panNumber?: string;
+        gstNumber?: string;
+        businessRegistrationNumber?: string;
+    };
 }
 
 export function PartnerManagement() {
@@ -538,10 +544,14 @@ export function PartnerManagement() {
                                                         </header>
 
                                                         <div className="grid grid-cols-2 gap-6">
-                                                            <AssetCard label="Trading License" val={selectedGym.documentation?.tradingLicense || "VERIFIED"} color="indigo" />
-                                                            <AssetCard label="Fire Safety NoC" val={selectedGym.documentation?.fireSafety || "VERIFIED"} color="orange" />
-                                                            <AssetCard label="GST Certificate" val="29AAAAA0000A1Z5" color="emerald" />
-                                                            < AssetCard label="Insurance Desk" val={selectedGym.documentation?.insurancePolicy || "VERIFIED"} color="blue" />
+                                                            <AssetCard label="Trading License" val={selectedGym.documentation?.tradingLicense || "On File"} color="indigo" />
+                                                            <AssetCard label="Fire Safety NoC" val={selectedGym.documentation?.fireSafety || "On File"} color="orange" />
+                                                            <AssetCard label="Insurance Desk" val={selectedGym.documentation?.insurancePolicy || "On File"} color="blue" />
+                                                            <AssetCard label="Bank Statement" val={selectedGym.documentation?.bankStatement || "On File"} color="emerald" />
+                                                            <AssetCard label="Aadhaar Number" val={selectedGym.kycDetails?.aadhaarNumber || "Not Provided"} color="purple" />
+                                                            <AssetCard label="PAN Number" val={selectedGym.kycDetails?.panNumber || "Not Provided"} color="emerald" />
+                                                            <AssetCard label="GST Certificate" val={selectedGym.kycDetails?.gstNumber || "Not Applicable"} color="yellow" />
+                                                            <AssetCard label="Business Reg. No." val={selectedGym.kycDetails?.businessRegistrationNumber || "Not Provided"} color="indigo" />
                                                         </div>
                                                     </section>
                                                 </motion.div>
@@ -589,9 +599,12 @@ export function PartnerManagement() {
                                                             <DetailRow label="Entity Owner" value={selectedGym.ownerName || "Institutional Partner"} icon={User} />
                                                             <DetailRow label="Contact Line" value={selectedGym.ownerPhone || "NOT SECURED"} icon={Phone} />
                                                             <DetailRow label="Institutional Email" value={selectedGym.ownerEmail || "NOT SECURED"} icon={Mail} />
-                                                            <DetailRow label="Established" value={selectedGym.establishedYear || "2020"} icon={Activity} />
-                                                            <DetailRow label="PAN Account" value="ABCDE1234F" icon={ShieldCheck} />
-                                                            <RowStat label="Base Location" value={selectedGym.address} icon={MapPin} />
+                                                            <DetailRow label="Established" value={selectedGym.establishedYear || "—"} icon={Activity} />
+                                                            <DetailRow label="Aadhaar Number" value={selectedGym.kycDetails?.aadhaarNumber || "Not Provided"} icon={ShieldCheck} />
+                                                            <DetailRow label="PAN Number" value={selectedGym.kycDetails?.panNumber || "Not Provided"} icon={ShieldCheck} />
+                                                            <DetailRow label="GST Number" value={selectedGym.kycDetails?.gstNumber || "Not Applicable"} icon={ShieldCheck} />
+                                                            <DetailRow label="Business Reg. No." value={selectedGym.kycDetails?.businessRegistrationNumber || "Not Provided"} icon={ShieldCheck} />
+                                                            <DetailRow label="Base Location" value={selectedGym.address} icon={MapPin} />
                                                         </div>
                                                     </div>
 

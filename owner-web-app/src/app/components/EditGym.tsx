@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Check, X, Camera, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, X, Camera, Upload, Loader2, Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -9,6 +9,21 @@ interface EditGymProps {
   gymId: string;
   onBack: () => void;
 }
+
+// Compress image before storing (prevents 'failed to fetch' on large payloads)
+const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<string> =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = base64;
+  });
 
 export function EditGym({ gymId, onBack }: EditGymProps) {
   const [loading, setLoading] = useState(false);
@@ -25,8 +40,23 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
     timings: '',
     facilities: [] as string[],
     specializations: [] as string[],
-    trainers: ''
+    houseRules: [] as string[],
+    trainers: [] as { name: string; experience: string; specialization: string }[],
+    kycDetails: {
+      aadhaarNumber: '',
+      panNumber: '',
+      gstNumber: '',
+      businessRegistrationNumber: ''
+    },
+    bankDetails: {
+      accountName: '',
+      accountNumber: '',
+      ifscCode: '',
+      bankName: ''
+    }
   });
+  const [newTrainer, setNewTrainer] = useState({ name: '', experience: '', specialization: '' });
+  const [newRule, setNewRule] = useState('');
 
   const FACILITIES = [
     "Cardio Equipment", "Free Weights", "WiFi", "Shower", "Locker",
@@ -43,60 +73,81 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
   useEffect(() => {
     fetchGymById(gymId)
       .then((data: any) => {
+        const trainerDetails = data.trainerDetails?.length
+          ? data.trainerDetails
+          : (data.trainers || []).map((name: string) => ({ name, experience: '', specialization: '' }));
         setForm({
-          name: data.name,
-          description: data.description,
+          name: data.name || '',
+          description: data.description || '',
           baseDayPassPrice: data.baseDayPassPrice || 0,
-          address: data.address,
+          address: data.address || '',
           location: data.location || '',
-          phone: data.phone,
-          email: data.email,
-          timings: data.timings,
+          phone: data.phone || '',
+          email: data.email || '',
+          timings: data.timings || '',
           facilities: data.facilities || [],
           specializations: data.specializations || [],
-          trainers: (data.trainers || []).join(', ')
+          houseRules: data.houseRules || [],
+          trainers: trainerDetails,
+          kycDetails: {
+            aadhaarNumber: data.kycDetails?.aadhaarNumber || '',
+            panNumber: data.kycDetails?.panNumber || '',
+            gstNumber: data.kycDetails?.gstNumber || '',
+            businessRegistrationNumber: data.kycDetails?.businessRegistrationNumber || ''
+          },
+          bankDetails: {
+            accountName: data.bankDetails?.accountName || '',
+            accountNumber: data.bankDetails?.accountNumber || '',
+            ifscCode: data.bankDetails?.ifscCode || '',
+            bankName: data.bankDetails?.bankName || ''
+          }
         });
         setImages(data.images || []);
         setFetching(false);
       })
-      .catch((err: any) => {
-        console.error(err);
-        alert("Failed to fetch gym details");
-        onBack();
-      });
+      .catch((err: any) => { console.error(err); alert("Failed to fetch gym details"); onBack(); });
   }, [gymId]);
 
-  const toggleFacility = (facility: string) => {
-    setForm(prev => ({
-      ...prev,
-      facilities: prev.facilities.includes(facility)
-        ? prev.facilities.filter(f => f !== facility)
-        : [...prev.facilities, facility]
-    }));
-  };
-
-  const toggleSpecialization = (spec: string) => {
-    setForm(prev => ({
-      ...prev,
-      specializations: prev.specializations.includes(spec)
-        ? prev.specializations.filter(s => s !== spec)
-        : [...prev.specializations, spec]
-    }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (images.length >= 7) {
-        alert('Maximum 7 photos allowed.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const compressed: string[] = [];
+    for (const file of Array.from(files)) {
+      await new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const comp = await compressImage(reader.result as string);
+          compressed.push(comp);
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
     }
+    setImages(prev => [...prev, ...compressed]);
+    e.target.value = '';
+  };
+
+  const toggleFacility = (f: string) => setForm(prev => ({
+    ...prev,
+    facilities: prev.facilities.includes(f) ? prev.facilities.filter(x => x !== f) : [...prev.facilities, f]
+  }));
+
+  const toggleSpec = (s: string) => setForm(prev => ({
+    ...prev,
+    specializations: prev.specializations.includes(s) ? prev.specializations.filter(x => x !== s) : [...prev.specializations, s]
+  }));
+
+  const addTrainer = () => {
+    if (newTrainer.name) {
+      setForm(prev => ({ ...prev, trainers: [...prev.trainers, newTrainer] }));
+      setNewTrainer({ name: '', experience: '', specialization: '' });
+    }
+  };
+
+  const removeTrainer = (i: number) => setForm(prev => ({ ...prev, trainers: prev.trainers.filter((_, idx) => idx !== i) }));
+
+  const addRule = () => {
+    if (newRule.trim()) { setForm(prev => ({ ...prev, houseRules: [...prev.houseRules, newRule.trim()] })); setNewRule(''); }
   };
 
   const handleSubmit = async () => {
@@ -104,213 +155,194 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
     try {
       await updateGym(gymId, {
         ...form,
-        trainers: form.trainers.split(',').map(t => t.trim()).filter(t => t),
-        images
+        images,
+        trainerDetails: form.trainers,
+        trainers: form.trainers.map(t => t.name)
       });
-
-      alert('Gym updated successfully');
+      alert('Gym updated successfully!');
       onBack();
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Failed to update gym');
+      alert(err.message || 'Failed to update gym. If you have many photos, try uploading fewer at once.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
-  }
+  if (fetching) return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin" /></div>;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b-2 border-gray-300 px-6 py-4 sticky top-0 z-10">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-700 font-bold hover:text-black transition-colors">
-          <ArrowLeft size={20} />
-          <span>EDIT VENUE</span>
+      <div className="bg-white border-b-2 border-gray-200 px-6 py-4 sticky top-0 z-10">
+        <button onClick={onBack} className="flex items-center gap-2 text-gray-700 font-bold hover:text-black">
+          <ArrowLeft size={20} /><span className="uppercase tracking-wide text-sm">Back</span>
         </button>
+        <h1 className="text-2xl font-black italic uppercase tracking-tighter mt-2">Modify Hub</h1>
       </div>
 
-      {/* Content */}
       <div className="px-6 py-8 space-y-8 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-black italic uppercase text-gray-900 tracking-tighter">Modify Hub</h1>
-            <p className="text-sm text-gray-500 font-medium">Update your venue information and pricing.</p>
+
+        {/* PHOTOS */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Media Vault <span className="text-gray-300">(Multiple allowed)</span></h3>
+          <div className="flex flex-wrap gap-3">
+            <label className="w-24 h-24 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-gray-100 cursor-pointer group">
+              <Camera size={20} className="text-gray-400 group-hover:text-black" />
+              <span className="text-[9px] font-bold uppercase text-gray-400">Add</span>
+              <input type="file" title="Upload photos" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+            </label>
+            {images.map((img, i) => (
+              <div key={i} className="w-24 h-24 relative rounded-xl overflow-hidden border border-gray-200 group">
+                <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                <button title="Remove" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100"><X size={10} /></button>
+              </div>
+            ))}
+          </div>
+          {images.length > 0 && <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase">{images.length} photo{images.length !== 1 ? 's' : ''} — auto-compressed for upload</p>}
+        </div>
+
+        {/* CORE INFO */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Core Identity</h3>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Hub Name</label>
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Full Address</label>
+              <Textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} rows={2} className="resize-none" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Area / Locality</label>
+              <Input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g. Indiranagar" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Description</label>
+              <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} className="resize-none" />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Contact & Pricing</h3>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Phone</label>
+              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Email</label>
+              <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Timings</label>
+              <Input value={form.timings} onChange={e => setForm({ ...form, timings: e.target.value })} placeholder="e.g. 6AM–10PM" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Base Day Pass Price (₹)</label>
+              <Input type="number" value={form.baseDayPassPrice || ''} onChange={e => setForm({ ...form, baseDayPassPrice: parseFloat(e.target.value) || 0 })} className="font-black text-blue-600 text-lg" />
+            </div>
           </div>
         </div>
 
-        {/* Photos */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-4">Media vault</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <label className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer transition-all group">
-              <Camera size={24} className="text-gray-400 group-hover:text-black" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-black">Add Photo</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            </label>
-            {images.map((img, i) => (
-              <div key={i} className="aspect-square relative rounded-xl overflow-hidden border border-gray-200 group">
-                <img src={img} alt="Preview" className="w-full h-full object-cover" />
-                <button
-                  title="Remove Image"
-                  onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
-                >
-                  <X size={14} />
-                </button>
+        {/* KYC */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Business KYC</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Aadhaar Number</label>
+              <Input placeholder="XXXX XXXX XXXX" value={form.kycDetails.aadhaarNumber} onChange={e => setForm({ ...form, kycDetails: { ...form.kycDetails, aadhaarNumber: e.target.value } })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">PAN Number</label>
+              <Input placeholder="ABCDE1234F" value={form.kycDetails.panNumber} onChange={e => setForm({ ...form, kycDetails: { ...form.kycDetails, panNumber: e.target.value.toUpperCase() } })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">GST Number <span className="text-gray-300">(Optional)</span></label>
+              <Input placeholder="22AAAAA0000A1Z5" value={form.kycDetails.gstNumber} onChange={e => setForm({ ...form, kycDetails: { ...form.kycDetails, gstNumber: e.target.value.toUpperCase() } })} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Business Registration No.</label>
+              <Input placeholder="CIN / MSME / Shop Act" value={form.kycDetails.businessRegistrationNumber} onChange={e => setForm({ ...form, kycDetails: { ...form.kycDetails, businessRegistrationNumber: e.target.value } })} />
+            </div>
+          </div>
+        </div>
+
+        {/* BANK DETAILS */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Settlement Account</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Account Holder Name</label><Input value={form.bankDetails.accountName} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, accountName: e.target.value } })} /></div>
+            <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Account Number</label><Input value={form.bankDetails.accountNumber} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, accountNumber: e.target.value } })} /></div>
+            <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">IFSC Code</label><Input value={form.bankDetails.ifscCode} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, ifscCode: e.target.value } })} /></div>
+            <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Bank Name</label><Input value={form.bankDetails.bankName} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, bankName: e.target.value } })} /></div>
+          </div>
+        </div>
+
+        {/* TRAINERS */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Trainers & Staff</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Input placeholder="Name" value={newTrainer.name} onChange={e => setNewTrainer({ ...newTrainer, name: e.target.value })} />
+            <Input placeholder="Experience (e.g. 3 yrs)" value={newTrainer.experience} onChange={e => setNewTrainer({ ...newTrainer, experience: e.target.value })} />
+            <Input placeholder="Specialization" value={newTrainer.specialization} onChange={e => setNewTrainer({ ...newTrainer, specialization: e.target.value })} />
+            <Button title="Add Trainer" onClick={addTrainer} className="bg-black text-white"><Plus size={16} className="mr-1" /> Add</Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {form.trainers.map((t, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200">
+                <div><p className="text-xs font-black uppercase">{t.name}</p><p className="text-[10px] text-gray-400">{t.specialization} {t.experience && `· ${t.experience}`}</p></div>
+                <button title="Remove" onClick={() => removeTrainer(i)}><X size={12} className="text-red-400" /></button>
+              </div>
+            ))}
+            {form.trainers.length === 0 && <p className="text-[10px] text-gray-300 uppercase font-bold">No trainers added yet</p>}
+          </div>
+        </div>
+
+        {/* HOUSE RULES */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">House Rules</h3>
+          <div className="flex gap-3">
+            <Input placeholder="Add a rule..." value={newRule} onChange={e => setNewRule(e.target.value)} onKeyDown={e => e.key === 'Enter' && addRule()} />
+            <Button title="Add Rule" onClick={addRule} className="bg-black text-white shrink-0"><Plus size={16} /></Button>
+          </div>
+          <div className="space-y-2">
+            {form.houseRules.map((rule, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="flex-1 text-sm text-gray-700">{rule}</span>
+                <button title="Remove" onClick={() => setForm(prev => ({ ...prev, houseRules: prev.houseRules.filter((_, idx) => idx !== i) }))}><X size={12} className="text-red-400" /></button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Basic Info */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Core Identity</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Hub Name</label>
-                <Input
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="h-12 border-gray-200 bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Location / Area</label>
-                <Input
-                  value={form.location}
-                  onChange={e => setForm({ ...form, location: e.target.value })}
-                  className="h-12 border-gray-200 bg-gray-50"
-                  placeholder="e.g. Indiranagar"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Full Address</label>
-                <Textarea
-                  value={form.address}
-                  onChange={e => setForm({ ...form, address: e.target.value })}
-                  rows={2}
-                  className="border-gray-200 bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Description</label>
-                <Textarea
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  rows={3}
-                  className="border-gray-200 bg-gray-50"
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Base Day Pass Price (₹)</label>
-                <Input
-                  type="number"
-                  value={form.baseDayPassPrice}
-                  onChange={e => setForm({ ...form, baseDayPassPrice: parseFloat(e.target.value) || 0 })}
-                  className="h-12 border-gray-200 bg-gray-50 font-black text-xl text-blue-600"
-                />
-                <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-widest">Crucial for auto-discount yield calculation</p>
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Contact Phone</label>
-                <Input
-                  value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
-                  className="h-12 border-gray-200 bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Contact Email</label>
-                <Input
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  className="h-12 border-gray-200 bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Operations Timings</label>
-                <Input
-                  value={form.timings}
-                  onChange={e => setForm({ ...form, timings: e.target.value })}
-                  className="h-12 border-gray-200 bg-gray-50"
-                  placeholder="e.g. 6AM - 10PM"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Amenities & Expertise */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Amenities</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {FACILITIES.map((facility, index) => (
-                <button
-                  key={index}
-                  onClick={() => toggleFacility(facility)}
-                  className={`h-14 rounded-xl border-2 flex items-center justify-between px-4 transition-all ${form.facilities.includes(facility)
-                    ? "bg-black border-black text-white shadow-lg"
-                    : "bg-gray-50 border-gray-100 text-gray-500 hover:border-black hover:text-black"
-                    }`}
-                >
-                  <span className="text-[10px] font-black uppercase text-left leading-tight">{facility}</span>
-                  {form.facilities.includes(facility) && <Check size={14} className="text-emerald-400" />}
+        {/* FACILITIES & SPECIALIZATIONS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Amenities</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {FACILITIES.map((f, i) => (
+                <button key={i} title={f} onClick={() => toggleFacility(f)} className={`p-2.5 text-left text-[10px] font-bold uppercase rounded-xl border-2 flex items-center justify-between transition-all ${form.facilities.includes(f) ? 'bg-black border-black text-white' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+                  {f}{form.facilities.includes(f) && <Check size={12} className="text-emerald-400" />}
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Specialized Disciplines</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {SPECIALIZATIONS.map((spec, index) => (
-                <button
-                  key={index}
-                  onClick={() => toggleSpecialization(spec)}
-                  className={`h-14 rounded-xl border-2 flex items-center justify-between px-4 transition-all ${form.specializations.includes(spec)
-                    ? "bg-blue-600 border-blue-600 text-white shadow-lg"
-                    : "bg-gray-50 border-gray-100 text-gray-500 hover:border-blue-600 hover:text-blue-600"
-                    }`}
-                >
-                  <span className="text-[10px] font-black uppercase text-left leading-tight">{spec}</span>
-                  {form.specializations.includes(spec) && <Check size={14} className="text-blue-200" />}
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Specializations</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {SPECIALIZATIONS.map((s, i) => (
+                <button key={i} title={s} onClick={() => toggleSpec(s)} className={`p-2.5 text-left text-[10px] font-bold uppercase rounded-xl border-2 flex items-center justify-between transition-all ${form.specializations.includes(s) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
+                  {s}{form.specializations.includes(s) && <Check size={12} className="text-blue-200" />}
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Experts & Trainers</h3>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Team Members (Comma separated)</label>
-              <Textarea
-                value={form.trainers}
-                onChange={e => setForm({ ...form, trainers: e.target.value })}
-                placeholder="e.g. John Doe, Jane Smith"
-                rows={4}
-                className="border-gray-200 bg-gray-50"
-              />
-              <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-widest leading-relaxed">List individual coaches or specialist team members.</p>
-            </div>
-          </div>
         </div>
 
-        {/* Save Button */}
+        {/* SAVE */}
         <div className="pt-4">
-          <Button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="w-full h-16 bg-black hover:bg-gray-800 text-white rounded-2xl text-sm font-black uppercase tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-3"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : <Upload size={20} />}
-            {loading ? 'Saving Hub Data...' : 'Confirm Changes'}
+          <Button onClick={handleSubmit} disabled={loading} className="w-full h-16 bg-black text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+            {loading ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
+            {loading ? 'Saving...' : 'Confirm Changes'}
           </Button>
         </div>
       </div>

@@ -32,6 +32,12 @@ const gymSchema = new mongoose.Schema({
         insurancePolicy: { type: String },
         bankStatement: { type: String }
     },
+    kycDetails: {
+        aadhaarNumber: { type: String },
+        panNumber: { type: String },
+        gstNumber: { type: String },
+        businessRegistrationNumber: { type: String }
+    },
     bankDetails: {
         accountName: { type: String },
         accountNumber: { type: String },

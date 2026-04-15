@@ -74,6 +74,7 @@ exports.getAllGyms = async (req, res) => {
                     houseRules: 1,
                     documentation: 1,
                     bankDetails: 1,
+                    kycDetails: 1,
                     baseDayPassPrice: 1,
                     createdAt: 1,
                     ownerId: {

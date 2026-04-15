@@ -100,12 +100,11 @@ exports.getStats = async (req, res) => {
                 checkInsToday: checkInsTodayCount,
                 gymPerformance
             });
-        }
-
-        // Admin Stats (Global or Per-Owner) - shows ALL gyms from ALL owners
-        console.log('📊 ADMIN DASHBOARD - fetching ALL gyms data');
-        const { ownerId } = req.query;
-        let gymQuery = {};
+        } else if (isAdmin) {
+            // Admin Stats (Global or Per-Owner) - shows ALL gyms from ALL owners
+            console.log('📊 ADMIN DASHBOARD - fetching ALL gyms data');
+            const { ownerId } = req.query;
+            let gymQuery = {};
         let bookingQuery = { status: { $in: ['active', 'completed', 'upcoming'] } };
 
         if (ownerId && ownerId !== 'all') {
@@ -239,12 +238,15 @@ exports.getStats = async (req, res) => {
             gymPerformance,
             ownerPerformance,
             tiers,
-            research: {
-                regionalDominance: "100%",
-                orderSurge: revenueTrend,
-                churnResistance: totalUsersCount > 50 ? "High" : "Solid"
-            }
-        });
+                research: {
+                    regionalDominance: "100%",
+                    orderSurge: revenueTrend,
+                    churnResistance: totalUsersCount > 50 ? "High" : "Solid"
+                }
+            });
+        } else {
+            return res.status(403).json({ message: 'Not authorized to view dashboard stats' });
+        }
     } catch (err) {
         console.error('Dashboard error:', err);
         res.status(500).json({ message: err.message });

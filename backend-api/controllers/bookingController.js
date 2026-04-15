@@ -12,6 +12,8 @@ exports.getAllBookings = async (req, res) => {
         if (isOwner && !isAdmin) {
             const myGyms = await Gym.find({ ownerId: req.user._id });
             filter = { gymId: { $in: myGyms.map(g => g._id) } };
+        } else if (!isAdmin) {
+            return res.status(403).json({ message: 'Not authorized to view all bookings' });
         }
 
         const bookings = await Booking.find(filter)

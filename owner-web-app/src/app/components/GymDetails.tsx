@@ -152,7 +152,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 h-auto bg-white border-2 border-gray-300 p-1.5 rounded-2xl shadow-sm">
+          <TabsList className="w-full grid grid-cols-6 h-auto bg-white border-2 border-gray-300 p-1.5 rounded-2xl shadow-sm">
             <TabsTrigger value="overview" className="text-[9px] font-black uppercase tracking-tight py-3 data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-xl transition-all">
               Metrics
             </TabsTrigger>
@@ -168,8 +168,8 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
             <TabsTrigger value="photos" className="text-[9px] font-black uppercase tracking-tight py-3 data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-xl transition-all">
               Media
             </TabsTrigger>
-            <TabsTrigger value="bank" className="text-[9px] font-black uppercase tracking-tight py-3 data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-xl transition-all">
-              Bank
+            <TabsTrigger value="kyc" className="text-[9px] font-black uppercase tracking-tight py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-xl transition-all">
+              KYC
             </TabsTrigger>
           </TabsList>
 
@@ -374,8 +374,61 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
             </div>
           </TabsContent>
 
-          <TabsContent value="bank" className="mt-6">
-            <BankDetailsSection gym={gym} setGym={setGym} />
+          <TabsContent value="kyc" className="mt-6">
+            <div className="space-y-5">
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 border-b-2 border-gray-50 pb-4 mb-5">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                    <ShieldCheck size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black italic uppercase tracking-tight">Business KYC</h3>
+                    <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest">Identity & Compliance Details</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Aadhaar Number', value: gym.kycDetails?.aadhaarNumber },
+                    { label: 'PAN Number', value: gym.kycDetails?.panNumber },
+                    { label: 'GST Number', value: gym.kycDetails?.gstNumber },
+                    { label: 'Business Reg. No.', value: gym.kycDetails?.businessRegistrationNumber }
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
+                      <p className={`text-sm font-black font-mono uppercase ${value ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+                        {value || 'Not Provided'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Settlement Bank Account
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Account Holder', value: gym.bankDetails?.accountName },
+                    { label: 'Bank Name', value: gym.bankDetails?.bankName },
+                    { label: 'Account Number', value: gym.bankDetails?.accountNumber },
+                    { label: 'IFSC Code', value: gym.bankDetails?.ifscCode }
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
+                      <p className={`text-sm font-black font-mono ${value ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+                        {value || '—'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest text-center">
+                To update KYC details, use the Edit Venue screen below.
+              </p>
+            </div>
           </TabsContent>
         </Tabs>
 

@@ -63,7 +63,8 @@ export default function App() {
     const [liveStats, setLiveStats] = useState<any>(null);
     const [fetchError, setFetchError] = useState(false);
 
-    const onExplore = () => { window.location.href = `${URLS.MARKETPLACE}?screen=home&action=explore`; };
+    const [showLaunchingSoon, setShowLaunchingSoon] = useState(false);
+    const onExplore = () => setShowLaunchingSoon(true);
     const onLogin = () => { window.location.href = `${URLS.MARKETPLACE}?action=login`; };
     const onListGym = () => { window.location.href = `${URLS.OWNER}?action=onboard`; };
     const onOwnerPortal = () => { window.location.href = URLS.OWNER; };
@@ -129,6 +130,52 @@ export default function App() {
             <script type="application/ld+json">
                 {JSON.stringify(structuredData)}
             </script>
+
+            {/* Launching Soon Modal Overlay */}
+            {showLaunchingSoon && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center px-6"
+                >
+                    <div className="absolute inset-0 overflow-hidden">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[200px]" />
+                    </div>
+                    <div className="relative z-10 text-center max-w-2xl mx-auto">
+                        <motion.div
+                            initial={{ scale: 0, rotate: -10 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", stiffness: 100 }}
+                            className="w-24 h-24 bg-primary rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-primary/30"
+                        >
+                            <Zap size={48} className="text-black" />
+                        </motion.div>
+                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                            <p className="text-primary font-black uppercase tracking-[0.5em] text-xs mb-4">Gymkaana</p>
+                            <h2 className="text-5xl md:text-7xl font-[1000] text-white uppercase tracking-tighter italic mb-6 leading-none">
+                                Launching <br /><span className="text-primary">Soon</span>
+                            </h2>
+                            <p className="text-slate-400 text-lg font-medium mb-12 max-w-lg mx-auto leading-relaxed">
+                                We're putting the final touches on the most advanced fitness marketplace. Be the first to know when we go live.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button
+                                    onClick={() => setShowLaunchingSoon(false)}
+                                    className="px-8 py-4 rounded-2xl border border-white/20 text-white font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all"
+                                >
+                                    Go Back
+                                </button>
+                                <a
+                                    href={`${URLS.OWNER}?action=onboard`}
+                                    className="px-8 py-4 rounded-2xl bg-primary text-black font-black uppercase tracking-widest text-sm hover:opacity-90 transition-all shadow-xl shadow-primary/30"
+                                >
+                                    List Your Gym →
+                                </a>
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Sticky Navbar */}
             <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-md z-[9999] border-b border-slate-200/40">
