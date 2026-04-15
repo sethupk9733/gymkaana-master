@@ -4,6 +4,7 @@ const gymController = require('../controllers/gymController');
 const { protect, protectOptional } = require('../middleware/authMiddleware');
 
 router.get('/', protectOptional, gymController.getAllGyms);
+router.get('/my-gyms', protect, gymController.getMyGyms);
 router.post('/', protect, gymController.createGym);
 router.get('/:id', gymController.getGymById);
 router.put('/:id', protect, gymController.updateGym);

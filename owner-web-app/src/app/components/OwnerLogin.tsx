@@ -35,6 +35,13 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
       console.log('Google Auth Response:', response);
       const res = await googleLogin({ idToken: response.credential, role: 'owner' });
       if (res.accessToken) {
+        // Role check
+        const roles = res.roles || [];
+        if (!roles.includes('owner') && !roles.includes('admin')) {
+          setError("You do not have administrative or owner access to this portal.");
+          setLoading(false);
+          return;
+        }
         localStorage.setItem('gymkaana_token', res.accessToken);
         localStorage.setItem('gymkaana_user', JSON.stringify(res));
         onLogin(false); // Can't easily determine if new without backend flag, assume default
@@ -77,6 +84,13 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
             setShowOTP(true);
             setMessage("Please verify your account first.");
           } else if (res.accessToken) {
+            // Role check
+            const roles = res.roles || [];
+            if (!roles.includes('owner') && !roles.includes('admin')) {
+              setError("This portal is reserved for Institutional Partners. Please use the Marketplace if you are a customer.");
+              setLoading(false);
+              return;
+            }
             localStorage.setItem('gymkaana_token', res.accessToken);
             localStorage.setItem('gymkaana_user', JSON.stringify(res));
             onLogin(false);

@@ -60,7 +60,7 @@ export const updateProfile = async (profileData: any) => {
 };
 
 export const fetchGyms = async () => {
-    const response = await fetch(`${BASE_URL}/gyms`, {
+    const response = await fetch(`${BASE_URL}/gyms/my-gyms`, {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch gyms');

@@ -5,22 +5,10 @@ const { logActivity } = require('./activityController');
 exports.getAllGyms = async (req, res) => {
     try {
         let query = {};
-        if (req.user) {
-            const hasOwnerRole = req.user.roles && req.user.roles.includes('owner');
-            const hasAdminRole = req.user.roles && req.user.roles.includes('admin');
-
-            if (hasOwnerRole && !hasAdminRole) {
-                // Strictly filter by ownerId for non-admins
-                const mongoose = require('mongoose');
-                query.ownerId = new mongoose.Types.ObjectId(req.user._id);
-            } else if (hasAdminRole) {
-                // Admin sees all
-            } else {
-                // Regular user sees only approved/active
-                query.status = { $in: ['Approved', 'Active', 'approved', 'active'] };
-            }
+                if (req.user && req.user.roles && req.user.roles.includes('admin')) {
+            // Admin sees all for management view
         } else {
-            // Public sees only approved/active
+            // Marketplace discovery: see only approved hubs
             query.status = { $in: ['Approved', 'Active', 'approved', 'active'] };
         }
         console.log('Fetching gyms for user:', req.user ? { id: req.user._id, roles: req.user.roles } : 'Guest');
@@ -343,5 +331,24 @@ exports.getDeclarationPDF = async (req, res) => {
         if (!res.headersSent) {
             res.status(500).json({ message: err.message });
         }
+    }
+};
+
+exports.getMyGyms = async (req, res) => {
+    try {
+        const isOwner = req.user.roles && req.user.roles.includes('owner');
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ message: 'Access denied. This endpoint is for institutional partners only.' });
+        }
+
+        const mongoose = require('mongoose');
+        let query = { ownerId: new mongoose.Types.ObjectId(req.user._id) };
+        
+        const gyms = await Gym.find(query).sort({ createdAt: -1 });
+        res.json(gyms);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 };
