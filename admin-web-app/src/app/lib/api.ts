@@ -204,3 +204,20 @@ export const fetchDeclarationByGymId = async (gymId: string) => {
     if (!response.ok) throw new Error('Failed to fetch declaration');
     return await response.json();
 };
+
+export const downloadDeclarationPDF = async (gymId: string, gymName: string) => {
+    const response = await fetch(`${BASE_URL}/gyms/declaration/${gymId}/pdf`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch PDF');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Partnership_Agreement_${gymName.replace(/\s+/g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+};

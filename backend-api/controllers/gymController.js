@@ -271,6 +271,29 @@ exports.submitDeclaration = async (req, res) => {
             type: 'success'
         });
 
+        // Generate PDF and Send Email in Background
+        const gym = await Gym.findById(gymId);
+        const gymName = gym ? gym.name : 'Your Hub';
+        const { generateDeclarationPDFBuffer } = require('../utils/pdfGenerator');
+        const sendEmail = require('../utils/sendEmail');
+
+        generateDeclarationPDFBuffer(declaration, gymName)
+            .then(pdfBuffer => {
+                sendEmail({
+                    email: req.user.email,
+                    subject: 'Gymkaana - Your Institutional Partnership Agreement',
+                    message: `Dear ${signatureName},\n\nThank you for accepting the Gymkaana Partnership Agreement for ${gymName}.\n\nAttached is your digitally signed Legal Binding Declaration.\n\nBest Regards,\nGymkaana Operations Team`,
+                    attachments: [
+                        {
+                            filename: `Partnership_Agreement_${gymName.replace(/\s+/g, '_')}.pdf`,
+                            content: pdfBuffer,
+                            contentType: 'application/pdf'
+                        }
+                    ]
+                }).catch(err => console.error("Failed to send declaration email to owner:", err));
+            })
+            .catch(err => console.error("Failed to generate PDF buffer for email:", err));
+
         res.status(201).json({ message: 'Declaration submitted successfully', declaration });
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -284,5 +307,41 @@ exports.getDeclarationByGymId = async (req, res) => {
         res.json(declaration);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getDeclarationPDF = async (req, res) => {
+    try {
+        const { gymId } = req.params;
+        const declaration = await PartnerDeclaration.findOne({ gymId });
+        if (!declaration) return res.status(404).json({ message: 'Declaration not found' });
+
+        const gym = await Gym.findById(gymId);
+        const gymName = gym ? gym.name : 'Unknown Hub';
+
+        // Security: only owner or admin can download the PDF
+        const isOwner = req.user.roles && req.user.roles.includes('owner');
+        const isAdmin = req.user.roles && req.user.roles.includes('admin');
+        
+        if (isOwner && !isAdmin) {
+            if (declaration.ownerId.toString() !== req.user._id.toString()) {
+                return res.status(403).json({ message: 'Not authorized to access this document' });
+            }
+        } else if (!isAdmin) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        const { generateDeclarationPDF } = require('../utils/pdfGenerator');
+        
+        // Stream the PDF directly down to the client
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Partnership_Agreement_${gymName.replace(/\s+/g, '_')}.pdf"`);
+        
+        generateDeclarationPDF(declaration, gymName, res);
+    } catch (err) {
+        console.error("PDF generation error:", err);
+        if (!res.headersSent) {
+            res.status(500).json({ message: err.message });
+        }
     }
 };

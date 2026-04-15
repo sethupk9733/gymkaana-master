@@ -1,7 +1,7 @@
 import { ArrowLeft, MapPin, Star, Phone, Mail, Clock, Edit, Dumbbell, Wifi, Droplets, User, XCircle, CreditCard, CheckCircle2, TrendingUp, LayoutList, Users, ShieldCheck, Target } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { fetchGymById, fetchPlansByGymId, fetchDashboardStats, updateGymBankDetails } from "../lib/api";
+import { fetchGymById, fetchPlansByGymId, fetchDashboardStats, updateGymBankDetails, downloadDeclarationPDF } from "../lib/api";
 import { useEffect, useState } from "react";
 
 interface GymDetailsProps {
@@ -381,10 +381,16 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                     <ShieldCheck size={20} className="text-white" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-sm font-black italic uppercase tracking-tight">Business KYC</h3>
                     <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest">Identity & Compliance Details</p>
                   </div>
+                  <Button 
+                    onClick={() => downloadDeclarationPDF(gym.id, gym.name)}
+                    className="px-4 py-2 bg-black text-[#A3E635] hover:bg-gray-900 border-0 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md flex items-center gap-2 h-auto"
+                  >
+                    Download Agreement
+                  </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {[

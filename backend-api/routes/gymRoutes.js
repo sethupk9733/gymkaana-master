@@ -12,5 +12,6 @@ router.delete('/:id', protect, gymController.deleteGym);
 // Declaration routes
 router.post('/declaration', protect, gymController.submitDeclaration);
 router.get('/declaration/:gymId', protect, gymController.getDeclarationByGymId);
+router.get('/declaration/:gymId/pdf', protect, gymController.getDeclarationPDF);
 
 module.exports = router;

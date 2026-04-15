@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { 
     fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, 
-    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId 
+    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, downloadDeclarationPDF 
 } from '../lib/api';
 
 interface GymDetail {
@@ -815,9 +815,17 @@ export function PartnerManagement() {
                                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Institutional Partnership Agreement</p>
                                                             </div>
                                                             {declarationData && (
-                                                                <div className="px-6 py-3 bg-[#A3E635]/10 border border-[#A3E635]/20 rounded-2xl flex items-center gap-2">
-                                                                    <ShieldCheck className="w-4 h-4 text-[#A3E635]" />
-                                                                    <span className="text-[10px] font-black text-[#A3E635] uppercase tracking-widest">Digitally Verified</span>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="px-6 py-3 bg-[#A3E635]/10 border border-[#A3E635]/20 rounded-2xl flex items-center gap-2">
+                                                                        <ShieldCheck className="w-4 h-4 text-[#A3E635]" />
+                                                                        <span className="text-[10px] font-black text-[#A3E635] uppercase tracking-widest">Digitally Verified</span>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => downloadDeclarationPDF(selectedGym._id, selectedGym.name)}
+                                                                        className="px-6 py-3 bg-black text-[#A3E635] rounded-2xl flex items-center gap-2 font-black text-[10px] uppercase tracking-widest hover:shadow-xl transition-all cursor-pointer"
+                                                                    >
+                                                                        <FileText className="w-4 h-4" /> Download PDF
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
