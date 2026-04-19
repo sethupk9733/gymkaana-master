@@ -208,7 +208,7 @@ export const updateTicketStatus = async (id: string, status: string) => {
 };
 
 export const fetchDashboardStats = async (ownerId?: string) => {
-    const url = ownerId ? `${BASE_URL}/admin/dashboard-stats?ownerId=${ownerId}` : `${BASE_URL}/admin/dashboard-stats`;
+    const url = ownerId ? `${BASE_URL}/dashboard/stats?ownerId=${ownerId}` : `${BASE_URL}/dashboard/stats`;
     const response = await fetch(url, {
         headers: getAuthHeaders()
     });
@@ -217,7 +217,7 @@ export const fetchDashboardStats = async (ownerId?: string) => {
 };
 
 export const fetchActivities = async () => {
-    const response = await fetch(`${BASE_URL}/admin/activities`, {
+    const response = await fetch(`${BASE_URL}/activities`, {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch activities');
@@ -225,7 +225,7 @@ export const fetchActivities = async () => {
 };
 
 export const fetchAdminAccounting = async () => {
-    const response = await fetch(`${BASE_URL}/admin/accounting`, {
+    const response = await fetch(`${BASE_URL}/accounting`, {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch accounting data');

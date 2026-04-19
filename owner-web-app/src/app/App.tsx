@@ -70,6 +70,7 @@ const updateUrl = (screen: Screen, tab: ActiveTab, gymId?: string | null, planId
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [currentScreen, setCurrentScreen] = useState<Screen>("main");
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
@@ -101,6 +102,7 @@ export default function App() {
         localStorage.removeItem('gymkaana_user');
       }
     }
+    setLoading(false);
   }, []);
 
   // Handle browser back/forward
@@ -123,6 +125,17 @@ export default function App() {
     updateUrl(screen, tab, gymId ?? selectedGymId, planId ?? selectedPlanId);
     window.scrollTo(0, 0);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#A3E635] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[10px] font-black uppercase text-[#A3E635] tracking-[0.3em]">Restoring Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <OwnerLogin onLogin={() => { setIsLoggedIn(true); navigate('main', 'dashboard'); }} />;

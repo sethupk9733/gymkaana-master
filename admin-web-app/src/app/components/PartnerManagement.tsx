@@ -943,6 +943,13 @@ export function PartnerManagement() {
                                                             <><FileCheck className="w-6 h-6 text-[#A3E635]" /> Authorize & Launch Hub</>
                                                         )}
                                                     </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(selectedGym._id)}
+                                                        disabled={isProcessing}
+                                                        className="px-10 py-5 bg-red-50 text-red-600 border border-red-100 rounded-[28px] font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" /> Delete Hub
+                                                    </button>
                                                 </>
                                             ) : (
                                                 <>

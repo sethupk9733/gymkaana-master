@@ -265,7 +265,12 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
 
         {/* OPERATING HOURS */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Multiple Operating Hours</h3>
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#A3E635]">7-Day Operational Configuration</h3>
+              <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-widest leading-none">Customize access windows for each day</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {form.operatingHours.map((oh, idx) => (
               <div key={oh.day} className={`p-4 rounded-xl border ${oh.isClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>

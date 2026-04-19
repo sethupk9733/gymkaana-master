@@ -260,13 +260,9 @@ exports.refresh = async (req, res) => {
         }
 
         const accessToken = generateAccessToken(user);
-
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 15 * 60 * 1000
-        });
+        
+        // Re-issue cookies with correct flags
+        setAuthCookies(res, accessToken, refreshToken);
 
         res.json({ accessToken, roles: user.roles, _id: user._id });
     } catch (error) {
@@ -514,7 +510,7 @@ exports.getAllUsers = async (req, res) => {
                     address: 1,
                     occupation: 1,
                     bookingsCount: { $size: '$userBookings' },
-                    totalSpent: { $sum: '$userBookings.totalAmount' }, // Changed from amount to totalAmount to match schema
+                    totalSpent: { $sum: '$userBookings.amount' }, // Changed back to amount to match schema
                     lastActive: { $max: '$userBookings.bookingDate' }
                 }
             },

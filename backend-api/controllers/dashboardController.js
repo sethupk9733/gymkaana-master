@@ -3,10 +3,11 @@ const Booking = require('../models/Booking');
 
 exports.getStats = async (req, res) => {
     try {
-        const isAdmin = req.user.roles && req.user.roles.includes('admin');
-        const isOwner = req.user.roles && req.user.roles.includes('owner');
+        const hasRole = (role) => (req.user.roles && req.user.roles.includes(role)) || req.user.role === role;
+        const isAdmin = hasRole('admin');
+        const isOwner = hasRole('owner');
 
-        console.log('🔐 User Roles:', req.user.roles, '| User ID:', req.user._id, '| User Name:', req.user.name);
+        console.log('🔐 User Roles:', req.user.roles, '| User Role:', req.user.role, '| User ID:', req.user._id, '| User Name:', req.user.name);
 
         if (isOwner && !isAdmin) {
             const { gymId } = req.query;

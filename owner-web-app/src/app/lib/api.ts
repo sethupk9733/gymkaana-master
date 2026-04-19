@@ -376,7 +376,7 @@ export const fetchActivities = async () => {
 };
 
 export const googleLogin = async (data: { idToken: string; role: string }) => {
-    const response = await fetch(`${BASE_URL}/auth/google-login`, {
+    const response = await fetch(`${BASE_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
