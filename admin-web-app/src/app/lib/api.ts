@@ -173,3 +173,12 @@ export const fetchDashboardStats = async (ownerId?: string) => {
     if (!response.ok) throw new Error('Failed to fetch dashboard stats');
     return await response.json();
 };
+
+export const fetchActivities = async () => {
+    const response = await fetch(`${BASE_URL}/admin/activities`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch activities');
+    return await response.json();
+};
+
