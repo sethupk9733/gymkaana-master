@@ -41,6 +41,7 @@ export default function App() {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('gymkaana_token'));
   const [pendingScreen, setPendingScreen] = useState<Screen | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadProfile = async () => {
     const token = localStorage.getItem('gymkaana_token');
@@ -60,7 +61,10 @@ export default function App() {
         setIsAuthenticated(false);
         localStorage.removeItem('gymkaana_token');
       }
+    } else {
+      setIsAuthenticated(false);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -91,8 +95,11 @@ export default function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case "splash":
-        // Go straight to login screen instead of home
-        return <SplashScreen onComplete={() => setCurrentScreen("login")} />;
+        // Navigate based on auth status after load finishes
+        return <SplashScreen onComplete={() => {
+            if (loading) return; 
+            setCurrentScreen(isAuthenticated ? "home" : "login");
+        }} />;
 
       case "login":
         return (
@@ -225,9 +232,13 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-0 sm:p-4">
       <div className="w-full sm:max-w-md h-screen sm:h-[850px] bg-white sm:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] sm:rounded-[48px] overflow-hidden relative">
         <Suspense fallback={<LoadingSpinner />}>
-          <AnimatePresence mode="wait">
-            {renderScreen()}
-          </AnimatePresence>
+          {loading && currentScreen !== "splash" ? (
+             <SplashScreen onComplete={() => {}} />
+          ) : (
+            <AnimatePresence mode="wait">
+              {renderScreen()}
+            </AnimatePresence>
+          )}
         </Suspense>
       </div>
     </div>

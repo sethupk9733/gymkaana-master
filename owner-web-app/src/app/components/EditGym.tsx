@@ -59,6 +59,12 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
 
   const [newTrainer, setNewTrainer] = useState({ name: '', experience: '', specialization: '' });
   const [newRule, setNewRule] = useState('');
+  const [schedule, setSchedule] = useState({
+    monSat: [{ open: '06:00', close: '22:00' }],
+    monSatClosed: false,
+    sunday: [{ open: '08:00', close: '14:00' }],
+    sundayClosed: false
+  });
 
   const FACILITIES = [
     "Cardio Equipment", "Free Weights", "WiFi", "Shower", "Locker",
@@ -80,11 +86,31 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
         const trainerDetails = data.trainerDetails?.length
           ? data.trainerDetails
           : (data.trainers || []).map((name: string) => ({ name: name, experience: '', specialization: '' }));
+        const oh = data.operatingHours || [];
+        const monSatOH = oh.filter((o: any) => o.day !== 'Sunday');
+        const sundayOH = oh.filter((o: any) => o.day === 'Sunday');
         
-        // Initialize operatingHours if missing
-        const operatingHours = data.operatingHours?.length 
-          ? data.operatingHours 
-          : DAYS.map(day => ({ day, open: '06:00', close: '22:00', isClosed: false }));
+        let monSat = [{ open: '06:00', close: '22:00' }];
+        let monSatClosed = false;
+        if (monSatOH.length > 0) {
+            monSatClosed = monSatOH.every((o: any) => o.isClosed);
+            if (!monSatClosed) {
+                const monShifts = monSatOH.filter((o: any) => o.day === 'Monday' && !o.isClosed);
+                if (monShifts.length > 0) monSat = monShifts.map((o: any) => ({ open: o.open, close: o.close }));
+            }
+        }
+        
+        let sunday = [{ open: '08:00', close: '14:00' }];
+        let sundayClosed = false;
+        if (sundayOH.length > 0) {
+            sundayClosed = sundayOH.every((o: any) => o.isClosed);
+            if (!sundayClosed) {
+                const sunShifts = sundayOH.filter((o: any) => !o.isClosed);
+                if (sunShifts.length > 0) sunday = sunShifts.map((o: any) => ({ open: o.open, close: o.close }));
+            }
+        }
+
+        setSchedule({ monSat, monSatClosed, sunday, sundayClosed });
 
         setForm({
           name: data.name || '',
@@ -95,7 +121,6 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           phone: data.phone || '',
           email: data.email || '',
           timings: data.timings || '',
-          operatingHours,
           facilities: data.facilities || [],
           specializations: data.specializations || [],
           houseRules: data.houseRules || [],
@@ -172,10 +197,34 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const payloadTimings: any[] = [];
+      const monSatDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      let monSatString = '';
+      let sundayString = '';
+
+      if (schedule.monSatClosed) {
+          monSatDays.forEach(d => payloadTimings.push({ day: d, open: '', close: '', isClosed: true }));
+          monSatString = 'Mon-Sat: Closed';
+      } else {
+          monSatDays.forEach(d => {
+              schedule.monSat.forEach(shift => payloadTimings.push({ day: d, open: shift.open, close: shift.close, isClosed: false }));
+          });
+          monSatString = 'Mon-Sat: ' + schedule.monSat.map(s => `${s.open}-${s.close}`).join(', ');
+      }
+      if (schedule.sundayClosed) {
+          payloadTimings.push({ day: 'Sunday', open: '', close: '', isClosed: true });
+          sundayString = 'Sun: Closed';
+      } else {
+          schedule.sunday.forEach(shift => payloadTimings.push({ day: 'Sunday', open: shift.open, close: shift.close, isClosed: false }));
+          sundayString = 'Sun: ' + schedule.sunday.map(s => `${s.open}-${s.close}`).join(', ');
+      }
+      const timingsString = `${monSatString} | ${sundayString}`;
+
       await updateGym(gymId, {
         ...form,
         images,
-        timings: form.operatingHours.map(oh => `${oh.day}: ${oh.isClosed ? 'Closed' : oh.open + '-' + oh.close}`).join(', '),
+        operatingHours: payloadTimings,
+        timings: timingsString,
         trainerDetails: form.trainers,
         trainers: form.trainers.map(t => t.name)
       });
@@ -265,62 +314,70 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
 
         {/* OPERATING HOURS */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-end mb-4">
             <div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-[#A3E635]">7-Day Operational Configuration</h3>
-              <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-widest leading-none">Customize access windows for each day</p>
+                <h3 className="text-xs font-black uppercase tracking-widest text-[#A3E635]">Operating Hours</h3>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-widest leading-none">Configure multiple shifts per day</p>
             </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {form.operatingHours.map((oh, idx) => (
-              <div key={oh.day} className={`p-4 rounded-xl border ${oh.isClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-black uppercase tracking-tight">{oh.day}</span>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      title={`Close on ${oh.day}`}
-                      checked={oh.isClosed} 
-                      onChange={e => {
-                        const newOH = [...form.operatingHours];
-                        newOH[idx].isClosed = e.target.checked;
-                        setForm({ ...form, operatingHours: newOH });
-                      }}
-                      className="w-3 h-3"
-                    />
-                    <span className="text-[9px] font-bold uppercase text-gray-400">Closed</span>
-                  </label>
+            
+            {/* Monday - Saturday */}
+            <div className={`p-4 rounded-xl border ${schedule.monSatClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'} space-y-3`}>
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-black uppercase tracking-tight">Monday - Saturday</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={schedule.monSatClosed} onChange={e => setSchedule({ ...schedule, monSatClosed: e.target.checked })} className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase text-gray-400">Closed</span>
+                    </label>
                 </div>
-                {!oh.isClosed && (
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="time" 
-                      title="Open Time"
-                      value={oh.open} 
-                      onChange={e => {
-                        const newOH = [...form.operatingHours];
-                        newOH[idx].open = e.target.value;
-                        setForm({ ...form, operatingHours: newOH });
-                      }}
-                      className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
-                    />
-                    <span className="text-gray-300 text-[10px]">to</span>
-                    <input 
-                      type="time" 
-                      title="Close Time"
-                      value={oh.close} 
-                      onChange={e => {
-                        const newOH = [...form.operatingHours];
-                        newOH[idx].close = e.target.value;
-                        setForm({ ...form, operatingHours: newOH });
-                      }}
-                      className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
-                    />
-                  </div>
+                {!schedule.monSatClosed && (
+                    <div className="space-y-2">
+                        {schedule.monSat.map((shift, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                                <input type="time" title="Open Time" value={shift.open} onChange={e => {
+                                    const newArr = [...schedule.monSat]; newArr[idx].open = e.target.value; setSchedule({ ...schedule, monSat: newArr });
+                                }} className="flex-1 p-2 text-xs font-bold border rounded-lg" />
+                                <span className="text-gray-300 text-xs">to</span>
+                                <input type="time" title="Close Time" value={shift.close} onChange={e => {
+                                    const newArr = [...schedule.monSat]; newArr[idx].close = e.target.value; setSchedule({ ...schedule, monSat: newArr });
+                                }} className="flex-1 p-2 text-xs font-bold border rounded-lg" />
+                                <button title="Remove Shift" onClick={() => setSchedule({ ...schedule, monSat: schedule.monSat.filter((_, i) => i !== idx) })} className="p-2 text-red-400 hover:text-red-600"><X size={16} /></button>
+                            </div>
+                        ))}
+                        <button title="Add Shift" onClick={() => setSchedule({ ...schedule, monSat: [...schedule.monSat, { open: '16:00', close: '22:00' }] })} className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2">
+                            <Plus size={12} /> Add Shift
+                        </button>
+                    </div>
                 )}
-              </div>
-            ))}
-          </div>
+            </div>
+
+            {/* Sunday */}
+            <div className={`p-4 rounded-xl border ${schedule.sundayClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'} space-y-3`}>
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-black uppercase tracking-tight">Sunday</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={schedule.sundayClosed} onChange={e => setSchedule({ ...schedule, sundayClosed: e.target.checked })} className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase text-gray-400">Closed</span>
+                    </label>
+                </div>
+                {!schedule.sundayClosed && (
+                    <div className="space-y-2">
+                        {schedule.sunday.map((shift, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                                <input type="time" title="Open Time" value={shift.open} onChange={e => {
+                                    const newArr = [...schedule.sunday]; newArr[idx].open = e.target.value; setSchedule({ ...schedule, sunday: newArr });
+                                }} className="flex-1 p-2 text-xs font-bold border rounded-lg" />
+                                <span className="text-gray-300 text-xs">to</span>
+                                <input type="time" title="Close Time" value={shift.close} onChange={e => {
+                                    const newArr = [...schedule.sunday]; newArr[idx].close = e.target.value; setSchedule({ ...schedule, sunday: newArr });
+                                }} className="flex-1 p-2 text-xs font-bold border rounded-lg" />
+                                <button title="Remove Shift" onClick={() => setSchedule({ ...schedule, sunday: schedule.sunday.filter((_, i) => i !== idx) })} className="p-2 text-red-400 hover:text-red-600"><X size={16} /></button>
+                            </div>
+                        ))}
+                        <button title="Add Shift" onClick={() => setSchedule({ ...schedule, sunday: [...schedule.sunday, { open: '15:00', close: '20:00' }] })} className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2">
+                            <Plus size={12} /> Add Shift
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
 
         {/* KYC */}
