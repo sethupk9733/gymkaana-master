@@ -272,7 +272,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                 Staff Roster
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {gym.trainerDetails && gym.trainerDetails.length > 0 ? (
+                {gym.trainerDetails && gym.trainerDetails.length > 0 && (
                   gym.trainerDetails.map((trainer: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                       <div className="flex items-center gap-4">
