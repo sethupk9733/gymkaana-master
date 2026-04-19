@@ -85,7 +85,8 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen bg-gray-50 pb-10 flex flex-col items-center">
+      <div className="w-full max-w-7xl">
       {/* Header */}
       <div className="bg-white border-b-2 border-gray-300 px-6 py-4 sticky top-0 z-10">
         <button onClick={onBack} className="flex items-center gap-2 text-gray-700 hover:text-black transition-colors font-bold">
@@ -95,7 +96,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
       </div>
 
       {/* Banner Image */}
-      <div className="w-full h-56 bg-gray-200 border-b-2 border-gray-300 overflow-hidden relative">
+      <div className="w-full h-48 md:h-72 bg-gray-200 border-b-2 border-gray-300 overflow-hidden relative">
         <img src={gym.images?.[0] || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000"} alt={gym.name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/10"></div>
       </div>
@@ -128,7 +129,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
             {gym.description}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
             <div className="flex items-center gap-3 text-sm text-gray-700">
               <div className="p-2 bg-white rounded-lg shadow-sm">
                 <Phone size={16} className="text-blue-600" />
@@ -152,7 +153,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-6 h-auto bg-white border-2 border-gray-300 p-1.5 rounded-2xl shadow-sm">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 h-auto bg-white border-2 border-gray-300 p-1.5 rounded-2xl shadow-sm">
             <TabsTrigger value="overview" className="text-[9px] font-black uppercase tracking-tight py-3 data-[state=active]:bg-gray-900 data-[state=active]:text-white rounded-xl transition-all">
               Metrics
             </TabsTrigger>
@@ -182,7 +183,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                 </h3>
                 <span className="text-[8px] font-black text-emerald-500 uppercase bg-emerald-50 px-2 py-1 rounded">Synced with Blockchain</span>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <p className="text-3xl font-black text-orange-600 mb-1">{gym.realCheckins || 0}</p>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Daily Entry</p>
@@ -235,7 +236,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                 <div className="w-2 h-2 rounded-full bg-purple-600"></div>
                 Integrated Infrastructure
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {gym.facilities?.map((facility: string, index: number) => (
                   <div key={index} className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-2xl bg-gray-50/30 hover:border-blue-100 transition-all group">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-black group-hover:text-white transition-all">
@@ -270,7 +271,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                 <div className="w-2 h-2 rounded-full bg-orange-600"></div>
                 Staff Roster
               </h3>
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {gym.trainerDetails && gym.trainerDetails.length > 0 ? (
                   gym.trainerDetails.map((trainer: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
@@ -286,31 +287,30 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-[10px] font-black text-gray-300 uppercase italic">No trainers registered for this hub</p>
-                  </div>
                 )}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="plans" className="mt-6">
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Base Day Pass Price Reference */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Base Price Anchor</p>
-                  <p className="text-sm font-black italic uppercase text-blue-900">₹{gym.baseDayPassPrice || 0} PER DAY PASS</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em]">Discount Logic</p>
-                  <p className="text-[10px] font-bold text-blue-700 italic">Automatic Yield Calculation</p>
+              <div className="max-w-xl">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Base Price Anchor</p>
+                    <p className="text-sm font-black italic uppercase text-blue-900">₹{gym.baseDayPassPrice || 0} PER DAY PASS</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em]">Discount Logic</p>
+                    <p className="text-[10px] font-bold text-blue-700 italic">Automatic Yield Calculation</p>
+                  </div>
                 </div>
               </div>
 
               {plans.length > 0 ? (
-                plans.map((plan, index) => (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {plans.map((plan, index) => (
                   <div key={index} className={`bg-white border-2 border-gray-300 rounded-2xl p-5 hover:border-black transition-all relative overflow-hidden group ${plan.enabled === false ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center justify-between relative z-10">
                       <div>
@@ -346,7 +346,8 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                       <Dumbbell className="w-20 h-20 rotate-[-15deg] translate-x-4 translate-y-4" />
                     </div>
                   </div>
-                ))
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-12 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No active tiers configured</p>
@@ -392,7 +393,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                     Download Agreement
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Aadhaar Number', value: gym.kycDetails?.aadhaarNumber },
                     { label: 'PAN Number', value: gym.kycDetails?.panNumber },
@@ -414,7 +415,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
                   Settlement Bank Account
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: 'Account Holder', value: gym.bankDetails?.accountName },
                     { label: 'Bank Name', value: gym.bankDetails?.bankName },
@@ -447,6 +448,7 @@ export function GymDetails({ gymId, onBack, onEdit, onManagePlans }: GymDetailsP
         </div>
       </div>
     </div>
+  </div>
   );
 }
 

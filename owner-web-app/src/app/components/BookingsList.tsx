@@ -53,7 +53,7 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-6xl mx-auto space-y-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
@@ -75,7 +75,7 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
 
       {/* Filters */}
       <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
           {['all', 'active', 'completed', 'cancelled'].map((filter) => (
             <button
               key={filter}
@@ -92,13 +92,13 @@ export function BookingsList({ onBookingSelect }: BookingsListProps) {
       </div>
 
       {/* Bookings List */}
-      <div className="px-6 py-6 max-w-4xl mx-auto min-h-[50vh]">
+      <div className="px-6 py-6 max-w-6xl mx-auto min-h-[50vh]">
         {filteredBookings.length === 0 ? (
           <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-100">
             <p>No {activeFilter} bookings found matching "{searchQuery}"</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredBookings.map((booking) => (
               <div
                 key={booking._id || booking.id}

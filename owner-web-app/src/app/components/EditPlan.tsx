@@ -187,13 +187,15 @@ export function EditPlan({ planId, onBack }: EditPlanProps) {
                                     value={formData.duration}
                                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                                 >
-                                    <option>Daily</option>
-                                    <option>Weekly (5 days)</option>
-                                    <option>Weekend (Sat-Sun)</option>
+                                    <option>Day Pass</option>
+                                    <option>Weekly Pass</option>
+                                    <option>Weekend Pass</option>
                                     <option>1 Month</option>
                                     <option>3 Months</option>
                                     <option>6 Months</option>
                                     <option>1 Year</option>
+                                    <option>2 Years</option>
+                                    <option>3 Years</option>
                                 </select>
                             </div>
                         </div>

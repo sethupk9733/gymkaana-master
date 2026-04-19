@@ -49,9 +49,9 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.DOMAIN?.includes('gymkaana.com');
     const cookieOptions = {
         httpOnly: true,
-        secure: true, // Always true for HTTPS production
-        sameSite: 'none', // Required for cross-site subdomains
-        domain: isProduction ? '.gymkaana.com' : 'localhost',
+        secure: isProduction, // Only secure in production
+        sameSite: isProduction ? 'none' : 'lax', // Lax for local, None for cross-site prod
+        domain: isProduction ? '.gymkaana.com' : undefined,
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     };
 
@@ -211,10 +211,6 @@ exports.googleLogin = async (req, res) => {
         if (isNewUser) {
             sendWelcomeEmail(user.email, user.name).catch(err => 
                 console.error("Google Welcome Email failed:", err.message)
-            );
-        } else {
-            sendLoginNotification(user.email, user.name).catch(err => 
-                console.error("Google Login Alert failed:", err.message)
             );
         }
         // ---------------------------------

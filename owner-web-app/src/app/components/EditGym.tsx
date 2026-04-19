@@ -38,6 +38,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
     phone: '',
     email: '',
     timings: '',
+    operatingHours: [] as { day: string; open: string; close: string; isClosed: boolean }[],
     facilities: [] as string[],
     specializations: [] as string[],
     houseRules: [] as string[],
@@ -55,6 +56,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
       bankName: ''
     }
   });
+
   const [newTrainer, setNewTrainer] = useState({ name: '', experience: '', specialization: '' });
   const [newRule, setNewRule] = useState('');
 
@@ -70,12 +72,20 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
     "Swimming", "Cardio", "Strength Training"
   ];
 
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
   useEffect(() => {
     fetchGymById(gymId)
       .then((data: any) => {
         const trainerDetails = data.trainerDetails?.length
           ? data.trainerDetails
-          : (data.trainers || []).map((name: string) => ({ name, experience: '', specialization: '' }));
+          : (data.trainers || []).map((name: string) => ({ name: name, experience: '', specialization: '' }));
+        
+        // Initialize operatingHours if missing
+        const operatingHours = data.operatingHours?.length 
+          ? data.operatingHours 
+          : DAYS.map(day => ({ day, open: '06:00', close: '22:00', isClosed: false }));
+
         setForm({
           name: data.name || '',
           description: data.description || '',
@@ -85,6 +95,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           phone: data.phone || '',
           email: data.email || '',
           timings: data.timings || '',
+          operatingHours,
           facilities: data.facilities || [],
           specializations: data.specializations || [],
           houseRules: data.houseRules || [],
@@ -111,12 +122,20 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    
+    // Limit to 10 total images
+    if (images.length + files.length > 10) {
+      alert("Maximum 10 photos allowed for each hub.");
+      return;
+    }
+
     const compressed: string[] = [];
     for (const file of Array.from(files)) {
       await new Promise<void>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = async () => {
-          const comp = await compressImage(reader.result as string);
+          // Use more aggressive compression for many photos (600px width)
+          const comp = await compressImage(reader.result as string, 600, 0.6);
           compressed.push(comp);
           resolve();
         };
@@ -156,6 +175,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
       await updateGym(gymId, {
         ...form,
         images,
+        timings: form.operatingHours.map(oh => `${oh.day}: ${oh.isClosed ? 'Closed' : oh.open + '-' + oh.close}`).join(', '),
         trainerDetails: form.trainers,
         trainers: form.trainers.map(t => t.name)
       });
@@ -243,10 +263,65 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           </div>
         </div>
 
+        {/* OPERATING HOURS */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Multiple Operating Hours</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {form.operatingHours.map((oh, idx) => (
+              <div key={oh.day} className={`p-4 rounded-xl border ${oh.isClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-black uppercase tracking-tight">{oh.day}</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      title={`Close on ${oh.day}`}
+                      checked={oh.isClosed} 
+                      onChange={e => {
+                        const newOH = [...form.operatingHours];
+                        newOH[idx].isClosed = e.target.checked;
+                        setForm({ ...form, operatingHours: newOH });
+                      }}
+                      className="w-3 h-3"
+                    />
+                    <span className="text-[9px] font-bold uppercase text-gray-400">Closed</span>
+                  </label>
+                </div>
+                {!oh.isClosed && (
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="time" 
+                      title="Open Time"
+                      value={oh.open} 
+                      onChange={e => {
+                        const newOH = [...form.operatingHours];
+                        newOH[idx].open = e.target.value;
+                        setForm({ ...form, operatingHours: newOH });
+                      }}
+                      className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
+                    />
+                    <span className="text-gray-300 text-[10px]">to</span>
+                    <input 
+                      type="time" 
+                      title="Close Time"
+                      value={oh.close} 
+                      onChange={e => {
+                        const newOH = [...form.operatingHours];
+                        newOH[idx].close = e.target.value;
+                        setForm({ ...form, operatingHours: newOH });
+                      }}
+                      className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* KYC */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Business KYC</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Aadhaar Number</label>
               <Input placeholder="XXXX XXXX XXXX" value={form.kycDetails.aadhaarNumber} onChange={e => setForm({ ...form, kycDetails: { ...form.kycDetails, aadhaarNumber: e.target.value } })} />
@@ -269,7 +344,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
         {/* BANK DETAILS */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Settlement Account</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Account Holder Name</label><Input value={form.bankDetails.accountName} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, accountName: e.target.value } })} /></div>
             <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Account Number</label><Input value={form.bankDetails.accountNumber} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, accountNumber: e.target.value } })} /></div>
             <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">IFSC Code</label><Input value={form.bankDetails.ifscCode} onChange={e => setForm({ ...form, bankDetails: { ...form.bankDetails, ifscCode: e.target.value } })} /></div>
@@ -318,7 +393,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Amenities</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               {FACILITIES.map((f, i) => (
                 <button key={i} title={f} onClick={() => toggleFacility(f)} className={`p-2.5 text-left text-[10px] font-bold uppercase rounded-xl border-2 flex items-center justify-between transition-all ${form.facilities.includes(f) ? 'bg-black border-black text-white' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
                   {f}{form.facilities.includes(f) && <Check size={12} className="text-emerald-400" />}
@@ -328,7 +403,7 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Specializations</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               {SPECIALIZATIONS.map((s, i) => (
                 <button key={i} title={s} onClick={() => toggleSpec(s)} className={`p-2.5 text-left text-[10px] font-bold uppercase rounded-xl border-2 flex items-center justify-between transition-all ${form.specializations.includes(s) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>
                   {s}{form.specializations.includes(s) && <Check size={12} className="text-blue-200" />}

@@ -124,7 +124,7 @@ export function MembershipPlans({ gymId, onBack, onAddPlan, onEditPlan }: Member
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-4 max-w-2xl mx-auto pb-32">
+      <div className="px-6 py-6 space-y-6 max-w-6xl mx-auto pb-32">
         {selectedPlans.length > 0 && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-4 z-50">
             <div className="bg-gray-900 text-white p-4 rounded-2xl shadow-2xl border border-gray-800 flex items-center justify-between gap-4">
@@ -163,7 +163,7 @@ export function MembershipPlans({ gymId, onBack, onAddPlan, onEditPlan }: Member
           Add New Plan
         </Button>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredPlans.length === 0 ? (
             <div className="text-center py-12 text-gray-500 bg-white rounded-xl border border-gray-100">
               <p>No plans found matching "{searchQuery}"</p>

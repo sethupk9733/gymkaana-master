@@ -2,7 +2,7 @@ import { API_URL } from '../config/api';
 
 const BASE_URL = API_URL;
 
-let inMemoryToken: string | null = null;
+let inMemoryToken: string | null = typeof window !== 'undefined' ? localStorage.getItem('gymkaana_token') : null;
 
 const getAuthHeaders = (): Record<string, string> => {
     return inMemoryToken ? { 'Authorization': `Bearer ${inMemoryToken}` } : {};
@@ -10,6 +10,11 @@ const getAuthHeaders = (): Record<string, string> => {
 
 export const setToken = (token: string | null) => {
     inMemoryToken = token;
+    if (token) {
+        localStorage.setItem('gymkaana_token', token);
+    } else {
+        localStorage.removeItem('gymkaana_token');
+    }
 };
 
 export const login = async (credentials: any) => {

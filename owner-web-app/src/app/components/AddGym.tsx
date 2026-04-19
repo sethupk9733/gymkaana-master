@@ -47,8 +47,15 @@ export function AddGym({ onBack }: AddGymProps) {
         email: '',
         googleMapsLink: '',
         trainers: [] as { name: string, experience: string, specialization: string }[],
-        weekdayHours: '',
-        weekendHours: '',
+        operatingHours: [
+            { day: 'Monday', open: '06:00', close: '22:00', isClosed: false },
+            { day: 'Tuesday', open: '06:00', close: '22:00', isClosed: false },
+            { day: 'Wednesday', open: '06:00', close: '22:00', isClosed: false },
+            { day: 'Thursday', open: '06:00', close: '22:00', isClosed: false },
+            { day: 'Friday', open: '06:00', close: '22:00', isClosed: false },
+            { day: 'Saturday', open: '08:00', close: '20:00', isClosed: false },
+            { day: 'Sunday', open: '08:00', close: '14:00', isClosed: false }
+        ],
         facilities: [] as string[],
         specializations: [] as string[],
         houseRules: [] as string[],
@@ -87,15 +94,24 @@ export function AddGym({ onBack }: AddGymProps) {
         "Swimming", "Cardio", "Strength Training"
     ];
 
+    const DURATIONS = [
+        "Day Pass", "Weekly Pass", "Weekend Pass", "1 Month", "3 Months", "6 Months", "1 Year", "2 Years", "3 Years"
+    ];
+
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
+        if (images.length + files.length > 10) {
+            alert('A maximum of 10 photos can be uploaded.');
+            return;
+        }
         const newImages: string[] = [];
         for (const file of Array.from(files)) {
             const reader = new FileReader();
             await new Promise<void>((resolve) => {
                 reader.onloadend = async () => {
-                    const compressed = await compressImage(reader.result as string);
+                    // Use higher compression (600px width) to stay within Vercel body limits
+                    const compressed = await compressImage(reader.result as string, 600, 0.6);
                     newImages.push(compressed);
                     resolve();
                 };
@@ -103,7 +119,6 @@ export function AddGym({ onBack }: AddGymProps) {
             });
         }
         setImages(prev => [...prev, ...newImages]);
-        // Reset input so same file can be re-selected
         e.target.value = '';
     };
 
@@ -144,7 +159,7 @@ export function AddGym({ onBack }: AddGymProps) {
             const payload = {
                 ...form,
                 images,
-                timings: `${form.weekdayHours || '9 AM - 9 PM'} (Weekdays), ${form.weekendHours || '10 AM - 8 PM'} (Weekends)`,
+                timings: form.operatingHours.map(oh => `${oh.day}: ${oh.isClosed ? 'Closed' : oh.open + '-' + oh.close}`).join(', '),
                 trainers: form.trainers.map(t => t.name),
                 trainerDetails: form.trainers,
                 documentation: {
@@ -248,6 +263,61 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
                             </div>
                         </div>
 
+                        {/* OPERATING HOURS */}
+                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Multiple Operating Hours</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {form.operatingHours.map((oh, idx) => (
+                                    <div key={oh.day} className={`p-4 rounded-xl border ${oh.isClosed ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-200'}`}>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-xs font-black uppercase tracking-tight">{oh.day}</span>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    title={`Close on ${oh.day}`}
+                                                    checked={oh.isClosed} 
+                                                    onChange={e => {
+                                                        const newOH = [...form.operatingHours];
+                                                        newOH[idx].isClosed = e.target.checked;
+                                                        setForm({ ...form, operatingHours: newOH });
+                                                    }}
+                                                    className="w-3 h-3"
+                                                />
+                                                <span className="text-[9px] font-bold uppercase text-gray-400">Closed</span>
+                                            </label>
+                                        </div>
+                                        {!oh.isClosed && (
+                                            <div className="flex items-center gap-2">
+                                                <input 
+                                                    type="time" 
+                                                    title="Open Time"
+                                                    value={oh.open} 
+                                                    onChange={e => {
+                                                        const newOH = [...form.operatingHours];
+                                                        newOH[idx].open = e.target.value;
+                                                        setForm({ ...form, operatingHours: newOH });
+                                                    }}
+                                                    className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
+                                                />
+                                                <span className="text-gray-300 text-[10px]">to</span>
+                                                <input 
+                                                    type="time" 
+                                                    title="Close Time"
+                                                    value={oh.close} 
+                                                    onChange={e => {
+                                                        const newOH = [...form.operatingHours];
+                                                        newOH[idx].close = e.target.value;
+                                                        setForm({ ...form, operatingHours: newOH });
+                                                    }}
+                                                    className="flex-1 p-1.5 text-[10px] font-bold border rounded-lg"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* KYC / BUSINESS IDENTITY */}
                         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                             <div>
@@ -299,7 +369,7 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
                                 <Input placeholder="Plan Name" value={newPlan.name} onChange={e => setNewPlan({ ...newPlan, name: e.target.value })} />
                                 <Input type="number" placeholder="Price (₹)" value={newPlan.price} onChange={e => setNewPlan({ ...newPlan, price: e.target.value })} />
                                 <select title="Duration" className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm" value={newPlan.duration} onChange={e => setNewPlan({ ...newPlan, duration: e.target.value })}>
-                                    <option>1 Month</option><option>3 Months</option><option>6 Months</option><option>1 Year</option>
+                                    {DURATIONS.map(d => <option key={d}>{d}</option>)}
                                 </select>
                                 <Input type="number" placeholder="Sessions" value={newPlan.sessions} onChange={e => setNewPlan({ ...newPlan, sessions: e.target.value })} />
                                 <Button title="Add Plan" onClick={() => { if (newPlan.name && newPlan.price) { setForm({ ...form, plans: [...form.plans, { ...newPlan, price: parseFloat(newPlan.price), sessions: parseInt(newPlan.sessions) || 1 }] }); setNewPlan({ name: '', price: '', duration: '1 Month', sessions: '30', description: '' }); } }} className="bg-black text-white"><Plus size={16} /></Button>

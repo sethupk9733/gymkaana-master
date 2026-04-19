@@ -65,7 +65,7 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
     };
   }, [isLiveScanning]);
 
-  const handleVerify = async (id: string) => {
+  const handleVerify = async (id: string, action?: 'approve' | 'reject') => {
     const cleanId = id.trim();
     if (!cleanId) return;
 
@@ -77,16 +77,46 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
     setScanState("processing");
     setErrorMessage("");
     try {
-      const result = await verifyQR(bookingId);
+      const result = await verifyQR(bookingId, action);
+      
+      if (action) {
+        setScanState(action === 'approve' ? 'success' : 'scanning');
+        if (action === 'reject') {
+          alert("Check-in rejected successfully.");
+          resetScan();
+        } else {
+          setScannedUser({
+            name: result.booking.memberName || "Member",
+            plan: result.booking.planId?.name || "Premium Plan",
+            expiry: "Access Granted",
+            id: result.booking._id,
+            photoUrl: null,
+            lastCheckIn: "Verified Now"
+          });
+        }
+        return;
+      }
+
       setScannedUser({
         name: result.booking.memberName || "Member",
         plan: result.booking.planId?.name || "Premium Plan",
-        expiry: "Verification Complete",
+        expiry: result.booking.status === 'upcoming' ? 'Valid Pass' : (result.booking.status === 'completed' ? 'ALREADY USED' : 'Invalid'),
         id: result.booking._id,
         photoUrl: null,
-        lastCheckIn: "Just now"
+        lastCheckIn: "Pending Approval",
+        rawId: bookingId,
+        status: result.booking.status
       });
-      setScanState("success");
+
+      if (result.booking.status === 'completed') {
+        setErrorMessage("This booking has already been used.");
+        setScanState("error");
+      } else if (result.booking.status === 'cancelled') {
+        setErrorMessage("This booking is cancelled.");
+        setScanState("error");
+      } else {
+        setScanState("success");
+      }
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || "Invalid or Expired Booking ID");
@@ -112,11 +142,11 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-md mx-auto relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-2xl mx-auto relative">
 
         {scanState === "scanning" && (
           <div className="w-full flex flex-col items-center animate-in fade-in zoom-in duration-300">
-            <div className="relative w-72 h-72 border-2 border-dashed border-gray-600 rounded-3xl overflow-hidden mb-8 bg-gray-800 flex items-center justify-center">
+            <div className="relative w-72 h-72 md:w-96 md:h-96 border-2 border-dashed border-gray-600 rounded-3xl overflow-hidden mb-8 bg-gray-800 flex items-center justify-center">
               {!isLiveScanning ? (
                 <>
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent animate-scan"></div>
@@ -226,12 +256,31 @@ export function QRCheckIn({ onBack }: QRCheckInProps) {
               </div>
             </div>
 
-            <Button
-              onClick={resetScan}
-              className="w-full h-14 mt-6 bg-white text-gray-900 hover:bg-gray-100 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl"
-            >
-              Authorize Next Entry
-            </Button>
+            <div className="flex gap-4 mt-6">
+              {scannedUser.status === 'upcoming' ? (
+                <>
+                  <Button
+                    onClick={() => handleVerify(scannedUser.rawId, 'reject')}
+                    className="flex-1 h-14 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/30 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl"
+                  >
+                    Reject Entry
+                  </Button>
+                  <Button
+                    onClick={() => handleVerify(scannedUser.rawId, 'approve')}
+                    className="flex-[2] h-14 bg-green-600 text-white hover:bg-green-700 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-lg shadow-green-900/20"
+                  >
+                    Approve Check-in
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={resetScan}
+                  className="w-full h-14 bg-white text-gray-900 hover:bg-gray-100 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl"
+                >
+                  Authorize Next Entry
+                </Button>
+              )}
+            </div>
           </div>
         )}
 

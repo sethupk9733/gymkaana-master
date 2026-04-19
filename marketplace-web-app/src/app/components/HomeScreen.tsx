@@ -162,7 +162,7 @@ export function HomeScreen({
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <h1 className="text-3xl md:text-8xl font-black tracking-tighter text-white italic mb-4 leading-none">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white italic mb-4 leading-none">
               {activeHero.heading}
             </h1>
             <p className="text-xs md:text-lg font-bold uppercase tracking-[0.4em] text-white/40 mb-12">

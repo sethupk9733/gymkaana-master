@@ -41,32 +41,6 @@ export const fetchGyms = async () => {
     return await response.json();
 };
 
-export const fetchGymById = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch gym');
-    return await response.json();
-};
-
-export const fetchBookings = async () => {
-    const response = await fetch(`${BASE_URL}/bookings`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch bookings');
-    return await response.json();
-};
-
-export const fetchDashboardStats = async (ownerId?: string) => {
-    let url = `${BASE_URL}/dashboard/stats`;
-    if (ownerId && ownerId !== 'all') url += `?ownerId=${ownerId}`;
-    const response = await fetch(url, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
-    return await response.json();
-};
-
 export const updateGymStatus = async (id: string, status: string) => {
     const response = await fetch(`${BASE_URL}/gyms/${id}`, {
         method: 'PUT',
@@ -76,7 +50,20 @@ export const updateGymStatus = async (id: string, status: string) => {
         },
         body: JSON.stringify({ status })
     });
+    if (!response.ok) throw new Error('Failed to update status');
     return await response.json();
+};
+
+export const deleteGym = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete hub');
+    }
+    return true;
 };
 
 export const createGym = async (gymData: any) => {
@@ -88,7 +75,7 @@ export const createGym = async (gymData: any) => {
         },
         body: JSON.stringify(gymData)
     });
-    if (!response.ok) throw new Error('Failed to create gym');
+    if (!response.ok) throw new Error('Failed to onboard hub');
     return await response.json();
 };
 
@@ -96,7 +83,7 @@ export const fetchBookingsByGym = async (gymId: string) => {
     const response = await fetch(`${BASE_URL}/bookings/gym/${gymId}`, {
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch bookings for gym');
+    if (!response.ok) throw new Error('Failed to fetch bookings');
     return await response.json();
 };
 
@@ -104,88 +91,36 @@ export const fetchPlansByGym = async (gymId: string) => {
     const response = await fetch(`${BASE_URL}/plans/gym/${gymId}`, {
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch plans for gym');
-    return await response.json();
-};
-
-export const fetchActivities = async () => {
-    const response = await fetch(`${BASE_URL}/activities`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch activities');
+    if (!response.ok) throw new Error('Failed to fetch plans');
     return await response.json();
 };
 
 export const fetchAllPayouts = async () => {
-    const response = await fetch(`${BASE_URL}/payouts/admin/all`, {
+    const response = await fetch(`${BASE_URL}/payouts`, {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch payouts');
     return await response.json();
 };
 
-export const processPayout = async (id: string, status: string, transactionId?: string, remarks?: string) => {
-    const response = await fetch(`${BASE_URL}/payouts/admin/${id}`, {
+export const processPayout = async (id: string, status: string, transactionId?: string) => {
+    const response = await fetch(`${BASE_URL}/payouts/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             ...getAuthHeaders()
         },
-        body: JSON.stringify({ status, transactionId, remarks })
+        body: JSON.stringify({ status, transactionId })
     });
     if (!response.ok) throw new Error('Failed to process payout');
     return await response.json();
 };
-// Ticket APIs
-export const fetchAllTickets = async () => {
-    const response = await fetch(`${BASE_URL}/tickets/admin/all-tickets`, {
+
+export const fetchAllBookings = async () => {
+    const response = await fetch(`${BASE_URL}/bookings`, {
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch tickets');
-    return await response.json();
-};
-
-export const fetchTicketById = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/tickets/${id}`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch ticket');
-    return await response.json();
-};
-
-export const addTicketReply = async (ticketId: string, message: string) => {
-    const response = await fetch(`${BASE_URL}/tickets/${ticketId}/reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ message })
-    });
-    if (!response.ok) throw new Error('Failed to add reply');
-    return await response.json();
-};
-
-export const updateTicketStatus = async (ticketId: string, status: string) => {
-    const response = await fetch(`${BASE_URL}/tickets/${ticketId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ status })
-    });
-    if (!response.ok) throw new Error('Failed to update ticket status');
-    return await response.json();
-};
-
-export const getUnreadTicketCount = async () => {
-    const response = await fetch(`${BASE_URL}/tickets/user/unread-count`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch unread count');
-    return await response.json();
-};
-
-export const fetchAdminAccounting = async () => {
-    const response = await fetch(`${BASE_URL}/accounting/admin`, {
-        headers: getAuthHeaders()
-    });
-    if (!response.ok) throw new Error('Failed to fetch accounting data');
+    if (!response.ok) throw new Error('Failed to fetch all bookings');
     return await response.json();
 };
 
@@ -220,4 +155,12 @@ export const downloadDeclarationPDF = async (gymId: string, gymName: string) => 
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+};
+
+export const getUnreadTicketCount = async () => {
+  const response = await fetch(`${BASE_URL}/tickets/unread-count`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch unread count');
+  return await response.json();
 };

@@ -10,7 +10,13 @@ const gymSchema = new mongoose.Schema({
     description: { type: String },
     phone: { type: String },
     email: { type: String },
-    timings: { type: String },
+    timings: { type: String }, // Backward compatibility
+    operatingHours: [{
+        day: { type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+        open: { type: String },
+        close: { type: String },
+        isClosed: { type: Boolean, default: false }
+    }],
     images: [{ type: String }], // Array of strings for multiple images
     members: { type: Number, default: 0 },
     checkins: { type: Number, default: 0 },

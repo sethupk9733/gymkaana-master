@@ -176,7 +176,7 @@ export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNa
 
       <div className="px-8 py-8 space-y-10 max-w-6xl mx-auto">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -201,9 +201,9 @@ export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNa
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           {/* Revenue Performance */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="md:col-span-8 space-y-6">
             <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
               <div className="flex items-center justify-between">
                 <div>
@@ -298,11 +298,11 @@ export function Dashboard({ onNavigateToNotifications, onNavigateToPayouts, onNa
           </div>
 
           {/* Side Panel: Actions & Activity */}
-          <div className="lg:col-span-4 space-y-10">
+          <div className="md:col-span-4 space-y-10">
             {/* Modern Quick Actions */}
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 px-4">Global Actions</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 gap-4">
                 {quickActions.map((action, index) => (
                   <button
                     key={index}

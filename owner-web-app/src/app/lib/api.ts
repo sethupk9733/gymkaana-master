@@ -12,8 +12,8 @@ export const login = async (credentials: any) => {
         body: JSON.stringify(credentials)
     });
     const data = await response.json();
-    if (data.token) {
-        localStorage.setItem('gymkaana_token', data.token);
+    if (data.accessToken) {
+        localStorage.setItem('gymkaana_token', data.accessToken);
         localStorage.setItem('gymkaana_user', JSON.stringify(data));
     }
     return data;
@@ -26,8 +26,8 @@ export const register = async (userData: any) => {
         body: JSON.stringify(userData)
     });
     const data = await response.json();
-    if (data.token) {
-        localStorage.setItem('gymkaana_token', data.token);
+    if (data.accessToken) {
+        localStorage.setItem('gymkaana_token', data.accessToken);
         localStorage.setItem('gymkaana_user', JSON.stringify(data));
     }
     return data;
@@ -192,14 +192,14 @@ export const fetchDashboardStats = async (gymId?: string) => {
     return data;
 };
 
-export const verifyQR = async (bookingId: string) => {
+export const verifyQR = async (bookingId: string, action?: 'approve' | 'reject') => {
     const response = await fetch(`${BASE_URL}/bookings/verify-qr`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             ...getAuthHeaders()
         },
-        body: JSON.stringify({ bookingId })
+        body: JSON.stringify({ bookingId, action })
     });
     if (!response.ok) throw new Error('Verification failed');
     return await response.json();

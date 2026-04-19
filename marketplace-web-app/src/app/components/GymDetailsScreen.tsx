@@ -110,10 +110,10 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
         title={gym.name || "Venue Details"}
         description={`Experience elite training at ${gym.name || 'our venue'} in ${gym.location || 'your area'}. Specialized in ${gym.specializations?.join(', ') || 'fitness'}. Book your membership now on Gymkaana.`}
       />
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 px-6 max-w-7xl mx-auto pt-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-8 lg:gap-12 px-6 max-w-7xl mx-auto pt-8">
 
         {/* Left Column: Images (Sticky on Desktop) */}
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           <div className="sticky top-24">
             <div className="mb-6 flex items-center gap-2">
               <button onClick={onBack} className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors">
@@ -242,7 +242,7 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
         </div>
 
         {/* Right Column: Details & Actions */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="md:col-span-2 space-y-8">
           {/* Header Info */}
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter italic uppercase mb-4">{gym.name || "Target Venue"}</h1>

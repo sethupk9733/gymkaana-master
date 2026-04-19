@@ -122,7 +122,7 @@ exports.getBookingById = async (req, res) => {
 
 exports.verifyBooking = async (req, res) => {
     try {
-        const { bookingId } = req.body;
+        const { bookingId, action } = req.body; // action can be 'approve' or 'reject'
         let booking;
 
         // Try searching by full ObjectId first
@@ -133,7 +133,7 @@ exports.verifyBooking = async (req, res) => {
         }
 
         // Fallback: If not found or if bookingId is short (8 chars), try to find by short display ID
-        if (!booking && (bookingId.length === 8 || bookingId.length === 24)) {
+        if (!booking && (bookingId && (bookingId.length === 8 || bookingId.length === 24))) {
             const regex = new RegExp(bookingId + '$', 'i');
             booking = await Booking.findOne({
                 $expr: {
@@ -160,9 +160,48 @@ exports.verifyBooking = async (req, res) => {
             }
         }
 
-        // Update status to completed
-        booking.status = 'completed';
-        await booking.save();
+        // Return details if no action provided (PREVIEW)
+        if (!action) {
+            if (booking.status === 'completed') {
+                return res.status(400).json({ message: 'This booking has already been used.', booking });
+            }
+            if (booking.status === 'cancelled') {
+                return res.status(400).json({ message: 'This booking is cancelled.', booking });
+            }
+            return res.json({ message: 'Booking verified. Pending approval.', booking, needsAction: true });
+        }
+
+        if (action === 'reject') {
+            booking.status = 'upcoming'; // Reset to upcoming if it was pending or something
+            await booking.save();
+            
+            logActivity({
+                userId: booking.userId,
+                gymId: booking.gymId,
+                action: 'Check-in Rejected',
+                description: `Owner rejected check-in for member ${booking.memberName}.`,
+                type: 'warning'
+            }).catch(err => console.error("Activity log failed:", err.message));
+
+            return res.json({ message: 'Check-in rejected. Booking remains valid for future use.', booking });
+        }
+
+        if (action === 'approve') {
+            booking.status = 'completed';
+            await booking.save();
+
+            logActivity({
+                userId: booking.userId,
+                gymId: booking.gymId,
+                action: 'Check-in Approved',
+                description: `Member ${booking.memberName} checked in successfully.`,
+                type: 'success'
+            }).catch(err => console.error("Activity log failed:", err.message));
+
+            return res.json({ message: 'Check-in approved successfully!', booking });
+        }
+
+        return res.status(400).json({ message: 'Invalid action parameter' });
 
         // Log activity asynchronously
         logActivity({

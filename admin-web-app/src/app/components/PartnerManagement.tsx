@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { 
     fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, 
-    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, downloadDeclarationPDF 
+    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, downloadDeclarationPDF, deleteGym
 } from '../lib/api';
 
 interface GymDetail {
@@ -217,6 +217,23 @@ export function PartnerManagement() {
         } catch (err) {
             console.error(err);
             alert('Failed to update hub status');
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("CRITICAL ACTION: Are you sure you want to PERMANENTLY DELETE this hub? All related bookings, plans and data will be lost. This cannot be undone.")) return;
+        
+        setIsProcessing(true);
+        try {
+            await deleteGym(id);
+            await loadGyms();
+            setSelectedGym(null);
+            alert("Hub successfully purged from directory.");
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message || 'Failed to delete hub');
+        } finally {
             setIsProcessing(false);
         }
     };
@@ -942,8 +959,12 @@ export function PartnerManagement() {
                                                     <button className="flex-1 py-5 bg-black text-white rounded-[28px] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 border border-white/10 active:scale-95 transition-all">
                                                         <Activity className="w-5 h-5 text-[#A3E635]" /> Sync Hub State
                                                     </button>
-                                                    <button className="px-10 py-5 bg-gray-50 text-black border border-gray-100 rounded-[28px] font-black text-[10px] uppercase tracking-[0.3em] transition-all">
-                                                        Hold Payouts
+                                                    <button 
+                                                        onClick={() => handleDelete(selectedGym._id)}
+                                                        disabled={isProcessing}
+                                                        className="px-10 py-5 bg-red-50 text-red-600 border border-red-100 rounded-[28px] font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" /> Delete Hub
                                                     </button>
                                                 </>
                                             )}
