@@ -116,7 +116,7 @@ export const processPayout = async (id: string, status: string, transactionId?: 
     return await response.json();
 };
 
-export const fetchAllBookings = async () => {
+export const fetchBookings = async () => {
     const response = await fetch(`${BASE_URL}/bookings`, {
         headers: getAuthHeaders()
     });
@@ -145,7 +145,7 @@ export const downloadDeclarationPDF = async (gymId: string, gymName: string) => 
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch PDF');
-    
+
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -165,6 +165,48 @@ export const getUnreadTicketCount = async () => {
     return await response.json();
 };
 
+export const fetchAllTickets = async () => {
+    const response = await fetch(`${BASE_URL}/tickets`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch tickets');
+    return await response.json();
+};
+
+export const fetchTicketById = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/tickets/${id}`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch ticket');
+    return await response.json();
+};
+
+export const addTicketReply = async (id: string, message: string) => {
+    const response = await fetch(`${BASE_URL}/tickets/${id}/replies`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify({ message })
+    });
+    if (!response.ok) throw new Error('Failed to add reply');
+    return await response.json();
+};
+
+export const updateTicketStatus = async (id: string, status: string) => {
+    const response = await fetch(`${BASE_URL}/tickets/${id}/status`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error('Failed to update ticket status');
+    return await response.json();
+};
+
 export const fetchDashboardStats = async (ownerId?: string) => {
     const url = ownerId ? `${BASE_URL}/admin/dashboard-stats?ownerId=${ownerId}` : `${BASE_URL}/admin/dashboard-stats`;
     const response = await fetch(url, {
@@ -179,6 +221,14 @@ export const fetchActivities = async () => {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch activities');
+    return await response.json();
+};
+
+export const fetchAdminAccounting = async () => {
+    const response = await fetch(`${BASE_URL}/admin/accounting`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch accounting data');
     return await response.json();
 };
 
