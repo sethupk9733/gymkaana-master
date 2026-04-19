@@ -158,9 +158,18 @@ export const downloadDeclarationPDF = async (gymId: string, gymName: string) => 
 };
 
 export const getUnreadTicketCount = async () => {
-  const response = await fetch(`${BASE_URL}/tickets/unread-count`, {
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) throw new Error('Failed to fetch unread count');
-  return await response.json();
+    const response = await fetch(`${BASE_URL}/tickets/unread-count`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch unread count');
+    return await response.json();
+};
+
+export const fetchDashboardStats = async (ownerId?: string) => {
+    const url = ownerId ? `${BASE_URL}/admin/dashboard-stats?ownerId=${ownerId}` : `${BASE_URL}/admin/dashboard-stats`;
+    const response = await fetch(url, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+    return await response.json();
 };
