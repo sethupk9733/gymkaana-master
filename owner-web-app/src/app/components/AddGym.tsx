@@ -46,6 +46,7 @@ export function AddGym({ onBack }: AddGymProps) {
         phone: '',
         email: '',
         googleMapsLink: '',
+        coordinates: { lat: 0, lng: 0 },
         trainers: [] as { name: string, experience: string, specialization: string }[],
         operatingHours: [
             { day: 'Monday', open: '06:00', close: '22:00', isClosed: false },
@@ -144,6 +145,28 @@ export function AddGym({ onBack }: AddGymProps) {
             ? prev.specializations.filter(s => s !== spec)
             : [...prev.specializations, spec]
     }));
+
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setForm(prev => ({
+                    ...prev,
+                    coordinates: { lat: latitude, lng: longitude },
+                    googleMapsLink: prev.googleMapsLink || `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+                }));
+                alert('Location captured successfully!');
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+                alert('Failed to get location. Please allow location permissions.');
+            }
+        );
+    };
 
     const handleSubmit = async () => {
         if (step === 1) {
@@ -290,6 +313,21 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
                                 <div className="grid grid-cols-2 gap-3">
                                     <Input placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} />
                                     <Input placeholder="Zip Code" value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} />
+                                </div>
+                                
+                                <div className="pt-2 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Maps Link / Coordinates</label>
+                                        <button type="button" onClick={handleGetLocation} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest hover:bg-blue-100 transition-colors">
+                                            Capture Current Location
+                                        </button>
+                                    </div>
+                                    <Input placeholder="e.g. https://goo.gl/maps/..." value={form.googleMapsLink} onChange={e => setForm({ ...form, googleMapsLink: e.target.value })} />
+                                    {form.coordinates.lat !== 0 && (
+                                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">
+                                            ✓ Coordinates saved ({form.coordinates.lat.toFixed(4)}, {form.coordinates.lng.toFixed(4)})
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>

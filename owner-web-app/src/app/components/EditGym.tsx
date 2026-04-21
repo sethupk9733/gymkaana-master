@@ -121,6 +121,8 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           phone: data.phone || '',
           email: data.email || '',
           timings: data.timings || '',
+          googleMapsLink: data.googleMapsLink || '',
+          coordinates: data.coordinates || { lat: 0, lng: 0 },
           facilities: data.facilities || [],
           specializations: data.specializations || [],
           houseRules: data.houseRules || [],
@@ -192,6 +194,28 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
 
   const addRule = () => {
     if (newRule.trim()) { setForm(prev => ({ ...prev, houseRules: [...prev.houseRules, newRule.trim()] })); setNewRule(''); }
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            setForm(prev => ({
+                ...prev,
+                coordinates: { lat: latitude, lng: longitude },
+                googleMapsLink: prev.googleMapsLink || `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+            }));
+            alert('Location captured successfully!');
+        },
+        (error) => {
+            console.error("Geolocation error:", error);
+            alert('Failed to get location. Please allow location permissions.');
+        }
+    );
   };
 
   const handleSubmit = async () => {
@@ -302,8 +326,18 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
               <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Timings</label>
-              <Input value={form.timings} onChange={e => setForm({ ...form, timings: e.target.value })} placeholder="e.g. 6AM–10PM" />
+              <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Maps Link / Coordinates</label>
+                  <button type="button" onClick={handleGetLocation} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-widest hover:bg-blue-100 transition-colors">
+                      Capture Current Location
+                  </button>
+              </div>
+              <Input placeholder="e.g. https://goo.gl/maps/..." value={form.googleMapsLink} onChange={e => setForm({ ...form, googleMapsLink: e.target.value })} />
+              {form.coordinates.lat !== 0 && (
+                  <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">
+                      ✓ Coordinates saved ({form.coordinates.lat.toFixed(4)}, {form.coordinates.lng.toFixed(4)})
+                  </p>
+              )}
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Base Day Pass Price (₹)</label>

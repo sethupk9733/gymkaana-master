@@ -32,6 +32,17 @@ export function HomeScreen({
   const [maxDistance, setMaxDistance] = useState(15);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log('Geolocation skipped or failed', err),
+        { timeout: 10000, maximumAge: 60000 }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     fetchGyms()
@@ -99,16 +110,29 @@ export function HomeScreen({
     setActiveHero(HERO_CONTENT[randomIndex]);
   }, [HERO_CONTENT]);
 
-  const parseDistance = (location: string) => {
-    const match = location.match(/(\d+(\.\d+)?)\s*km/);
+  const getDistance = (gym: any) => {
+    if (userLocation && gym.coordinates && gym.coordinates.lat && gym.coordinates.lng) {
+      const R = 6371; // km
+      const dLat = (gym.coordinates.lat - userLocation.lat) * Math.PI / 180;
+      const dLon = (gym.coordinates.lng - userLocation.lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(gym.coordinates.lat * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    const match = (gym.location || "").match(/(\d+(\.\d+)?)\s*km/);
     return match ? parseFloat(match[1]) : 0;
   };
 
   const filteredGyms = useMemo(() => {
     const results = gyms.filter(gym => {
-      const distance = parseDistance(gym.location || "");
-      const matchesSearch = gym.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gym.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const distance = getDistance(gym);
+      const name = gym.name || "";
+      const location = gym.location || "";
+      const search = (searchQuery || "").toLowerCase();
+      const matchesSearch = name.toLowerCase().includes(search) ||
+        location.toLowerCase().includes(search);
       const matchesDistance = distance <= maxDistance;
 
       const gymSpecs = Array.isArray(gym.specializations) ? gym.specializations : [];
@@ -127,7 +151,7 @@ export function HomeScreen({
     if (filteredGyms.length > 0) return [];
 
     return gyms.filter(gym => {
-      const distance = parseDistance(gym.location || "");
+      const distance = getDistance(gym);
       const matchesDistance = distance <= maxDistance;
       const gymSpecs = Array.isArray(gym.specializations) ? gym.specializations : [];
       const matchesDisciplines = selectedDisciplines.length === 0 ||

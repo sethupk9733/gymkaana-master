@@ -11,6 +11,11 @@ const gymSchema = new mongoose.Schema({
     phone: { type: String },
     email: { type: String },
     timings: { type: String }, // Backward compatibility
+    googleMapsLink: { type: String },
+    coordinates: {
+        lat: { type: Number },
+        lng: { type: Number }
+    },
     operatingHours: [{
         day: { type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
         open: { type: String },
