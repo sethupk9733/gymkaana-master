@@ -32,13 +32,7 @@ app.use(cors({
 
 // ── Payment Infrastructure ──────────────────────────────────────────────────
 // Webhook needs raw body for HMAC verification; others need standard JSON.
-app.use('/api/payments', (req, res, next) => {
-    if (req.originalUrl === '/api/payments/webhook' && req.method === 'POST') {
-        return express.raw({ type: 'application/json' })(req, res, next);
-    }
-    next();
-});
-// (Router registration moved below express.json() to allow body parsing)
+// (Router moved to direct app.post/get registration below for reliability)
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -171,6 +165,18 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
+
+// ── Payment Routes ──────────────────────────────────────────────────────────
+// Mounting directly to avoid any router matching issues
+const paymentController = require('./controllers/paymentController');
+const { protect }       = require('./middleware/authMiddleware');
+
+app.post('/api/payments/create-order', protect, paymentController.createOrder);
+app.get('/api/payments/status/:orderId', protect, paymentController.getPaymentStatus);
+app.post('/api/payments/vendors/register', protect, paymentController.registerVendor);
+app.post('/api/payments/refund', protect, paymentController.triggerRefund);
+// Webhook is public and already has its raw body handled at the top
+app.post('/api/payments/webhook', paymentController.verifyWebhook);
 // ── Payment Routes ──────────────────────────────────────────────────────────
 // These are mounted AFTER express.json() to ensure body can be read
 app.use('/api/payments', (req, res, next) => {
@@ -182,7 +188,7 @@ app.use('/api/payments', (req, res, next) => {
 app.use((req, res) => {
     console.warn(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ 
-        message: `Route ${req.originalUrl} not found on this server.`,
+        message: `Antigravity: Route ${req.originalUrl} not found on this server.`,
         error: 'Not Found'
     });
 });
