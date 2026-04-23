@@ -32,7 +32,7 @@ app.use(cors({
 
 // ── Payment Infrastructure ──────────────────────────────────────────────────
 // Webhook needs raw body for HMAC verification; others need standard JSON.
-// (Router moved to direct app.post/get registration below for reliability)
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -188,7 +188,7 @@ app.use('/api/payments', (req, res, next) => {
 app.use((req, res) => {
     console.warn(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ 
-        message: `Antigravity: Route ${req.originalUrl} not found on this server.`,
+        message: `Antigravity v3: Route ${req.originalUrl} not found on this server.`,
         error: 'Not Found'
     });
 });
