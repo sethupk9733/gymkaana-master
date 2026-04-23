@@ -100,6 +100,37 @@ export default function App() {
     loadProfile();
   }, []);
 
+  // Handle Cashfree Return Redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('order_id');
+    
+    if (orderId && currentScreen !== 'success') {
+      const verifyStatus = async () => {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/payments/status/${orderId}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}`
+            }
+          });
+          const result = await response.json();
+          
+          if (result.status === 'SUCCESS' || result.status === 'ACTIVE') {
+            setRecentBooking(result);
+            setCurrentScreen('success');
+            // Clean up the URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('order_id');
+            window.history.replaceState({}, '', newUrl.toString());
+          }
+        } catch (err) {
+          console.error("Failed to verify payment status on return:", err);
+        }
+      };
+      verifyStatus();
+    }
+  }, [currentScreen]);
+
   // Synchronize URL with active screen state
   useEffect(() => {
     if (currentScreen === 'splash') return;

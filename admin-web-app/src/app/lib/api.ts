@@ -232,3 +232,15 @@ export const fetchAdminAccounting = async () => {
     return await response.json();
 };
 
+export const updateGymFinancials = async (id: string, financialData: { cashfreeVendorId?: string, cashfreeVendorStatus?: string, commissionPercent?: number }) => {
+    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify(financialData)
+    });
+    if (!response.ok) throw new Error('Failed to update financial settings');
+    return await response.json();
+};

@@ -3,12 +3,13 @@ import {
     Check, X, Building2, MapPin, Eye, FileText, User, Phone, ShieldCheck,
     Dumbbell, Users, Landmark, Award, Shield, Mail, ArrowUpRight,
     ChevronRight, FileCheck, AlertCircle, Trash2, Search, Filter,
-    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2, Calendar
+    TrendingUp, Star, MoreHorizontal, Activity, Layers, Power, Plus, Loader2, Calendar, Target
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
     fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, 
-    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, downloadDeclarationPDF, deleteGym
+    fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, 
+    downloadDeclarationPDF, deleteGym, updateGymFinancials
 } from '../lib/api';
 
 interface GymDetail {
@@ -54,6 +55,9 @@ interface GymDetail {
         gstNumber?: string;
         businessRegistrationNumber?: string;
     };
+    cashfreeVendorId?: string;
+    cashfreeVendorStatus?: string;
+    commissionPercent?: number;
 }
 
 export function PartnerManagement() {
@@ -76,6 +80,9 @@ export function PartnerManagement() {
     const [isFetchingPlans, setIsFetchingPlans] = useState(false);
     const [declarationData, setDeclarationData] = useState<any>(null);
     const [isFetchingDeclaration, setIsFetchingDeclaration] = useState(false);
+    const [cfVendorIdInput, setCfVendorIdInput] = useState('');
+    const [cfCommissionInput, setCfCommissionInput] = useState<number>(15);
+    const [isUpdatingFinancials, setIsUpdatingFinancials] = useState(false);
 
     const loadGyms = async () => {
         setLoading(true);
@@ -105,6 +112,10 @@ export function PartnerManagement() {
     useEffect(() => {
         const loadGymData = async () => {
             if (selectedGym) {
+                // Initialize financial inputs from selected gym
+                setCfVendorIdInput(selectedGym.cashfreeVendorId || '');
+                setCfCommissionInput(selectedGym.commissionPercent || 15);
+
                 setIsFetchingBookings(true);
                 setIsFetchingPlans(true);
                 try {
@@ -218,6 +229,31 @@ export function PartnerManagement() {
             console.error(err);
             alert('Failed to update hub status');
             setIsProcessing(false);
+        }
+    };
+
+    const handleUpdateFinancials = async () => {
+        if (!selectedGym) return;
+        setIsUpdatingFinancials(true);
+        try {
+            await updateGymFinancials(selectedGym._id, {
+                cashfreeVendorId: cfVendorIdInput,
+                cashfreeVendorStatus: cfVendorIdInput ? 'ACTIVE' : 'NOT_REGISTERED',
+                commissionPercent: Number(cfCommissionInput)
+            });
+            alert('Cashfree Split settings updated successfully!');
+            await loadGyms();
+            setSelectedGym(prev => prev ? { 
+                ...prev, 
+                cashfreeVendorId: cfVendorIdInput, 
+                commissionPercent: cfCommissionInput,
+                cashfreeVendorStatus: cfVendorIdInput ? 'ACTIVE' : 'NOT_REGISTERED'
+            } : null);
+        } catch (err: any) {
+            console.error("Financial update failed:", err);
+            alert(err.message || 'Failed to update financial settings');
+        } finally {
+            setIsUpdatingFinancials(false);
         }
     };
 
@@ -702,6 +738,76 @@ export function PartnerManagement() {
                                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No banking details configured</p>
                                                             </div>
                                                         )}
+                                                    </div>
+
+                                                    {/* EASYSPLIT INTEGRATION PANEL */}
+                                                    <div className="p-10 bg-[#A3E635]/5 border-2 border-[#A3E635]/20 rounded-[48px] space-y-10 relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#A3E635]/10 flex items-center justify-center rounded-bl-[40px]">
+                                                            <Activity className="w-8 h-8 text-[#A3E635]" />
+                                                        </div>
+
+                                                        <div className="space-y-4">
+                                                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-black flex items-center gap-3">
+                                                                <Target className="w-4 h-4 text-black" /> EasySplit Automation
+                                                            </h4>
+                                                            <p className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 leading-tight">Link Vault ID</p>
+                                                            <p className="text-xs font-bold text-gray-500 max-w-md leading-relaxed">
+                                                                Connect this hub's internal Platform ID with its verified Cashfree Vendor ID to enable automatic revenue splitting.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-10">
+                                                            <div className="space-y-4">
+                                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Internal Platform ID</label>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="px-5 py-4 bg-white border border-gray-100 rounded-2xl font-black text-xs text-gray-400 select-all">
+                                                                        {selectedGym._id.slice(-8).toUpperCase()}
+                                                                    </div>
+                                                                    <div className="text-[9px] font-black text-[#A3E635] uppercase tracking-widest px-3 py-1 bg-[#A3E635]/10 rounded-lg">Source</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-4">
+                                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Cashfree Vendor ID</label>
+                                                                <input 
+                                                                    type="text"
+                                                                    placeholder="ENTER VENDOR ID..."
+                                                                    className="w-full px-5 py-4 bg-white border border-black/10 rounded-2xl font-black text-xs uppercase tracking-widest focus:ring-2 focus:ring-[#A3E635] focus:border-transparent transition-all outline-none"
+                                                                    value={cfVendorIdInput}
+                                                                    onChange={(e) => setCfVendorIdInput(e.target.value.toUpperCase().trim())}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-10 items-end">
+                                                            <div className="space-y-4">
+                                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Commission Rate (%)</label>
+                                                                <div className="flex items-center gap-4">
+                                                                    <input 
+                                                                        type="number"
+                                                                        className="w-24 px-5 py-4 bg-white border border-black/10 rounded-2xl font-black text-xs focus:ring-2 focus:ring-[#A3E635] transition-all outline-none"
+                                                                        value={cfCommissionInput}
+                                                                        onChange={(e) => setCfCommissionInput(Number(e.target.value))}
+                                                                    />
+                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Platform Fee Cap</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <button 
+                                                                onClick={handleUpdateFinancials}
+                                                                disabled={isUpdatingFinancials}
+                                                                className="w-full py-5 bg-black text-[#A3E635] rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0"
+                                                            >
+                                                                {isUpdatingFinancials ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Synchronize Identity'}
+                                                            </button>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-2 p-4 bg-white/40 rounded-2xl">
+                                                            <div className={`w-2 h-2 rounded-full ${selectedGym.cashfreeVendorId ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
+                                                            <p className="text-[9px] font-black uppercase text-gray-500">
+                                                                Status: {selectedGym.cashfreeVendorId ? `ACTIVE SPLIT - LINKED AS ${selectedGym.cashfreeVendorId}` : 'EASYSPLIT INACTIVE'}
+                                                            </p>
+                                                        </div>
                                                     </div>
 
                                                     <div className="space-y-6">

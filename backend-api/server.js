@@ -3,6 +3,8 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const { cleanupExpiredPayments } = require('./utils/cleanupExpiredPayments');
+
 
 console.log('=========================================');
 console.log('🚀 GYMKAANA BACKEND STARTING UP... (V2)');
@@ -27,6 +29,17 @@ app.use(cors({
     ],
     credentials: true
 }));
+
+// ── Payment Infrastructure ──────────────────────────────────────────────────
+// Webhook needs raw body for HMAC verification; others need standard JSON.
+app.use('/api/payments', (req, res, next) => {
+    if (req.originalUrl === '/api/payments/webhook' && req.method === 'POST') {
+        return express.raw({ type: 'application/json' })(req, res, next);
+    }
+    next();
+});
+// (Router registration moved below express.json() to allow body parsing)
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -174,6 +187,7 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // 404 JSON Handler (Prevents "Unexpected token <" HTML errors)
 app.use((req, res) => {
@@ -238,6 +252,11 @@ const connectDB = async () => {
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server running on port ${PORT}`);
+            
+            // ── Cleanup Interval ──────────────────────────────────────────
+            // Run every 15 mins to clear out stale "PENDING" Cashfree orders
+            setInterval(cleanupExpiredPayments, 15 * 60 * 1000);
+            console.log('⏰ Payment cleanup worker started (15m interval)');
         });
     } catch (err) {
         console.error('❌ MongoDB Connection Failed:', err.message);

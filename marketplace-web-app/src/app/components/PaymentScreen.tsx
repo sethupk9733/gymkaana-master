@@ -25,6 +25,7 @@ const paymentMethods = [
 
 import { createBooking } from "../lib/api";
 import { API_URL } from "../config/api";
+import { initiateCheckout } from "../lib/payment";
 
 export function PaymentScreen({
   gymId,
@@ -72,82 +73,63 @@ export function PaymentScreen({
       end.setMonth(end.getMonth() + 1); // Default 1 month
     }
 
-    console.log("Web Payment: Creating booking with data:", {
-      gymId,
-      planId: plan.id || plan._id,
-      userId: user._id,
-      amount: total,
-      startDate: start.toISOString(),
-      endDate: end.toISOString(),
-      status: "upcoming"
-    });
+    try {
+      // 1. Create Pending Booking in DB
+      const bookingData = {
+        gymId,
+        planId: plan.id || plan._id,
+        userId: user._id || user.id,
+        memberName: user.name,
+        memberEmail: user.email,
+        amount: total,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+        status: 'upcoming' // This is the default status
+      };
 
-    // Simulate payment processing with dummy approval (1.5 second delay)
-    setTimeout(async () => {
-      try {
-        // Use direct booking endpoint to bypass middleware issues
-        const bookingPayload = {
-          gymId,
-          planId: plan.id || plan._id,
-          userId: user._id,
-          memberName: user.name,
-          memberEmail: user.email,
-          amount: total,
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-          status: "upcoming"
-        };
-
-        console.log("📤 Sending booking payload:", bookingPayload);
-
-        const response = await fetch(`${API_URL}/bookings/create-direct`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(bookingPayload)
-        });
-
-        console.log("📥 Response status:", response.status);
-        const result = await response.json();
-        console.log("📥 Response data:", result);
-
-        if (!response.ok) {
-          throw new Error(result.message || `HTTP ${response.status}: Failed to create booking`);
-        }
-
-        console.log("✅ Web Payment: Booking created successfully:", result);
-
-        // Store booking details for success screen (with quota safety)
-        try {
-          localStorage.setItem('latest_booking', JSON.stringify(result));
-        } catch (e) {
-          console.warn("localStorage quota exceeded, storing minimal booking info");
-          try {
-            // If full, just store the ID so SuccessScreen fallback can at least show that
-            localStorage.setItem('latest_booking', JSON.stringify({ _id: result._id || result.id }));
-          } catch (e2) {
-            console.error("Critical: Could not store even minimal booking info", e2);
-          }
-        }
-
-        if (onPaymentSuccess) {
-          console.log("Payment Successful, navigating to Success screen", result);
-          onPaymentSuccess(result);
-        }
-      } catch (err) {
-        console.error("Payment failed during booking creation:", err);
-        console.error("Web Payment error details:", {
-          message: err instanceof Error ? err.message : "Unknown error",
-          stack: err instanceof Error ? err.stack : undefined,
-          error: err
-        });
-        const errorMsg = err instanceof Error ? err.message : "Unknown error occurred";
-        alert("Payment failed during booking completion. Details: " + errorMsg);
-      } finally {
-        setIsProcessing(false);
+      console.log("[Payment] Creating pending booking:", bookingData);
+      const booking = await createBooking(bookingData);
+      
+      if (!booking || !booking._id) {
+        throw new Error("Failed to create booking reference in database.");
       }
-    }, 1500);
+
+      // 2. Create Cashfree Order on Backend using the booking ID
+      console.log("[Payment] Initializing Cashfree order for booking:", booking._id);
+      const response = await fetch(`${API_URL}/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}`
+        },
+        body: JSON.stringify({ bookingId: booking._id })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to initialize payment gateway');
+      }
+
+      // 3. Open Cashfree Checkout Modal
+      const checkoutResult = await initiateCheckout(result.paymentSessionId);
+
+      // 4. Handle Result
+      if (checkoutResult.error) {
+        // User closed modal or payment failed
+        alert("Payment was not completed: " + (checkoutResult.error.message || 'Verification pending'));
+      } else if (checkoutResult.redirect) {
+        console.log("Redirecting to: ", checkoutResult.redirect);
+      } else {
+        console.log("Checkout result:", checkoutResult);
+      }
+
+    } catch (err: any) {
+      console.error("Payment flow interrupted:", err);
+      alert(err.message || "Something went wrong during payment initialization.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const displayPrice = typeof plan?.price === 'string'

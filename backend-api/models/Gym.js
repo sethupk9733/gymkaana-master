@@ -55,6 +55,14 @@ const gymSchema = new mongoose.Schema({
         ifscCode: { type: String },
         bankName: { type: String }
     },
+    // ─── Cashfree EasySplit ──────────────────────────────────────────────────
+    cashfreeVendorId:     { type: String },                            // assigned by Cashfree after vendor KYC
+    cashfreeVendorStatus: {
+        type: String,
+        enum: ['NOT_REGISTERED', 'PENDING', 'ACTIVE', 'BLOCKED'],
+        default: 'NOT_REGISTERED'
+    },
+    commissionPercent: { type: Number, default: 15, min: 0, max: 100 }, // platform fee %, default 15%
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now }
 });
