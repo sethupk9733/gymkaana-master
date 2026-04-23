@@ -149,7 +149,7 @@ export function PaymentScreen({
           <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Go back">
             <Back className="w-5 h-5 text-gray-900" />
           </button>
-          <h2 className="text-xl font-black uppercase italic tracking-tight">Payment Method</h2>
+          <h2 className="text-xl font-black uppercase italic tracking-tight">Checkout</h2>
         </div>
       </div>
 
@@ -165,19 +165,19 @@ export function PaymentScreen({
               Authentication required to access payment protocols. Please login to continue.
             </p>
             <button
-              onClick={() => window.location.reload()} // App.tsx will handle redirecting to login on reload if not authenticated
+              onClick={() => window.location.reload()}
               className="px-10 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
             >
               Initialize Login
             </button>
           </div>
         ) : (
-          <>
+          <div className="max-w-md mx-auto space-y-6">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="mb-8 p-8 bg-gray-900 text-white rounded-[32px] shadow-2xl relative overflow-hidden"
+              className="p-8 bg-gray-900 text-white rounded-[32px] shadow-2xl relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 blur-[60px] rounded-full" />
               <div className="relative z-10 text-center">
@@ -187,46 +187,52 @@ export function PaymentScreen({
               </div>
             </motion.div>
 
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4 px-1">Select Gateway</h3>
-
-            <div className="space-y-4">
-              {paymentMethods.map((method, index) => (
-                <motion.button
-                  key={method.id}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 + (index * 0.1) }}
-                  whileHover={{ scale: 1.02, x: 5 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePayment}
-                  disabled={isProcessing}
-                  className="w-full bg-white border border-gray-100 rounded-[24px] p-5 flex items-center gap-4 hover:shadow-xl hover:border-primary/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-inner">
-                    {isProcessing ? <Loader2 className="w-6 h-6 animate-spin" /> : <method.icon className="w-6 h-6" />}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-black text-gray-900 uppercase tracking-tight mb-0.5">{method.title}</div>
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{method.description}</div>
-                  </div>
-                  {isProcessing ? (
-                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                  ) : (
-                    <Right className="w-5 h-5 text-gray-300 group-hover:text-primary transition-colors" />
-                  )}
-                </motion.button>
-              ))}
+            {/* Plan Summary */}
+            <div className="bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Booking Summary</h3>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-400 uppercase">Plan</span>
+                        <span className="text-sm font-black text-gray-900 uppercase italic">{plan.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-400 uppercase">Duration</span>
+                        <span className="text-sm font-black text-gray-900 uppercase italic">{plan.duration}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-400 uppercase">Start Date</span>
+                        <span className="text-sm font-black text-gray-900 uppercase italic">{new Date(startDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-10 p-6 bg-white border border-gray-100 rounded-[28px] shadow-sm flex items-center gap-4">
+            <div className="p-6 bg-white border border-gray-100 rounded-[28px] shadow-sm flex items-center gap-4">
               <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500">
                 <Secure className="w-5 h-5" />
               </div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                Pay with confidence. Your data is protected by 256-bit AES encryption.
+                Pay with confidence via Cashfree Secure. All major UPI apps, cards and wallets supported.
               </p>
             </div>
-          </>
+
+            <button
+               onClick={handlePayment}
+               disabled={isProcessing}
+               className="w-full bg-black text-white h-20 rounded-[24px] font-black uppercase italic tracking-widest text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-4"
+            >
+               {isProcessing ? (
+                 <>
+                   <Loader2 className="w-6 h-6 animate-spin" />
+                   <span>Initializing Gateway...</span>
+                 </>
+               ) : (
+                 <>
+                   <span>Proceed to Pay</span>
+                   <Right className="w-6 h-6" />
+                 </>
+               )}
+            </button>
+          </div>
         )}
       </div>
 

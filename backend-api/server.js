@@ -171,9 +171,14 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
-app.use('/api/payments', require('./routes/paymentRoutes'));
+// ── Payment Routes ──────────────────────────────────────────────────────────
+// These are mounted AFTER express.json() to ensure body can be read
+app.use('/api/payments', (req, res, next) => {
+    // console.log(`[PAYMENT ROUTE] ${req.method} ${req.path}`);
+    next();
+}, require('./routes/paymentRoutes'));
 
-// 404 JSON Handler (Prevents "Unexpected token <" HTML errors)
+// (End of Routes)
 app.use((req, res) => {
     console.warn(`⚠️ 404 Not Found: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ 
