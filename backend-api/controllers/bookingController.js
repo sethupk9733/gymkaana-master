@@ -79,18 +79,8 @@ exports.createBooking = async (req, res) => {
             })
             .populate('planId');
 
-        // Send Member Confirmation
-        sendBookingConfirmation(populated.memberEmail, populated).catch(err => 
-            console.error("User email failed:", err.message)
-        );
-
-        // Send Owner Notification if gym has owner email
-        const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
-        if (ownerEmail) {
-            sendOwnerBookingNotification(ownerEmail, populated).catch(err => 
-                console.error("Owner email failed:", err.message)
-            );
-        }
+        // Emails are now sent via the Cashfree Webhook after successful payment.
+        console.log("✓ Booking created. Emails will follow payment success.");
 
         logActivity({
             userId: req.body.userId,
