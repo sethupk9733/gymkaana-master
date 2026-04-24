@@ -49,20 +49,16 @@ exports.createOrder = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Idempotency: if order exists and is genuinely pending, return existing session
-        // Allow retry if user dropped or payment failed
-        const retryableStatuses = ['USER_DROPPED', 'FAILED'];
-        if (booking.cashfreeOrderId && booking.paymentStatus === 'PENDING') {
-            return res.json({
-                cashfreeOrderId:  booking.cashfreeOrderId,
-                paymentSessionId: booking.paymentSessionId,
-                paymentStatus:    booking.paymentStatus
-            });
-        }
-        // For dropped/failed — fall through to create a fresh Cashfree order below
+        // Check status
         if (booking.paymentStatus === 'SUCCESS') {
             return res.status(400).json({ message: 'Payment already completed for this booking' });
         }
+        if (booking.paymentStatus === 'REFUNDED') {
+            return res.status(400).json({ message: 'This booking has been refunded' });
+        }
+
+        // We always generate a fresh Cashfree order here to avoid "session expired" errors
+        // during retries. Cashfree sessions only last about 60 minutes.
         if (booking.paymentStatus === 'REFUNDED') {
             return res.status(400).json({ message: 'This booking has been refunded' });
         }

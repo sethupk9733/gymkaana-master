@@ -19,8 +19,14 @@ let cashfreeInstance: any = null;
 
 const getCashfree = async () => {
     if (!cashfreeInstance) {
+        // Auto-detect sandbox mode if using a TEST ID
+        const isTestId = CASHFREE_APP_ID?.startsWith('TEST');
+        const mode = isTestId ? "sandbox" : (import.meta.env.PROD ? "production" : "sandbox");
+        
+        console.log(`[Cashfree] Initializing in ${mode} mode`);
+        
         cashfreeInstance = await load({
-            mode: import.meta.env.PROD ? "production" : "sandbox" // Automatic based on build
+            mode: mode as "sandbox" | "production"
         });
     }
     return cashfreeInstance;
