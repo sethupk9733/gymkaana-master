@@ -150,13 +150,17 @@ exports.verifyWebhook = async (req, res) => {
     res.sendStatus(200);
 
     try {
-        const rawBody      = req.body;                          // Buffer (express.raw)
         const receivedSig  = req.headers['x-webhook-signature'];
         const timestamp    = req.headers['x-webhook-timestamp'];
+        const rawBody      = req.body; // express.raw buffer
 
-        // ── Signature verification ─────────────────────────────────────────
         if (!receivedSig || !timestamp) {
-            console.warn('[Webhook] Missing signature or timestamp headers — ignoring');
+            console.warn('[Webhook] Missing X-Webhook-Signature or X-Webhook-Timestamp');
+            return;
+        }
+
+        if (!rawBody || !(rawBody instanceof Buffer)) {
+            console.error('[Webhook] FATAL: req.body is not a Buffer. Check express.raw order in server.js');
             return;
         }
 
@@ -169,7 +173,9 @@ exports.verifyWebhook = async (req, res) => {
             .digest('base64');
 
         if (expectedSig !== receivedSig) {
-            console.warn('[Webhook] ⚠ Signature mismatch — ignoring event');
+            console.warn('[Webhook] ⚠ Signature Mismatch!');
+            console.warn(`[Webhook] Expected: ${expectedSig.substring(0, 10)}...`);
+            console.warn(`[Webhook] Received: ${receivedSig.substring(0, 10)}...`);
             return;
         }
 
@@ -294,20 +300,53 @@ exports.getPaymentStatus = async (req, res) => {
     try {
         const { orderId } = req.params;
 
-        const booking = await Booking.findOne({ cashfreeOrderId: orderId })
-            .select('cashfreeOrderId paymentStatus status memberName memberEmail amount gymId planId startDate endDate');
+        const booking = await Booking.findOne({ cashfreeOrderId: orderId });
 
         if (!booking) {
             return res.status(404).json({ message: 'Order not found' });
         }
 
+        // If local status is PENDING, we CRITICALLY need to verify with Cashfree directly
+        // in case the webhook was missed or delayed.
+        if (booking.paymentStatus === 'PENDING') {
+            console.log(`[StatusCheck] Re-verifying order ${orderId} with Cashfree...`);
+            try {
+                const { data: cfOrder } = await cashfree.get(`/orders/${orderId}`);
+                
+                // If Cashfree says it's PAID, we update everything locally now
+                if (cfOrder.order_status === 'PAID') {
+                    console.log(`[StatusCheck] Order ${orderId} confirmed PAID by API. Updating DB...`);
+                    
+                    booking.paymentStatus = 'SUCCESS';
+                    booking.status        = 'upcoming';
+                    booking.paidAt        = new Date();
+                    await booking.save();
+                    
+                    // Trigger emails if they haven't been sent
+                    // (The handlePaymentSuccess logic is reused here)
+                    const populated = await Booking.findById(booking._id)
+                        .populate({ path: 'gymId', populate: { path: 'ownerId' } })
+                        .populate('planId')
+                        .populate('userId');
+
+                    const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
+                    sendBookingConfirmation(populated.memberEmail, populated).catch(e => console.error(e));
+                    const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
+                    if (ownerEmail) sendOwnerBookingNotification(ownerEmail, populated).catch(e => console.error(e));
+                }
+            } catch (cfErr) {
+                console.error('[StatusCheck] Cashfree API check failed:', cfErr.response?.data || cfErr.message);
+            }
+        }
+
         return res.json({
-            cashfreeOrderId: booking.cashfreeOrderId,
+            status:          booking.paymentStatus, // For frontend compatibility
             paymentStatus:   booking.paymentStatus,
             bookingStatus:   booking.status,
             amount:          booking.amount,
             startDate:       booking.startDate,
-            endDate:         booking.endDate
+            endDate:         booking.endDate,
+            booking:         booking // Full object for success screen
         });
 
     } catch (err) {
