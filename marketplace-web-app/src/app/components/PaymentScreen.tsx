@@ -84,18 +84,13 @@ export function PaymentScreen({
         amount: total,
         startDate: start.toISOString(),
         endDate: end.toISOString(),
-        status: 'upcoming' // This is the default status
+        status: 'upcoming'
       };
 
-      console.log("[Payment] Creating pending booking:", bookingData);
       const booking = await createBooking(bookingData);
-      
-      if (!booking || !booking._id) {
-        throw new Error("Failed to create booking reference in database.");
-      }
+      if (!booking || !booking._id) throw new Error("Database failed to reserve booking slot.");
 
-      // 2. Create Cashfree Order on Backend using the booking ID
-      console.log("[Payment] Initializing Cashfree order for booking:", booking._id);
+      // 2. Create Cashfree Order
       const response = await fetch(`${API_URL}/payments/create-order`, {
         method: 'POST',
         headers: {
@@ -106,22 +101,43 @@ export function PaymentScreen({
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to initialize payment gateway');
-      }
+      if (!response.ok) throw new Error(result.message || 'Failed to initialize payment gateway');
 
       // 3. Open Cashfree Checkout Modal
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 
-      // 4. Handle Result
+      // 4. Verify Status (Even if they closed it, they might have paid)
+      const verifyPayment = async (silent = false) => {
+        try {
+          const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
+          });
+          const checkData = await checkRes.json();
+          
+          if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
+            console.log("✅ Payment status confirmed SUCCESS");
+            onPaymentSuccess(checkData.booking || booking);
+            return true;
+          } else if (!silent) {
+            console.log("Payment still pending according to API");
+          }
+        } catch (e) {
+          console.error("Status verification failed:", e);
+        }
+        return false;
+      };
+
+      // Handle Modal Result
       if (checkoutResult.error) {
-        // User closed modal or payment failed
-        alert("Payment was not completed: " + (checkoutResult.error.message || 'Verification pending'));
-      } else if (checkoutResult.redirect) {
-        console.log("Redirecting to: ", checkoutResult.redirect);
+         // Just finished/closed modal. Polling check.
+         console.log("Checking final status...");
+         const isConfirmed = await verifyPayment(true);
+         if (!isConfirmed) {
+           alert("Your payment is currently being processed. If you've already paid, it will update shortly.");
+         }
       } else {
-        console.log("Checkout result:", checkoutResult);
+         // Some SDK versions return non-error on success
+         await verifyPayment(true);
       }
 
     } catch (err: any) {
