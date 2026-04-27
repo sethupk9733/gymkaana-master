@@ -45,8 +45,7 @@ export function PaymentScreen({
     : (plan?.price || 0);
 
   const subtotal = rawPrice;
-  const tax = Math.round(subtotal * 0.18);
-  const total = subtotal + tax;
+  const total = subtotal;
 
   const userStr = localStorage.getItem('gymkaana_user');
   const user = userStr ? JSON.parse(userStr) : null;
