@@ -53,10 +53,45 @@ exports.getMyBookings = async (req, res) => {
 
 const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
 
+function calculateEndDate(startDate, duration) {
+    if (!startDate || !duration) return null;
+    const start = new Date(startDate);
+    const durationLower = duration.toLowerCase();
+    let daysToAdd = 1;
+
+    if (durationLower.includes('month')) {
+        const months = parseInt(durationLower) || 1;
+        daysToAdd = months * 30; // Standardize month to 30 days
+    } else if (durationLower.includes('day')) {
+        daysToAdd = parseInt(durationLower) || 1;
+    } else if (durationLower.includes('year')) {
+        const years = parseInt(durationLower) || 1;
+        daysToAdd = years * 365;
+    } else if (durationLower.includes('week')) {
+        const weeks = parseInt(durationLower) || 1;
+        daysToAdd = weeks * 7;
+    }
+
+    const end = new Date(start.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+    return end;
+}
+
 exports.createBooking = async (req, res) => {
     try {
         console.log('===== BOOKING CREATION DEBUG =====');
         
+        let { startDate, endDate, planId } = req.body;
+        
+        // Auto-calculate endDate if missing or to ensure it matches the plan
+        if (planId) {
+            const plan = await mongoose.model('Plan').findById(planId);
+            if (plan && plan.duration) {
+                const calculatedEnd = calculateEndDate(startDate, plan.duration);
+                if (calculatedEnd) endDate = calculatedEnd.toISOString();
+                console.log(`[AutoExpiry] Plan: ${plan.name} | Duration: ${plan.duration} | End: ${endDate}`);
+            }
+        }
+
         const booking = new Booking({
             gymId: req.body.gymId,
             planId: req.body.planId,
@@ -64,8 +99,8 @@ exports.createBooking = async (req, res) => {
             memberName: req.body.memberName,
             memberEmail: req.body.memberEmail,
             amount: req.body.amount,
-            startDate: req.body.startDate,
-            endDate: req.body.endDate,
+            startDate: startDate,
+            endDate: endDate,
             status: req.body.status || 'upcoming'
         });
 

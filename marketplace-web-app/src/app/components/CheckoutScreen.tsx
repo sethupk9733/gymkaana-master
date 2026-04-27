@@ -37,8 +37,7 @@ export function CheckoutScreen({
 
   const subtotal = rawPrice;
   const discount = 0;
-  const tax = Math.round(subtotal * 0.18);
-  const total = subtotal + tax;
+  const total = subtotal;
 
   return (
     <motion.div
@@ -168,16 +167,12 @@ export function CheckoutScreen({
                 <span className="font-black text-accent">-₹{discount}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="font-bold text-white/60 uppercase tracking-wider">GST (18%)</span>
-              <span className="font-black">₹{tax}</span>
-            </div>
             <div className="pt-4 mt-2 border-t border-white/10 flex justify-between items-end">
               <div>
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Grand Total</div>
-                <span className="text-3xl font-black italic tracking-tighter">₹{total}</span>
+                <span className="text-3xl font-black italic tracking-tighter">₹{subtotal}</span>
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-lg">All Inclusive</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-3 py-1 rounded-lg">Inclusive of all taxes</div>
             </div>
           </div>
         </motion.div>

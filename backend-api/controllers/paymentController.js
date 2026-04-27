@@ -20,8 +20,8 @@ const cashfree  = require('../utils/cashfreeClient');
 
 function generateOrderId() {
     const date      = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `GYM-${date}-${randomStr}`;
+    const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return `GK-${date}-${randomStr}`;
 }
 
 // ─── 1. Create Cashfree Order (with EasySplit) ────────────────────────────────

@@ -228,6 +228,8 @@ export function BookingCard({ booking }: { booking: Booking }) {
                                     </button>
                                     <p className="text-[8px] font-black text-gray-400 uppercase text-center leading-relaxed">
                                         * Cancellation available within 1hr of booking or before check-in.
+                                        <br />
+                                        Please check the cancellation and refund policy on the confirm cancellation card.
                                     </p>
                                 </div>
 

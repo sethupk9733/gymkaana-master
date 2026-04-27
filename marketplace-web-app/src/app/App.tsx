@@ -82,14 +82,26 @@ export default function App() {
 
   const loadProfile = async () => {
     try {
-      const user = await checkSession();
+      let user = await checkSession();
+      
+      // If refresh fails but we have a token in localStorage, try one more time by fetching profile directly
+      if (!user && localStorage.getItem('gymkaana_token')) {
+        console.log("CheckSession null, attempting direct profile fetch...");
+        try {
+          user = await fetchProfile();
+        } catch (e) {
+          console.error("Direct profile fetch failed:", e);
+        }
+      }
+
       if (user) {
-        const profile = await fetchProfile();
+        // user might be the profile data now
+        const profile = user.email ? user : await fetchProfile();
         setUserProfile(profile);
         setIsAuthenticated(true);
       }
     } catch (err) {
-      console.error("Profile fetch failed:", err);
+      console.error("Profile load failed:", err);
       setIsAuthenticated(false);
     } finally {
       setLoading(false);

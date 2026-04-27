@@ -57,20 +57,22 @@ export function PaymentScreen({
 
     setIsProcessing(true);
 
-    // Calculate endDate based on duration
+    // Calculate endDate based on duration (matching backend logic: 1 Month = 30 Days)
     const start = new Date(startDate || new Date());
     const end = new Date(start);
-    const durationStr = plan.duration.toLowerCase().replace(/[^\d]/g, '');
-    const durationNum = parseInt(durationStr) || 1;
+    const durationLower = plan.duration.toLowerCase();
+    const durationNum = parseInt(durationLower.replace(/[^\d]/g, '')) || 1;
 
-    if (plan.duration.toLowerCase().includes('month')) {
-      end.setMonth(end.getMonth() + durationNum);
-    } else if (plan.duration.toLowerCase().includes('day')) {
+    if (durationLower.includes('month')) {
+      end.setDate(end.getDate() + (durationNum * 30));
+    } else if (durationLower.includes('day')) {
       end.setDate(end.getDate() + durationNum);
-    } else if (plan.duration.toLowerCase().includes('year')) {
-      end.setFullYear(end.getFullYear() + durationNum);
+    } else if (durationLower.includes('year')) {
+      end.setDate(end.getDate() + (durationNum * 365));
+    } else if (durationLower.includes('week')) {
+      end.setDate(end.getDate() + (durationNum * 7));
     } else {
-      end.setMonth(end.getMonth() + 1); // Default 1 month
+      end.setDate(end.getDate() + 30); // Default 30 days
     }
 
     try {
