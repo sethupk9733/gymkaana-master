@@ -53,23 +53,28 @@ exports.getMyBookings = async (req, res) => {
 
 const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
 
-function calculateEndDate(startDate, duration) {
-    if (!startDate || !duration) return null;
+function calculateEndDate(startDate, duration, sessions) {
+    if (!startDate) return null;
     const start = new Date(startDate);
-    const durationLower = duration.toLowerCase();
     let daysToAdd = 1;
 
-    if (durationLower.includes('month')) {
-        const months = parseInt(durationLower) || 1;
-        daysToAdd = months * 30; // Standardize month to 30 days
-    } else if (durationLower.includes('day')) {
-        daysToAdd = parseInt(durationLower) || 1;
-    } else if (durationLower.includes('year')) {
-        const years = parseInt(durationLower) || 1;
-        daysToAdd = years * 365;
-    } else if (durationLower.includes('week')) {
-        const weeks = parseInt(durationLower) || 1;
-        daysToAdd = weeks * 7;
+    // Use sessions as the direct day count if available
+    if (sessions && sessions > 0) {
+        daysToAdd = sessions;
+    } else if (duration) {
+        const durationLower = duration.toLowerCase();
+        if (durationLower.includes('month')) {
+            const months = parseInt(durationLower) || 1;
+            daysToAdd = months * 30; // Standardize month to 30 days
+        } else if (durationLower.includes('day')) {
+            daysToAdd = parseInt(durationLower) || 1;
+        } else if (durationLower.includes('year')) {
+            const years = parseInt(durationLower) || 1;
+            daysToAdd = years * 365;
+        } else if (durationLower.includes('week')) {
+            const weeks = parseInt(durationLower) || 1;
+            daysToAdd = weeks * 7;
+        }
     }
 
     const end = new Date(start.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
@@ -85,10 +90,10 @@ exports.createBooking = async (req, res) => {
         // Auto-calculate endDate if missing or to ensure it matches the plan
         if (planId) {
             const plan = await mongoose.model('Plan').findById(planId);
-            if (plan && plan.duration) {
-                const calculatedEnd = calculateEndDate(startDate, plan.duration);
+            if (plan) {
+                const calculatedEnd = calculateEndDate(startDate, plan.duration, plan.sessions);
                 if (calculatedEnd) endDate = calculatedEnd.toISOString();
-                console.log(`[AutoExpiry] Plan: ${plan.name} | Duration: ${plan.duration} | End: ${endDate}`);
+                console.log(`[AutoExpiry] Plan: ${plan.name} | Sessions: ${plan.sessions} | Duration: ${plan.duration} | End: ${endDate}`);
             }
         }
 
