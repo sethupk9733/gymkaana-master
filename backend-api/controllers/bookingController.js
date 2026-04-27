@@ -64,16 +64,15 @@ function calculateEndDate(startDate, duration, sessions) {
     } else if (duration) {
         const durationLower = duration.toLowerCase();
         if (durationLower.includes('month')) {
-            const months = parseInt(durationLower) || 1;
-            daysToAdd = months * 30; // Standardize month to 30 days
-        } else if (durationLower.includes('day')) {
-            daysToAdd = parseInt(durationLower) || 1;
-        } else if (durationLower.includes('year')) {
-            const years = parseInt(durationLower) || 1;
-            daysToAdd = years * 365;
+            daysToAdd = (parseInt(durationLower) || 1) * 30;
         } else if (durationLower.includes('week')) {
-            const weeks = parseInt(durationLower) || 1;
-            daysToAdd = weeks * 7;
+            daysToAdd = (parseInt(durationLower) || 1) * 7;
+        } else if (durationLower.includes('year')) {
+            daysToAdd = (parseInt(durationLower) || 1) * 365;
+        } else if (durationLower.includes('weekend')) {
+            daysToAdd = 3; // Standard 3-day weekend
+        } else if (durationLower.includes('day') || durationLower.includes('session')) {
+            daysToAdd = parseInt(durationLower) || 1;
         }
     }
 

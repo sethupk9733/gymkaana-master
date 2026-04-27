@@ -55,18 +55,20 @@ export function PaymentScreen({
       end.setDate(end.getDate() + plan.sessions);
     } else {
       const durationLower = plan.duration.toLowerCase();
-      const durationNum = parseInt(durationLower.replace(/[^\d]/g, '')) || 1;
+      const num = parseInt(durationLower.replace(/[^\d]/g, '')) || 1;
 
       if (durationLower.includes('month')) {
-        end.setDate(end.getDate() + (durationNum * 30));
-      } else if (durationLower.includes('day')) {
-        end.setDate(end.getDate() + durationNum);
-      } else if (durationLower.includes('year')) {
-        end.setDate(end.getDate() + (durationNum * 365));
+        end.setDate(end.getDate() + (num * 30));
       } else if (durationLower.includes('week')) {
-        end.setDate(end.getDate() + (durationNum * 7));
+        end.setDate(end.getDate() + (num * 7));
+      } else if (durationLower.includes('year')) {
+        end.setDate(end.getDate() + (num * 365));
+      } else if (durationLower.includes('weekend')) {
+        end.setDate(end.getDate() + 3);
+      } else if (durationLower.includes('day') || durationLower.includes('session')) {
+        end.setDate(end.getDate() + num);
       } else {
-        end.setDate(end.getDate() + 30); // Default 30 days
+        end.setDate(end.getDate() + 30); // Default fallback
       }
     }
 
