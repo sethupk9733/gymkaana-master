@@ -41,6 +41,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 mongoose.set('bufferCommands', false);
 
 
+// SEO Routes
+const seoController = require('./controllers/seoController');
+app.get('/sitemap.xml', seoController.getSitemap);
+app.get('/robots.txt', seoController.getRobots);
+
 // Basic Route
 app.get('/', (req, res) => {
     res.send('Gymkaana API is running...');

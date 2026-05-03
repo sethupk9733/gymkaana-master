@@ -451,32 +451,122 @@ export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
         </motion.div>
       </section>
 
-      <footer className="border-t border-slate-200/40 py-12 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <h3 className="text-2xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12 mb-2">
-                <span className="text-slate-900">GYM</span>
-                <span className="italic ml-0.5" style={{ color: "#2EDD3B" }}>
-                  KAA
-                </span>
-                <span className="text-slate-900">NA</span>
-              </h3>
-              <p className="text-slate-600 text-sm">The fitness marketplace for gym owners.</p>
+      <footer className="bg-black text-white pt-20 pb-10 px-6 lg:px-12 mt-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
+            {/* Brand & Mission */}
+            <div className="space-y-6">
+              <h2 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
+                <span className="text-white">GYM</span>
+                <span className="text-[#2EDD3B] italic mx-0.5">KAA</span>
+                <span className="text-white">NA</span>
+              </h2>
+              <p className="text-gray-400 text-sm font-medium leading-relaxed max-w-xs">
+                ELEVATING THE FITNESS ECOSYSTEM. UNIVERSAL ACCESS TO THE FINEST VENUES, POWERED BY INTELLIGENT TECHNOLOGY.
+              </p>
             </div>
-            <div className="flex items-center gap-8 text-slate-600 text-sm">
-              <a href="#about" className="hover:text-[#2EDD3B] transition-colors font-black uppercase text-[10px] tracking-widest">
-                About
-              </a>
-              <a href="#contact" className="hover:text-[#2EDD3B] transition-colors font-black uppercase text-[10px] tracking-widest">
-                Contact
-              </a>
-              <a href="#privacy" className="hover:text-[#2EDD3B] transition-colors font-black uppercase text-[10px] tracking-widest">
-                Privacy
-              </a>
+
+            {/* Backlinks */}
+            <div className="lg:self-start lg:text-left">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2EDD3B] mb-6">
+                Quick Links
+              </h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=about"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=contact"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Privacy & Security
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=help"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Help & Support
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=faq"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    FAQs
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=refund"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Refund Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=partner"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Partner with Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://app.gymkaana.com/?screen=careers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
+                  >
+                    Careers
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
-          <div className="border-t border-slate-200/40 mt-8 pt-8 text-center text-slate-600 text-xs">
+
+          <div className="border-t border-white/5 pt-8 text-center text-gray-400 text-xs">
             <p>© {new Date().getFullYear()} Gymkaana. All rights reserved.</p>
           </div>
         </div>

@@ -226,6 +226,7 @@ export function AddGym({ onBack }: AddGymProps) {
             };
 
             const newGym = await api.createGym(payload);
+            console.log('✅ Gym created successfully:', newGym._id);
 
             const declarationText = `I hereby confirm that I am the authorized owner/representative of the gym/business registered on Gymkaana.
 I agree to partner with Gymkaana (operated by Vuegam Solutions) for listing and providing services.
@@ -239,11 +240,13 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
                 declarationAccepted: declaration.accepted,
                 declarationText
             });
+            console.log('✅ Declaration submitted successfully');
 
             onBack();
         } catch (err: any) {
-            console.error(err);
-            alert(err.message || 'Submission failed. If you uploaded many photos, try with fewer images.');
+            console.error('❌ Submission Error:', err);
+            const errorMsg = err.message || err.toString() || 'Submission failed. If you uploaded many photos, try with fewer images.';
+            alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }

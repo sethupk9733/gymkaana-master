@@ -99,9 +99,9 @@ exports.createBooking = async (req, res) => {
         const booking = new Booking({
             gymId: req.body.gymId,
             planId: req.body.planId,
-            userId: req.body.userId,
-            memberName: req.body.memberName,
-            memberEmail: req.body.memberEmail,
+            userId: req.body.userId || req.user._id,
+            memberName: req.body.memberName || req.user.name || req.user.phoneNumber || 'Gymkaana Member',
+            memberEmail: req.body.memberEmail || req.user.email || `${req.user.phoneNumber || req.user._id}@gymkaana.user`,
             amount: req.body.amount,
             startDate: startDate,
             endDate: endDate,

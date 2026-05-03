@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { fetchGyms } from "./lib/api";
 import { Layout } from "./components/Layout";
+import { OwnerLanding } from "./components/OwnerLanding";
 import { OwnerLogin } from "./components/OwnerLogin";
 import { Dashboard } from "./components/Dashboard";
 import { GymsList } from "./components/GymsList";
@@ -70,7 +72,11 @@ const updateUrl = (screen: Screen, tab: ActiveTab, gymId?: string | null, planId
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [gyms, setGyms] = useState<any[] | null>(null);
+  const [checkingGyms, setCheckingGyms] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
+  const [initialAuthMode, setInitialAuthMode] = useState<"login" | "signup">("login");
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [currentScreen, setCurrentScreen] = useState<Screen>("main");
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
@@ -117,6 +123,19 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
 
+  // After login, check for gyms
+  useEffect(() => {
+    if (isLoggedIn) {
+      setCheckingGyms(true);
+      fetchGyms()
+        .then((data) => {
+          setGyms(Array.isArray(data) ? data : (data.gyms || []));
+        })
+        .catch(() => setGyms([]))
+        .finally(() => setCheckingGyms(false));
+    }
+  }, [isLoggedIn]);
+
   const navigate = (screen: Screen, tab: ActiveTab = activeTab, gymId?: string | null, planId?: string | null) => {
     setCurrentScreen(screen);
     if (screen === 'main') setActiveTab(tab);
@@ -138,7 +157,61 @@ export default function App() {
   }
 
   if (!isLoggedIn) {
-    return <OwnerLogin onLogin={() => { setIsLoggedIn(true); navigate('main', 'dashboard'); }} />;
+    if (showLanding) {
+      return (
+        <OwnerLanding
+          onNavigateToLogin={(mode) => {
+            setInitialAuthMode(mode);
+            setShowLanding(false);
+          }}
+        />
+      );
+    }
+
+    return (
+      <OwnerLogin
+        initialMode={initialAuthMode}
+        onBackToLanding={() => setShowLanding(true)}
+        onLogin={async (isNew?: boolean) => {
+          setIsLoggedIn(true);
+          setShowLanding(false);
+          setCheckingGyms(true);
+          try {
+            const gymsData = await fetchGyms();
+            const gymsList = Array.isArray(gymsData) ? gymsData : (gymsData.gyms || []);
+            setGyms(gymsList);
+            if (gymsList.length === 0) {
+              navigate('addGym');
+            } else {
+              navigate('main', 'dashboard');
+            }
+          } catch {
+            setGyms([]);
+            navigate('addGym');
+          } finally {
+            setCheckingGyms(false);
+          }
+        }}
+      />
+    );
+  }
+
+  // Block dashboard if no gyms
+  if (checkingGyms) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#A3E635] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[10px] font-black uppercase text-[#A3E635] tracking-[0.3em]">Checking Gym Registration...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If logged in and no gyms, allow profile and addGym screens only
+  if (isLoggedIn && gyms && gyms.length === 0 && currentScreen !== 'addGym' && (currentScreen !== 'main' || activeTab !== 'profile')) {
+    navigate('addGym');
+    return null;
   }
 
   const renderScreen = () => {

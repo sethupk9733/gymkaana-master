@@ -14,6 +14,8 @@ const CheckoutScreen = lazy(() => import("./components/CheckoutScreen").then(m =
 const PaymentScreen = lazy(() => import("./components/PaymentScreen").then(m => ({ default: m.PaymentScreen })));
 const SuccessScreen = lazy(() => import("./components/SuccessScreen").then(m => ({ default: m.SuccessScreen })));
 const ProfileScreen = lazy(() => import("./components/ProfileScreen").then(m => ({ default: m.ProfileScreen })));
+const BMICalculatorScreen = lazy(() => import("./components/BMICalculatorScreen").then(m => ({ default: m.BMICalculatorScreen })));
+const WeightGuideScreen = lazy(() => import("./components/WeightGuideScreen").then(m => ({ default: m.WeightGuideScreen })));
 const BookingHistoryScreen = lazy(() => import("./components/BookingHistoryScreen").then(m => ({ default: m.BookingHistoryScreen })));
 const Footer = lazy(() => import("./components/Footer").then(m => ({ default: m.Footer })));
 const AboutUsScreen = lazy(() => import("./components/AboutUsScreen").then(m => ({ default: m.AboutUsScreen })));
@@ -43,7 +45,9 @@ type Screen =
   | "careers"
   | "terms"
   | "partner"
-  | "refund";
+  | "refund"
+  | "bmi"
+  | "weight_guide";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
@@ -53,7 +57,7 @@ export default function App() {
     const actionParam = params.get('action');
 
     if (actionParam === 'login') return 'login';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund'].includes(screenParam)) {
+    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi'].includes(screenParam)) {
       return screenParam;
     }
     return "splash";
@@ -236,6 +240,7 @@ export default function App() {
               setCurrentScreen("details");
             }}
             onProfile={() => handleProtectedAction("profile")}
+            onBMIClick={() => setCurrentScreen("bmi")}
             initialDiscipline={initialDiscipline}
             onClearInitialDiscipline={() => setInitialDiscipline(null)}
             initialSearch={initialSearch}
@@ -281,11 +286,17 @@ export default function App() {
           <PaymentScreen
             gymId={selectedGymId}
             plan={selectedPlan}
+            user={userProfile}
             startDate={selectedStartDate}
             onBack={() => setCurrentScreen("checkout")}
             onPaymentSuccess={(booking) => {
               setRecentBooking(booking);
               setCurrentScreen("success");
+            }}
+            onEditProfile={() => {
+                setProfileInitialView('edit');
+                setCurrentScreen('profile');
+                setPendingScreen('payment');
             }}
           />
         );
@@ -388,6 +399,21 @@ export default function App() {
         return (
           <RefundScreen
             onBack={() => setCurrentScreen("home")}
+          />
+        );
+
+      case "bmi":
+        return (
+          <BMICalculatorScreen
+            onGoHome={() => setCurrentScreen("home")}
+            onReadGuide={() => setCurrentScreen("weight_guide")}
+          />
+        );
+
+      case "weight_guide":
+        return (
+          <WeightGuideScreen
+            onBack={() => setCurrentScreen("bmi")}
           />
         );
 
@@ -500,6 +526,9 @@ export default function App() {
               }}
               onRefundClick={() => {
                 setCurrentScreen("refund");
+              }}
+              onBMIClick={() => {
+                setCurrentScreen("bmi");
               }}
             />
           )}

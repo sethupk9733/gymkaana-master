@@ -69,7 +69,30 @@ exports.register = async (req, res) => {
 
         const userExists = await User.findOne({ email });
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            // If user exists and doesn't have the 'owner' role, add it
+            if (role && !userExists.roles.includes(role)) {
+                userExists.roles.push(role);
+                await userExists.save();
+                console.log(`✅ Role '${role}' added to existing user: ${email}`);
+            } else if (!role) {
+                return res.status(400).json({ message: 'User already exists' });
+            }
+            
+            // Return existing user data with existing profile info
+            return res.status(200).json({
+                message: 'User account upgraded to owner access',
+                email: userExists.email,
+                _id: userExists._id,
+                name: userExists.name,
+                phoneNumber: userExists.phoneNumber,
+                profileImage: userExists.profileImage,
+                gender: userExists.gender,
+                age: userExists.age,
+                address: userExists.address,
+                occupation: userExists.occupation,
+                isExistingUser: true,
+                requiresVerification: false
+            });
         }
 
         const otp = generateOTP();
@@ -156,6 +179,12 @@ exports.login = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
+                profileImage: user.profileImage,
+                gender: user.gender,
+                age: user.age,
+                address: user.address,
+                occupation: user.occupation,
                 roles: user.roles,
                 accessToken
             });
@@ -230,6 +259,12 @@ exports.googleLogin = async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
+            phoneNumber: user.phoneNumber,
+            profileImage: user.profileImage,
+            gender: user.gender,
+            age: user.age,
+            address: user.address,
+            occupation: user.occupation,
             roles: user.roles,
             accessToken
         });
@@ -389,6 +424,12 @@ exports.verifyOTP = async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
+            phoneNumber: user.phoneNumber,
+            profileImage: user.profileImage,
+            gender: user.gender,
+            age: user.age,
+            address: user.address,
+            occupation: user.occupation,
             roles: user.roles,
             accessToken
         });

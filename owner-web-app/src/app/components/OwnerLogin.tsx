@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, Lock, User, Phone, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -8,11 +8,14 @@ import { login, register, googleLogin, verifyOTP, resendOTP, forgotPassword, res
 
 interface OwnerLoginProps {
   onLogin: (isNew?: boolean) => void;
+  initialMode?: "login" | "signup";
+  onBackToLanding?: () => void;
 }
 
-export function OwnerLogin({ onLogin }: OwnerLoginProps) {
-  const [isSignUp, setIsSignUp] = useState(false);
+export function OwnerLogin({ onLogin, initialMode = "login", onBackToLanding }: OwnerLoginProps) {
+  const [isSignUp, setIsSignUp] = useState(initialMode === "signup");
   const [showOTP, setShowOTP] = useState(false);
+  const [isNewSignupAwaitingVerification, setIsNewSignupAwaitingVerification] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetStep, setResetStep] = useState(1);
   const [otp, setOtp] = useState("");
@@ -21,6 +24,10 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
   const [formData, setFormData] = useState({ email: '', password: '', name: '', phone: '' });
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsSignUp(initialMode === "signup");
+  }, [initialMode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -63,8 +70,36 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
     try {
       if (isSignUp) {
           const regRes = await register({ ...formData, role: 'owner' });
-          if ((regRes as any).requiresVerification) {
+          
+          // Check if this is an existing marketplace user being upgraded to owner
+          if ((regRes as any).isExistingUser) {
+            // Existing marketplace user - log them in immediately with their existing profile data
+            localStorage.setItem('gymkaana_user', JSON.stringify({
+              ...regRes,
+              phoneNumber: regRes.phoneNumber || formData.phone,
+              name: regRes.name || formData.name
+            }));
+            
+            // Now get the access token by logging in
+            const loginRes = await login({ email: formData.email, password: formData.password });
+            if (loginRes.accessToken) {
+              localStorage.setItem('gymkaana_token', loginRes.accessToken);
+              const finalUserData = {
+                ...regRes,
+                ...loginRes,
+                phoneNumber: regRes.phoneNumber || formData.phone,
+                name: regRes.name || formData.name
+              };
+              localStorage.setItem('gymkaana_user', JSON.stringify(finalUserData));
+              onLogin(false); // Existing user, not new
+              setLoading(false);
+              return;
+            } else {
+              setError(loginRes.message || "Authentication failed");
+            }
+          } else if ((regRes as any).requiresVerification) {
             setShowOTP(true);
+            setIsNewSignupAwaitingVerification(true);
             setMessage('Registration successful. Please verify your email.');
             setLoading(false);
             return;
@@ -73,7 +108,13 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
           const loginRes = await login({ email: formData.email, password: formData.password });
           if (loginRes.accessToken) {
               localStorage.setItem('gymkaana_token', loginRes.accessToken);
-              localStorage.setItem('gymkaana_user', JSON.stringify(loginRes));
+              // Store signup data with phoneNumber mapping
+              const userData = {
+                  ...loginRes,
+                  phoneNumber: formData.phone,
+                  name: formData.name
+              };
+              localStorage.setItem('gymkaana_user', JSON.stringify(userData));
               onLogin(true); // Is a new registration
           } else {
               setError(loginRes.message || "Authentication failed after registration");
@@ -82,6 +123,7 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
           const res = await login({ email: formData.email, password: formData.password });
           if ((res as any).requiresVerification) {
             setShowOTP(true);
+            setIsNewSignupAwaitingVerification(false);
             setMessage("Please verify your account first.");
           } else if (res.accessToken) {
             // Role check
@@ -113,8 +155,14 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
       const res = await verifyOTP(formData.email, otp);
       if (res.accessToken) {
         localStorage.setItem('gymkaana_token', res.accessToken);
-        localStorage.setItem('gymkaana_user', JSON.stringify(res));
-        onLogin();
+        // Store signup data with phoneNumber mapping for new signups
+        const userData = {
+          ...res,
+          phoneNumber: isNewSignupAwaitingVerification ? formData.phone : (res.phoneNumber || ''),
+          name: isNewSignupAwaitingVerification ? formData.name : (res.name || '')
+        };
+        localStorage.setItem('gymkaana_user', JSON.stringify(userData));
+        onLogin(isNewSignupAwaitingVerification);
       } else {
         setError(res.message || 'Verification failed');
       }
@@ -322,6 +370,17 @@ export function OwnerLogin({ onLogin }: OwnerLoginProps) {
             </p>
           </div>
         </div>
+        {onBackToLanding && (
+          <div className="px-8 py-4 text-right">
+            <button
+              type="button"
+              onClick={onBackToLanding}
+              className="text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:text-slate-200"
+            >
+              ← Back to portal overview
+            </button>
+          </div>
+        )}
 
         {/* Form Section */}
         <div className="px-8 py-8">

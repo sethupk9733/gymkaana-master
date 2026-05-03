@@ -30,12 +30,29 @@ export function Profile({ onLogout }: ProfileProps) {
           fetchProfile(),
           fetchDashboardStats()
         ]);
-        setProfile(profileData);
+        
+        // If profile doesn't have phoneNumber, check localStorage from signup
+        let completeProfile = profileData;
+        if (!completeProfile.phoneNumber) {
+          const userStr = localStorage.getItem('gymkaana_user');
+          if (userStr) {
+            try {
+              const storedUser = JSON.parse(userStr);
+              completeProfile.phoneNumber = storedUser.phoneNumber || storedUser.phone || '';
+              completeProfile.name = completeProfile.name || storedUser.name || '';
+              completeProfile.email = completeProfile.email || storedUser.email || '';
+            } catch (e) {
+              // Silently handle JSON parse error
+            }
+          }
+        }
+        
+        setProfile(completeProfile);
         setStats(statsData);
         setEditData({
-          name: profileData.name || '',
-          email: profileData.email || '',
-          phoneNumber: profileData.phoneNumber || ''
+          name: completeProfile.name || '',
+          email: completeProfile.email || '',
+          phoneNumber: completeProfile.phoneNumber || ''
         });
       } catch (err) {
         console.error("Failed to load profile:", err);

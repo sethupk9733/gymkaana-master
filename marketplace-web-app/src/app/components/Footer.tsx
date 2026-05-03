@@ -10,7 +10,8 @@ export function Footer({
     onCareersClick,
     onTermsClick,
     onPartnerClick,
-    onRefundClick
+    onRefundClick,
+    onBMIClick
 }: {
     onDisciplineClick?: (discipline: string) => void;
     onAboutClick?: () => void;
@@ -22,27 +23,28 @@ export function Footer({
     onTermsClick?: () => void;
     onPartnerClick?: () => void;
     onRefundClick?: () => void;
+    onBMIClick?: () => void;
 }) {
     const cities = [
-        "Gyms in Bangalore",
-        "Gyms in Mumbai",
-        "Gyms in Delhi",
-        "Gyms in Hyderabad",
-        "Gyms in Chennai",
-        "Gyms in Pune",
-        "Gyms in Kolkata",
-        "Gyms in Ahmedabad"
+        { label: "Gyms in Bangalore", value: "Bangalore", href: "https://www.gymkaana.com/gyms-in-bangalore" },
+        { label: "Gyms in Mumbai", value: "Mumbai", href: "https://www.gymkaana.com/gyms-in-mumbai" },
+        { label: "Gyms in Delhi", value: "Delhi", href: "https://www.gymkaana.com/gyms-in-delhi" },
+        { label: "Gyms in Hyderabad", value: "Hyderabad", href: "https://www.gymkaana.com/gyms-in-hyderabad" },
+        { label: "Gyms in Chennai", value: "Chennai", href: "https://www.gymkaana.com/gyms-in-chennai" },
+        { label: "Gyms in Pune", value: "Pune", href: "https://www.gymkaana.com/gyms-in-pune" },
+        { label: "Gyms in Kolkata", value: "Kolkata", href: "https://www.gymkaana.com/gyms-in-kolkata" },
+        { label: "Gyms in Ahmedabad", value: "Ahmedabad", href: "https://www.gymkaana.com/gyms-in-ahmedabad" }
     ];
 
     const disciplines = [
-        { label: "Yoga Studios near me", value: "Yoga" },
-        { label: "CrossFit boxes near me", value: "CrossFit" },
-        { label: "Zumba classes near me", value: "Zumba" },
-        { label: "Pilates studios near me", value: "Pilates" },
-        { label: "MMA training near me", value: "MMA/Kickboxing" },
-        { label: "Swimming pools near me", value: "Swimming" },
-        { label: "Aerobics classes near me", value: "Aerobics" },
-        { label: "Bodybuilding gyms near me", value: "Bodybuilding" }
+        { label: "Yoga Studios near me", value: "Yoga", href: "https://www.gymkaana.com/yoga-studios-near-me" },
+        { label: "CrossFit boxes near me", value: "CrossFit", href: "https://www.gymkaana.com/crossfit-boxes-near-me" },
+        { label: "Zumba classes near me", value: "Zumba", href: "https://www.gymkaana.com/zumba-classes-near-me" },
+        { label: "Pilates studios near me", value: "Pilates", href: "https://www.gymkaana.com/pilates-studios-near-me" },
+        { label: "MMA training near me", value: "MMA/Kickboxing", href: "https://www.gymkaana.com/mma-training-near-me" },
+        { label: "Swimming pools near me", value: "Swimming", href: "https://www.gymkaana.com/swimming-pools-near-me" },
+        { label: "Aerobics classes near me", value: "Aerobics", href: "https://www.gymkaana.com/aerobics-classes-near-me" },
+        { label: "Bodybuilding gyms near me", value: "Bodybuilding", href: "https://www.gymkaana.com/bodybuilding-gyms-near-me" }
     ];
 
     const company = [
@@ -54,7 +56,8 @@ export function Footer({
         { label: "Terms of Service", href: "#" },
         { label: "Refund Policy", href: "#" },
         { label: "Partner with Us", href: "#" },
-        { label: "Careers", href: "#" }
+        { label: "Careers", href: "#" },
+        { label: "BMI Calculator", href: "#" }
     ];
 
     const handleDisciplineClick = (e: React.MouseEvent, value: string) => {
@@ -121,11 +124,14 @@ export function Footer({
                             {cities.map((city, index) => (
                                 <li key={index}>
                                     <a
-                                        href="#"
-                                        onClick={(e) => handleDisciplineClick(e, city.replace('Gyms in ', ''))}
+                                        href={city.href}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleDisciplineClick(e, city.value);
+                                        }}
                                         className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
                                     >
-                                        {city}
+                                        {city.label}
                                     </a>
                                 </li>
                             ))}
@@ -139,8 +145,11 @@ export function Footer({
                             {disciplines.map((d, index) => (
                                 <li key={index}>
                                     <a
-                                        href="#"
-                                        onClick={(e) => handleDisciplineClick(e, d.value)}
+                                        href={d.href}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleDisciplineClick(e, d.value);
+                                        }}
                                         className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
                                     >
                                         {d.label}
@@ -203,6 +212,9 @@ export function Footer({
                                                     } else if (link.label === "Refund Policy" && onRefundClick) {
                                                         e.preventDefault();
                                                         onRefundClick();
+                                                    } else if (link.label === "BMI Calculator" && onBMIClick) {
+                                                        e.preventDefault();
+                                                        onBMIClick();
                                                     }
                                                 }}
                                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-primary transition-colors"

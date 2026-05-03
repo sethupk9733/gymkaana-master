@@ -30,15 +30,18 @@ import { initiateCheckout } from "../lib/payment";
 export function PaymentScreen({
   gymId,
   plan,
+  user,
   startDate,
   onBack,
   onPaymentSuccess
 }: {
   gymId: string | null;
   plan: any;
+  user: any;
   startDate: string | null;
   onBack: () => void;
   onPaymentSuccess: (booking: any) => void;
+  onEditProfile: () => void;
 }) {
   const rawPrice = typeof plan?.price === 'string'
     ? parseInt(plan.price.replace(/[^\d]/g, ''))
@@ -47,9 +50,9 @@ export function PaymentScreen({
   const subtotal = rawPrice;
   const total = subtotal;
 
-  const userStr = localStorage.getItem('gymkaana_user');
-  const user = userStr ? JSON.parse(userStr) : null;
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const isProfileComplete = user && user.name && user.email;
 
   const handlePayment = async () => {
     if (!gymId || !plan || !user) return;
@@ -87,8 +90,8 @@ export function PaymentScreen({
         gymId,
         planId: plan.id || plan._id,
         userId: user._id || user.id,
-        memberName: user.name,
-        memberEmail: user.email,
+        memberName: user.name || user.phoneNumber || 'Gymkaana Member',
+        memberEmail: user.email || `${user.phoneNumber || user._id}@gymkaana.user`,
         amount: total,
         startDate: start.toISOString(),
         endDate: end.toISOString(),
@@ -193,6 +196,22 @@ export function PaymentScreen({
               className="px-10 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
             >
               Initialize Login
+            </button>
+          </div>
+        ) : !isProfileComplete ? (
+          <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white rounded-[40px] border border-gray-100 shadow-sm max-w-md mx-auto">
+            <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-500 mb-6">
+              <LockIcon className="w-10 h-10" />
+            </div>
+            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4">Profile Incomplete</h3>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed mb-8">
+              We need your name and email to send your booking confirmation and invoice. Please update your profile to continue.
+            </p>
+            <button
+              onClick={onEditProfile}
+              className="px-10 py-4 bg-primary text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-[1.05] transition-all shadow-xl shadow-primary/20"
+            >
+              Update Profile Now
             </button>
           </div>
         ) : (

@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "npm run build --prefix landing-page && mkdir -p dist && cp -r landing-page/dist/* dist/"
+    "build": "npm run build --prefix landing-page && mkdir -p dist && cp -r landing-page/dist/* dist/",
+    "push:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./push-all-git.ps1"
   }
 }

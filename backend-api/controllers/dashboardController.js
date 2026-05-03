@@ -259,15 +259,15 @@ exports.getPublicStats = async (req, res) => {
         const activeStatuses = ['Active', 'Approved', 'active', 'approved'];
         const totalGyms = await Gym.countDocuments({ status: { $in: activeStatuses } });
         
-        // --- CHANGE: USE TOTAL USERS AS ACTIVE MEMBERS ---
+        // --- LIVE DATA: COUNT ALL USERS (not just 'user' role since roles is array field) ---
         const User = require('../models/User');
-        const totalUsersCount = await User.countDocuments({ roles: 'user' });
+        const totalUsersCount = await User.countDocuments();
 
         res.json({
             totalGyms: totalGyms > 0 ? totalGyms : 0,
             activeMembers: totalUsersCount || 0,
             platformRating: "4.9",
-            citiesCovered: 1, // HARDCODED AS REQUESTED
+            citiesCovered: 1,
             isLive: true
         });
     } catch (err) {

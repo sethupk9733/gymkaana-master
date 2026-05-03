@@ -1,4 +1,4 @@
-import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X } from "lucide-react";
+import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X, Calculator } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { VenueCard } from "./ui/VenueCard";
 import { useEffect, useState, useMemo } from "react";
@@ -14,6 +14,7 @@ const SPECIALIZATIONS = [
 export function HomeScreen({
   onGymClick,
   onProfile,
+  onBMIClick,
   initialDiscipline,
   onClearInitialDiscipline,
   initialSearch,
@@ -21,6 +22,7 @@ export function HomeScreen({
 }: {
   onGymClick: (gymId: any) => void;
   onProfile: () => void;
+  onBMIClick: () => void;
   initialDiscipline?: string | null;
   onClearInitialDiscipline?: () => void;
   initialSearch?: string | null;
@@ -307,6 +309,24 @@ export function HomeScreen({
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* New BMI Tool CTA */}
+          <div className="mt-12 flex flex-wrap gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBMIClick}
+              className="px-6 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl flex items-center gap-3 group transition-all hover:bg-white/10"
+            >
+              <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                <Calculator className="w-5 h-5 shadow-[0_0_15px_rgba(163,230,53,0.4)]" />
+              </div>
+              <div className="text-left">
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Free Tool</div>
+                <div className="text-sm font-black italic uppercase text-white group-hover:text-primary transition-colors">BMI Calculator</div>
+              </div>
+            </motion.button>
           </div>
         </div>
       </div>
