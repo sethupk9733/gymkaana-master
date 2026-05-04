@@ -114,6 +114,13 @@ export function PaymentScreen({
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Failed to initialize payment gateway');
 
+      console.log("[Payment] Cashfree order response:", result);
+
+      if (!result.paymentSessionId) {
+        console.error("[Payment] Missing paymentSessionId in response:", result);
+        throw new Error('Payment session not initialized. Please try again.');
+      }
+
       // 3. Open Cashfree Checkout Modal
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 

@@ -86,19 +86,57 @@ exports.createOrder = async (req, res) => {
         // ── Call Cashfree ───────────────────────────────────────────────────
         const { data: cfOrder } = await cashfree.post('/orders', orderPayload);
 
+        console.log('[Cashfree Order Response]', JSON.stringify(cfOrder, null, 2));
+
+        if (!cfOrder.order_id) {
+            console.error('❌ Cashfree order creation failed - no order_id:', cfOrder);
+            return res.status(500).json({
+                message: 'Failed to create order with Cashfree',
+                error: cfOrder
+            });
+        }
+
+        // ── Create Payment Session ─────────────────────────────────────────
+        let paymentSessionId = cfOrder.payment_session_id;
+        
+        if (!paymentSessionId) {
+            console.log(`[Cashfree] Creating payment session for order ${cfOrder.order_id}`);
+            try {
+                const { data: sessionResponse } = await cashfree.post(
+                    `/orders/${cfOrder.order_id}/sessions`,
+                    { payment_method: 'upi' }
+                );
+                paymentSessionId = sessionResponse.payment_session_id;
+                console.log('[Cashfree Session Response]', JSON.stringify(sessionResponse, null, 2));
+            } catch (sessionErr) {
+                console.warn('[Cashfree] Session creation alternative attempt:', sessionErr.message);
+                // Try alternative: maybe payment_session_id is in the order response itself
+                paymentSessionId = cfOrder.payment_session_id;
+            }
+        }
+        
+        if (!paymentSessionId) {
+            console.error('❌ No payment_session_id in Cashfree response:', cfOrder);
+            return res.status(500).json({
+                message: 'Failed to get payment session from Cashfree',
+                details: 'Cashfree response missing payment_session_id',
+                cfResponse: cfOrder
+            });
+        }
+
         // ── Persist Cashfree IDs to DB ──────────────────────────────────────
         booking.cashfreeOrderId  = cfOrder.order_id;
-        booking.paymentSessionId = cfOrder.payment_session_id;
+        booking.paymentSessionId = paymentSessionId;
         booking.paymentStatus    = 'PENDING';
         booking.vendorAmount     = 0;        // No split payment
         booking.platformFee      = amount;   // Full amount to admin
         await booking.save();
 
-        console.log(`✅ Cashfree order created: ${cfOrder.order_id} for booking ${bookingId}`);
+        console.log(`✅ Cashfree order created: ${cfOrder.order_id} | Session: ${paymentSessionId}`);
 
         return res.status(201).json({
             cashfreeOrderId:  cfOrder.order_id,
-            paymentSessionId: cfOrder.payment_session_id,
+            paymentSessionId: paymentSessionId,
             paymentStatus:    'PENDING',
             amount,
             vendorAmount:     0,

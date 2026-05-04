@@ -38,6 +38,12 @@ const getCashfree = async () => {
  */
 export const initiateCheckout = async (paymentSessionId: string) => {
     try {
+        if (!paymentSessionId) {
+            throw new Error("Payment session ID is missing. Please try again.");
+        }
+
+        console.log(`[Cashfree] Initiating checkout with session: ${paymentSessionId.substring(0, 20)}...`);
+        
         const cashfree = await getCashfree();
         
         const checkoutOptions = {
@@ -46,10 +52,16 @@ export const initiateCheckout = async (paymentSessionId: string) => {
             redirectTarget: "_modal" // Opens in a beautiful popup instead of redirecting
         };
 
-        return cashfree.checkout(checkoutOptions);
+        console.log(`[Cashfree] Opening checkout with options:`, checkoutOptions);
+        
+        const result = await cashfree.checkout(checkoutOptions);
+        
+        console.log(`[Cashfree] Checkout result:`, result);
+        
+        return result;
     } catch (error) {
         console.error("[Cashfree] Checkout Initialization Failed:", error);
-        throw error;
+        throw new Error(`Payment gateway error: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 
