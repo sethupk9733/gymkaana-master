@@ -74,11 +74,11 @@ exports.createOrder = async (req, res) => {
             customer_details: {
                 customer_id:    booking.userId?._id?.toString() || booking.userId?.toString(),
                 customer_name:  booking.memberName,
-                customer_email: booking.memberEmail,
+                customer_email: booking.memberEmail || `user-${booking.userId}@gymkaana.local`,
                 customer_phone: booking.userId?.phone || '9999999999'
             },
             order_meta: {
-                return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`,
+                return_url: `${process.env.MARKETPLACE_URL || 'http://localhost:5176'}/payment-result?order_id={order_id}`,
                 notify_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`
             },
             order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`,
@@ -87,6 +87,21 @@ exports.createOrder = async (req, res) => {
                 gym_id: gym._id?.toString()
             }
         };
+
+        // Validate payload before sending
+        if (!orderPayload.order_id || !orderPayload.order_amount) {
+            console.error('❌ Invalid order payload:', orderPayload);
+            return res.status(400).json({
+                message: 'Invalid order data',
+                details: 'order_id and order_amount are required'
+            });
+        }
+
+        if (!orderPayload.customer_details.customer_email || !orderPayload.customer_details.customer_email.includes('@')) {
+            console.warn('[Cashfree] Using fallback email:', orderPayload.customer_details.customer_email);
+        }
+
+        console.log('[Cashfree] Sending order payload:', JSON.stringify(orderPayload, null, 2));
 
         // ── Call Cashfree ───────────────────────────────────────────────────
         const { data: cfOrder } = await cashfree.post('/orders', orderPayload);
@@ -164,10 +179,25 @@ exports.createOrder = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ createOrder error:', err.response?.data || err.message);
+        const errorData = err.response?.data;
+        const errorStatus = err.response?.status;
+        const errorMessage = err.message;
+
+        console.error('❌ createOrder error details:', {
+            status: errorStatus,
+            message: errorMessage,
+            response: errorData,
+            headers: err.response?.headers,
+            cashfreeEnv: process.env.CASHFREE_ENV || 'sandbox',
+            hasAppId: !!process.env.CASHFREE_APP_ID,
+            hasSecret: !!process.env.CASHFREE_SECRET_KEY
+        });
+
         return res.status(500).json({
             message: 'Failed to create Cashfree order',
-            error:   err.response?.data || err.message
+            error: errorData?.message || errorMessage,
+            details: errorData || {},
+            status: errorStatus
         });
     }
 };
