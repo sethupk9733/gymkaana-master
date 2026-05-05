@@ -75,12 +75,17 @@ exports.createOrder = async (req, res) => {
                 customer_id:    booking.userId?._id?.toString() || booking.userId?.toString(),
                 customer_name:  booking.memberName,
                 customer_email: booking.memberEmail,
-                customer_phone: booking.userId?.phone || '9999999999' // CF requires phone
+                customer_phone: booking.userId?.phone || '9999999999'
             },
             order_meta: {
-                return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`
+                return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`,
+                notify_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`
             },
-            order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`
+            order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`,
+            order_tags: {
+                booking_id: booking._id?.toString(),
+                gym_id: gym._id?.toString()
+            }
         };
 
         // ── Call Cashfree ───────────────────────────────────────────────────
@@ -102,25 +107,40 @@ exports.createOrder = async (req, res) => {
         if (!paymentSessionId) {
             console.log(`[Cashfree] Creating payment session for order ${cfOrder.order_id}`);
             try {
+                // Cashfree 2023-08-01 API: Create session with minimal payload
                 const { data: sessionResponse } = await cashfree.post(
                     `/orders/${cfOrder.order_id}/sessions`,
-                    { payment_method: 'upi' }
+                    {}  // Empty body - Cashfree will generate session
                 );
                 paymentSessionId = sessionResponse.payment_session_id;
                 console.log('[Cashfree Session Response]', JSON.stringify(sessionResponse, null, 2));
             } catch (sessionErr) {
-                console.warn('[Cashfree] Session creation alternative attempt:', sessionErr.message);
-                // Try alternative: maybe payment_session_id is in the order response itself
-                paymentSessionId = cfOrder.payment_session_id;
+                console.error('[Cashfree] Session creation failed:', {
+                    status: sessionErr.response?.status,
+                    error: sessionErr.response?.data,
+                    message: sessionErr.message
+                });
+                
+                // Try fallback: check if session was created but response structure is different
+                try {
+                    const { data: orderStatus } = await cashfree.get(`/orders/${cfOrder.order_id}`);
+                    console.log('[Cashfree] Order status check:', orderStatus);
+                    paymentSessionId = orderStatus.payment_session_id;
+                } catch (fallbackErr) {
+                    console.error('[Cashfree] Fallback also failed:', fallbackErr.message);
+                }
             }
         }
         
         if (!paymentSessionId) {
-            console.error('❌ No payment_session_id in Cashfree response:', cfOrder);
+            console.error('❌ No payment_session_id obtained:', {
+                orderResponse: cfOrder,
+                availableFields: Object.keys(cfOrder)
+            });
             return res.status(500).json({
                 message: 'Failed to get payment session from Cashfree',
-                details: 'Cashfree response missing payment_session_id',
-                cfResponse: cfOrder
+                details: 'After multiple attempts, payment_session_id could not be obtained',
+                orderFields: Object.keys(cfOrder)
             });
         }
 
