@@ -111,8 +111,8 @@ exports.createOrder = async (req, res) => {
                 customer_phone: booking.userId?.phone || '9999999999'
             },
             order_meta: {
-                return_url: `${process.env.MARKETPLACE_URL || 'http://localhost:5176'}/payment-result?order_id={order_id}`,
-                notify_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`
+                return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://'),
+                notify_url: `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://')
             },
             order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`,
             order_tags: {
