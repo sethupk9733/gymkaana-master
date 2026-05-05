@@ -112,9 +112,20 @@ export function PaymentScreen({
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'Failed to initialize payment gateway');
+      
+      console.log("[Payment] Cashfree order API response:", {
+        status: response.status,
+        ok: response.ok,
+        data: result
+      });
 
-      console.log("[Payment] Cashfree order response:", result);
+      if (!response.ok) {
+        const errorMsg = result.message || result.cashfreeError || 'Failed to initialize payment';
+        const details = result.details ? JSON.stringify(result.details) : '';
+        throw new Error(`${errorMsg}${details ? ` - ${details}` : ''}`);
+      }
+
+      console.log("[Payment] Cashfree order created successfully:", result);
 
       if (!result.paymentSessionId) {
         console.error("[Payment] Missing paymentSessionId in response:", result);

@@ -63,8 +63,41 @@ exports.createOrder = async (req, res) => {
         const amount = booking.amount;
         const orderId = generateOrderId();
 
+        // ── Validate booking has all required fields ────────────────────────
+        if (!amount || amount <= 0) {
+            console.error('❌ Invalid amount:', amount);
+            return res.status(400).json({
+                message: 'Invalid booking amount',
+                details: `Amount must be greater than 0, got: ${amount}`
+            });
+        }
+
+        if (!booking.memberName) {
+            console.error('❌ Missing member name for booking:', booking._id);
+            return res.status(400).json({
+                message: 'Booking is missing member name',
+                details: 'Cannot proceed without member name'
+            });
+        }
+
+        if (!booking.userId) {
+            console.error('❌ Missing user ID for booking:', booking._id);
+            return res.status(400).json({
+                message: 'Booking is missing user ID',
+                details: 'Cannot proceed without user information'
+            });
+        }
+
+        if (!gym) {
+            console.error('❌ Missing gym for booking:', booking._id);
+            return res.status(400).json({
+                message: 'Booking is missing gym information',
+                details: 'Cannot proceed without gym details'
+            });
+        }
+
         // ── Full amount to admin account (no split) ────────────────────────
-        console.log(`[Cashfree] Order ${orderId}: Full amount ₹${amount} → Admin Account`);
+        console.log(`[Cashfree] Creating order ${orderId}: ₹${amount} for booking ${booking._id}`);
 
         // ── Build Cashfree payload (NO order_splits) ────────────────────────
         const orderPayload = {
@@ -183,21 +216,29 @@ exports.createOrder = async (req, res) => {
         const errorStatus = err.response?.status;
         const errorMessage = err.message;
 
-        console.error('❌ createOrder error details:', {
+        console.error('❌ createOrder FAILED:', {
             status: errorStatus,
-            message: errorMessage,
-            response: errorData,
-            headers: err.response?.headers,
-            cashfreeEnv: process.env.CASHFREE_ENV || 'sandbox',
-            hasAppId: !!process.env.CASHFREE_APP_ID,
-            hasSecret: !!process.env.CASHFREE_SECRET_KEY
+            cashfreeError: errorData?.message || errorData,
+            nodeError: errorMessage,
+            bookingId: req.body.bookingId,
+            timestamp: new Date().toISOString()
         });
 
+        // Check if it's a Cashfree API error
+        if (errorStatus && errorStatus >= 400) {
+            return res.status(errorStatus).json({
+                message: 'Cashfree API Error',
+                cashfreeError: errorData?.message || 'Unknown error',
+                code: errorData?.code,
+                details: errorData
+            });
+        }
+
+        // Network or other error
         return res.status(500).json({
             message: 'Failed to create Cashfree order',
-            error: errorData?.message || errorMessage,
-            details: errorData || {},
-            status: errorStatus
+            error: errorMessage,
+            details: 'Please check backend logs for details'
         });
     }
 };
