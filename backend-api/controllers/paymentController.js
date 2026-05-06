@@ -14,7 +14,7 @@
 const crypto    = require('crypto');
 const Booking   = require('../models/Booking');
 const Gym       = require('../models/Gym');
-const cashfree  = require('../utils/cashfreeClient');
+const { Cashfree } = require('../utils/cashfreeClient');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 // NOTE: commission is now read per-gym from gym.commissionPercent (default 15%)
@@ -136,10 +136,15 @@ exports.createOrder = async (req, res) => {
 
         console.log('[Cashfree] Sending order payload:', JSON.stringify(orderPayload, null, 2));
 
-        // ── Call Cashfree ───────────────────────────────────────────────────
-        const { data: cfOrder } = await cashfree.post('/orders', orderPayload);
-
-        console.log('[Cashfree Order Response]', JSON.stringify(cfOrder, null, 2));
+        // ── Call Cashfree using official SDK ─────────────────────────────────
+        let cfOrder;
+        try {
+            cfOrder = await Cashfree.PGOrder.create(orderPayload);
+            console.log('[Cashfree Order Response]', JSON.stringify(cfOrder, null, 2));
+        } catch (sdkError) {
+            console.error('[Cashfree SDK Error]:', sdkError.message);
+            throw sdkError;
+        }
 
         if (!cfOrder.order_id) {
             console.error('❌ Cashfree order creation failed - no order_id:', cfOrder);
@@ -149,45 +154,17 @@ exports.createOrder = async (req, res) => {
             });
         }
 
-        // ── Create Payment Session ─────────────────────────────────────────
+        // ── Payment Session is included in order response ────────────────────
         let paymentSessionId = cfOrder.payment_session_id;
         
         if (!paymentSessionId) {
-            console.log(`[Cashfree] Creating payment session for order ${cfOrder.order_id}`);
-            try {
-                // Cashfree 2023-08-01 API: Create session with minimal payload
-                const { data: sessionResponse } = await cashfree.post(
-                    `/orders/${cfOrder.order_id}/sessions`,
-                    {}  // Empty body - Cashfree will generate session
-                );
-                paymentSessionId = sessionResponse.payment_session_id;
-                console.log('[Cashfree Session Response]', JSON.stringify(sessionResponse, null, 2));
-            } catch (sessionErr) {
-                console.error('[Cashfree] Session creation failed:', {
-                    status: sessionErr.response?.status,
-                    error: sessionErr.response?.data,
-                    message: sessionErr.message
-                });
-                
-                // Try fallback: check if session was created but response structure is different
-                try {
-                    const { data: orderStatus } = await cashfree.get(`/orders/${cfOrder.order_id}`);
-                    console.log('[Cashfree] Order status check:', orderStatus);
-                    paymentSessionId = orderStatus.payment_session_id;
-                } catch (fallbackErr) {
-                    console.error('[Cashfree] Fallback also failed:', fallbackErr.message);
-                }
-            }
-        }
-        
-        if (!paymentSessionId) {
-            console.error('❌ No payment_session_id obtained:', {
+            console.error('❌ No payment_session_id in Cashfree response:', {
                 orderResponse: cfOrder,
                 availableFields: Object.keys(cfOrder)
             });
             return res.status(500).json({
                 message: 'Failed to get payment session from Cashfree',
-                details: 'After multiple attempts, payment_session_id could not be obtained',
+                details: 'Cashfree response missing payment_session_id',
                 orderFields: Object.keys(cfOrder)
             });
         }
@@ -212,25 +189,22 @@ exports.createOrder = async (req, res) => {
         });
 
     } catch (err) {
-        const errorData = err.response?.data;
-        const errorStatus = err.response?.status;
         const errorMessage = err.message;
+        const errorCode = err.code;
 
         console.error('❌ createOrder FAILED:', {
-            status: errorStatus,
-            cashfreeError: errorData?.message || errorData,
-            nodeError: errorMessage,
+            error: errorMessage,
+            code: errorCode,
             bookingId: req.body.bookingId,
             timestamp: new Date().toISOString()
         });
 
-        // Check if it's a Cashfree API error
-        if (errorStatus && errorStatus >= 400) {
-            return res.status(errorStatus).json({
+        // Handle Cashfree SDK errors
+        if (err.statusCode) {
+            return res.status(err.statusCode).json({
                 message: 'Cashfree API Error',
-                cashfreeError: errorData?.message || 'Unknown error',
-                code: errorData?.code,
-                details: errorData
+                error: errorMessage,
+                code: errorCode
             });
         }
 
@@ -419,7 +393,7 @@ exports.getPaymentStatus = async (req, res) => {
         if (booking.paymentStatus === 'PENDING') {
             console.log(`[StatusCheck] Re-verifying order ${orderId} with Cashfree...`);
             try {
-                const { data: cfOrder } = await cashfree.get(`/orders/${orderId}`);
+                const cfOrder = await Cashfree.PGOrder.fetch(orderId);
                 
                 // If Cashfree says it's PAID, we update everything locally now
                 if (cfOrder.order_status === 'PAID') {
@@ -520,8 +494,8 @@ exports.triggerRefund = async (req, res) => {
             refund_note:   reason || 'Booking cancelled — refund by Gymkaana'
         };
 
-        const { data: refund } = await cashfree.post(
-            `/orders/${booking.cashfreeOrderId}/refunds`,
+        const refund = await Cashfree.PGRefund.create(
+            booking.cashfreeOrderId,
             refundPayload
         );
 
