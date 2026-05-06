@@ -14,7 +14,11 @@
 const crypto    = require('crypto');
 const Booking   = require('../models/Booking');
 const Gym       = require('../models/Gym');
-const { Cashfree } = require('../utils/cashfreeClient');
+const { CFPaymentGateway, cfConfig } = require('../utils/cashfreeClient');
+const {
+    CFOrderRequest,
+    CFCustomerDetails
+} = require('cashfree-pg-sdk-nodejs');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 // NOTE: commission is now read per-gym from gym.commissionPercent (default 15%)
@@ -99,55 +103,56 @@ exports.createOrder = async (req, res) => {
         // ── Full amount to admin account (no split) ────────────────────────
         console.log(`[Cashfree] Creating order ${orderId}: ₹${amount} for booking ${booking._id}`);
 
-        // ── Build Cashfree payload (NO order_splits) ────────────────────────
-        const orderPayload = {
-            order_id:       orderId,
-            order_amount:   amount,
-            order_currency: 'INR',
-            customer_details: {
-                customer_id:    booking.userId?._id?.toString() || booking.userId?.toString(),
-                customer_name:  booking.memberName,
-                customer_email: booking.memberEmail || `user-${booking.userId}@gymkaana.local`,
-                customer_phone: booking.userId?.phone || '9999999999'
-            },
-            order_meta: {
-                return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://'),
-                notify_url: `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://')
-            },
-            order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`,
-            order_tags: {
-                booking_id: booking._id?.toString(),
-                gym_id: gym._id?.toString()
-            }
+        // ── Build Cashfree request objects ──────────────────────────────────
+        const customerDetails = new CFCustomerDetails();
+        customerDetails.customerId = booking.userId?._id?.toString() || booking.userId?.toString();
+        customerDetails.customerName = booking.memberName;
+        customerDetails.customerEmail = booking.memberEmail || `user-${booking.userId}@gymkaana.local`;
+        customerDetails.customerPhone = booking.userId?.phone || '9999999999';
+
+        const cFOrderRequest = new CFOrderRequest();
+        cFOrderRequest.orderAmount = amount;
+        cFOrderRequest.orderCurrency = 'INR';
+        cFOrderRequest.customerDetails = customerDetails;
+        cFOrderRequest.orderNote = `Gymkaana booking — ${gym?.name || 'Gym'}`;
+        cFOrderRequest.orderTags = {
+            booking_id: booking._id?.toString(),
+            gym_id: gym._id?.toString()
         };
 
-        // Validate payload before sending
-        if (!orderPayload.order_id || !orderPayload.order_amount) {
-            console.error('❌ Invalid order payload:', orderPayload);
-            return res.status(400).json({
-                message: 'Invalid order data',
-                details: 'order_id and order_amount are required'
-            });
-        }
+        const orderMeta = {
+            return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://'),
+            notify_url: `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://')
+        };
+        
+        // Manually set order_meta since CFOrderRequest may not have this property
+        cFOrderRequest['order_meta'] = orderMeta;
 
-        if (!orderPayload.customer_details.customer_email || !orderPayload.customer_details.customer_email.includes('@')) {
-            console.warn('[Cashfree] Using fallback email:', orderPayload.customer_details.customer_email);
-        }
-
-        console.log('[Cashfree] Sending order payload:', JSON.stringify(orderPayload, null, 2));
+        console.log('[Cashfree] Sending order request:', JSON.stringify({
+            amount: cFOrderRequest.orderAmount,
+            customerId: customerDetails.customerId,
+            returnUrl: orderMeta.return_url
+        }, null, 2));
 
         // ── Call Cashfree using official SDK ─────────────────────────────────
-        let cfOrder;
+        let cfOrderResponse;
         try {
-            cfOrder = await Cashfree.PGOrder.create(orderPayload);
-            console.log('[Cashfree Order Response]', JSON.stringify(cfOrder, null, 2));
+            const apiInstance = new CFPaymentGateway();
+            cfOrderResponse = await apiInstance.orderCreate(cfConfig, cFOrderRequest);
+            
+            console.log('[Cashfree Order Response]', JSON.stringify({
+                cfOrder: cfOrderResponse?.cfOrder,
+                cfHeaders: cfOrderResponse?.cfHeaders
+            }, null, 2));
         } catch (sdkError) {
             console.error('[Cashfree SDK Error]:', sdkError.message);
             throw sdkError;
         }
 
-        if (!cfOrder.order_id) {
-            console.error('❌ Cashfree order creation failed - no order_id:', cfOrder);
+        const cfOrder = cfOrderResponse?.cfOrder;
+
+        if (!cfOrder.orderId) {
+            console.error('❌ Cashfree order creation failed - no orderId:', cfOrder);
             return res.status(500).json({
                 message: 'Failed to create order with Cashfree',
                 error: cfOrder
@@ -155,32 +160,32 @@ exports.createOrder = async (req, res) => {
         }
 
         // ── Payment Session is included in order response ────────────────────
-        let paymentSessionId = cfOrder.payment_session_id;
+        let paymentSessionId = cfOrder.paymentSessionId;
         
         if (!paymentSessionId) {
-            console.error('❌ No payment_session_id in Cashfree response:', {
+            console.error('❌ No paymentSessionId in Cashfree response:', {
                 orderResponse: cfOrder,
                 availableFields: Object.keys(cfOrder)
             });
             return res.status(500).json({
                 message: 'Failed to get payment session from Cashfree',
-                details: 'Cashfree response missing payment_session_id',
+                details: 'Cashfree response missing paymentSessionId',
                 orderFields: Object.keys(cfOrder)
             });
         }
 
         // ── Persist Cashfree IDs to DB ──────────────────────────────────────
-        booking.cashfreeOrderId  = cfOrder.order_id;
+        booking.cashfreeOrderId  = cfOrder.orderId;
         booking.paymentSessionId = paymentSessionId;
         booking.paymentStatus    = 'PENDING';
         booking.vendorAmount     = 0;        // No split payment
         booking.platformFee      = amount;   // Full amount to admin
         await booking.save();
 
-        console.log(`✅ Cashfree order created: ${cfOrder.order_id} | Session: ${paymentSessionId}`);
+        console.log(`✅ Cashfree order created: ${cfOrder.orderId} | Session: ${paymentSessionId}`);
 
         return res.status(201).json({
-            cashfreeOrderId:  cfOrder.order_id,
+            cashfreeOrderId:  cfOrder.orderId,
             paymentSessionId: paymentSessionId,
             paymentStatus:    'PENDING',
             amount,
@@ -393,10 +398,12 @@ exports.getPaymentStatus = async (req, res) => {
         if (booking.paymentStatus === 'PENDING') {
             console.log(`[StatusCheck] Re-verifying order ${orderId} with Cashfree...`);
             try {
-                const cfOrder = await Cashfree.PGOrder.fetch(orderId);
+                const apiInstance = new CFPaymentGateway();
+                const result = await apiInstance.orderFetch(cfConfig, orderId);
+                const cfOrder = result?.cfOrder;
                 
                 // If Cashfree says it's PAID, we update everything locally now
-                if (cfOrder.order_status === 'PAID') {
+                if (cfOrder?.orderStatus === 'PAID') {
                     console.log(`[StatusCheck] Order ${orderId} confirmed PAID by API. Updating DB...`);
                     
                     booking.paymentStatus = 'SUCCESS';
@@ -488,31 +495,40 @@ exports.triggerRefund = async (req, res) => {
         }
 
         const refundId      = `REFUND-${booking._id}-${Date.now()}`;
-        const refundPayload = {
-            refund_amount: booking.amount,
-            refund_id:     refundId,
-            refund_note:   reason || 'Booking cancelled — refund by Gymkaana'
-        };
+        
+        const CFRefundRequest = require('cashfree-pg-sdk-nodejs').CFRefundRequest;
+        const refundRequest = new CFRefundRequest();
+        refundRequest.refundAmount = booking.amount;
+        refundRequest.refundId = refundId;
+        refundRequest.refundNote = reason || 'Booking cancelled — refund by Gymkaana';
 
-        const refund = await Cashfree.PGRefund.create(
-            booking.cashfreeOrderId,
-            refundPayload
-        );
+        try {
+            const apiInstance = new CFPaymentGateway();
+            const result = await apiInstance.refundCreate(
+                cfConfig,
+                booking.cashfreeOrderId,
+                refundRequest
+            );
+            
+            const refund = result?.cfRefund;
 
-        booking.refundId      = refund.refund_id || refundId;
-        booking.refundStatus  = 'PENDING';
-        booking.refundAmount  = booking.amount;
-        booking.status        = 'cancelled';
-        await booking.save();
+            booking.refundId      = refund?.refundId || refundId;
+            booking.refundStatus  = 'PENDING';
+            booking.refundAmount  = booking.amount;
+            booking.status        = 'cancelled';
+            await booking.save();
 
-        console.log(`✅ Refund initiated: ${booking.refundId} for booking ${booking._id}`);
-        return res.json({
-            message:      'Refund initiated — you will receive a webhook confirmation',
-            refundId:     booking.refundId,
-            refundStatus: 'PENDING',
-            refundAmount: booking.amount
-        });
-
+            console.log(`✅ Refund initiated: ${booking.refundId} for booking ${booking._id}`);
+            return res.json({
+                message:      'Refund initiated — you will receive a webhook confirmation',
+                refundId:     booking.refundId,
+                refundStatus: 'PENDING',
+                refundAmount: booking.amount
+            });
+        } catch (sdkErr) {
+            console.error('❌ Refund API error:', sdkErr.message);
+            throw sdkErr;
+        }
     } catch (err) {
         console.error('❌ triggerRefund error:', err.response?.data || err.message);
         return res.status(500).json({

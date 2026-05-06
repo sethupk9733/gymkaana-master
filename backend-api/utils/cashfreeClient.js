@@ -5,22 +5,35 @@
  * Auto-detects sandbox/production from CASHFREE_ENV env var.
  *
  * Usage:
- *   const { Cashfree } = require('../utils/cashfreeClient');
- *   const response = await Cashfree.PGOrder.create(orderPayload);
+ *   const { CFPaymentGateway, cfConfig } = require('../utils/cashfreeClient');
+ *   const apiInstance = new CFPaymentGateway();
+ *   const result = await apiInstance.orderCreate(cfConfig, cfOrderRequest);
  */
 
-const { Cashfree } = require('cashfree-pg-sdk-nodejs');
+const {
+    CFPaymentGateway,
+    CFConfig,
+    CFEnvironment
+} = require('cashfree-pg-sdk-nodejs');
 
-// Initialize Cashfree SDK
+// Initialize configuration
 const isSandbox = (process.env.CASHFREE_ENV || 'sandbox') === 'sandbox';
+const environment = isSandbox ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION;
+const apiVersion = '2022-09-01';
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XApiVersion = '2023-08-01';
+const cfConfig = new CFConfig(
+    environment,
+    apiVersion,
+    process.env.CASHFREE_APP_ID,
+    process.env.CASHFREE_SECRET_KEY
+);
 
-// Set environment
-Cashfree.environment = isSandbox ? Cashfree.Environment.SANDBOX : Cashfree.Environment.PRODUCTION;
+const paymentGateway = new CFPaymentGateway();
 
 console.log(`[Cashfree] Initialized in ${isSandbox ? 'SANDBOX' : 'PRODUCTION'} mode`);
 
-module.exports = { Cashfree };
+module.exports = {
+    CFPaymentGateway,
+    cfConfig,
+    paymentGateway
+};
