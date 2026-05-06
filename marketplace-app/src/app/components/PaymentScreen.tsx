@@ -24,6 +24,8 @@ const paymentMethods = [
 ];
 
 import { createBooking } from "../lib/api";
+import { API_URL } from "../config/api";
+import { initiateCheckout, verifyPaymentStatus } from "../lib/payment";
 
 export function PaymentScreen({
   gymId,
@@ -100,24 +102,17 @@ export function PaymentScreen({
         status: 'upcoming'
       };
 
-      console.log("[Payment] Creating mobile pending booking:", bookingData);
-      
-      // We need to import createBooking and API_URL first, adding them if missing
-      // For now using the existing imports if available
+      console.log("[Payment] Creating pending booking:", bookingData);
       const booking = await createBooking(bookingData);
       
       if (!booking || !booking._id) {
         throw new Error("Failed to create booking reference.");
       }
 
-      // 2. Create Cashfree Order
-      console.log("[Payment] Initializing Cashfree order for mobile booking:", booking._id);
+      // 2. Create Cashfree Order via Backend
+      console.log("[Payment] Initializing Cashfree order");
       
-      // Using the same API logic as the web version
-      // Note: In marketplace-app we might need to define API_URL if not imported
-      const API_BASE = 'https://api.gymkaana.com/api'; 
-      
-      const response = await fetch(`${API_BASE}/payments/create-order`, {
+      const response = await fetch(`${API_URL}/payments/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,21 +127,48 @@ export function PaymentScreen({
         throw new Error(result.message || 'Failed to initialize payment gateway');
       }
 
-      // 3. Open Cashfree (Simulation or SDK if available)
-      // For now, since this is marketplace-app (possibly Capacitor/Cordova),
-      // we'll log the success and suggest using the web SDK flow.
-      console.log("✅ Mobile Payment initialized:", result.paymentSessionId);
-      alert("Payment initialization successful! Redirecting to secure gateway...");
-      
-      // Fallback: If this is running in a browser, we could use the SDK.
-      // For now, we'll mark as success to allow testing the flow UI.
-      if (onPaymentSuccess) {
-        onPaymentSuccess(booking);
+      if (!result.paymentSessionId) {
+        throw new Error('Payment session not initialized. Please try again.');
+      }
+
+      console.log("[Payment] Cashfree order created, opening checkout");
+
+      // 3. Open Cashfree Checkout Modal using Official SDK
+      const checkoutResult = await initiateCheckout(result.paymentSessionId);
+
+      // 4. Verify Payment Status After Modal Closes
+      const verifyPayment = async () => {
+        try {
+          const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
+          });
+          const checkData = await checkRes.json();
+          
+          if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
+            console.log("✅ Payment confirmed SUCCESS");
+            onPaymentSuccess(checkData.booking || booking);
+            return true;
+          }
+        } catch (e) {
+          console.error("Status verification failed:", e);
+        }
+        return false;
+      };
+
+      // Handle checkout result
+      if (checkoutResult.error) {
+        console.log("Checkout closed/error, checking final status...");
+        const isConfirmed = await verifyPayment();
+        if (!isConfirmed) {
+          alert("Your payment is being processed. It will update shortly.");
+        }
+      } else {
+        await verifyPayment();
       }
 
     } catch (err: any) {
-      console.error("Mobile Payment failed:", err);
-      alert("Payment failed: " + (err.message || "Unknown error"));
+      console.error("Payment failed:", err);
+      alert(err.message || "Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
