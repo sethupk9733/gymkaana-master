@@ -136,24 +136,35 @@ export function PaymentScreen({
       // 3. Open Cashfree Checkout Modal using Official SDK
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 
-      // 4. Verify Payment Status After Modal Closes
-      const verifyPayment = async () => {
+      // 4. Verify Payment Status After Modal Closes with Retry Logic
+      const verifyPayment = async (retryCount = 0) => {
         try {
           const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
           });
           const checkData = await checkRes.json();
           
+          console.log(`[Payment Verification] Status: ${checkData.paymentStatus} (Attempt: ${retryCount + 1})`);
+          
           if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
             console.log("✅ Payment confirmed SUCCESS");
             onPaymentSuccess(checkData.booking || booking);
             return true;
+          } else if (retryCount < 2 && (checkData.paymentStatus === 'PENDING' || !checkData.paymentStatus)) {
+            // Retry after delay - webhook may still be processing
+            console.log("Status pending, retrying in 2 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return verifyPayment(retryCount + 1);
           }
         } catch (e) {
           console.error("Status verification failed:", e);
         }
         return false;
       };
+
+      // Wait briefly for Cashfree to process before checking status
+      console.log("[Payment] Waiting for payment processing...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Handle checkout result
       if (checkoutResult.error) {
@@ -163,7 +174,11 @@ export function PaymentScreen({
           alert("Your payment is being processed. It will update shortly.");
         }
       } else {
-        await verifyPayment();
+        console.log("Checkout completed, verifying payment status...");
+        const isConfirmed = await verifyPayment();
+        if (!isConfirmed) {
+          alert("Your payment is being processed. It will update shortly.");
+        }
       }
 
     } catch (err: any) {

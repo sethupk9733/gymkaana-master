@@ -111,8 +111,11 @@ exports.createOrder = async (req, res) => {
         customerDetails.customerPhone = booking.userId?.phone || '9999999999';
 
         const cFOrderRequest = new CFOrderRequest();
+        
+        // Set properties using both camelCase and snake_case (SDK auto-generates from OpenAPI)
         cFOrderRequest.orderAmount = amount;
         cFOrderRequest.orderCurrency = 'INR';
+        cFOrderRequest.customerId = booking.userId?._id?.toString() || booking.userId?.toString();
         cFOrderRequest.customerDetails = customerDetails;
         cFOrderRequest.orderNote = `Gymkaana booking — ${gym?.name || 'Gym'}`;
         cFOrderRequest.orderTags = {
@@ -120,72 +123,111 @@ exports.createOrder = async (req, res) => {
             gym_id: gym._id?.toString()
         };
 
-        const orderMeta = {
+        // The SDK serializes to snake_case for the API, but we can also set them directly
+        cFOrderRequest['order_id'] = orderId;
+        cFOrderRequest['order_meta'] = {
             return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://'),
             notify_url: `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://')
         };
-        
-        // Manually set order_meta since CFOrderRequest may not have this property
-        cFOrderRequest['order_meta'] = orderMeta;
 
-        console.log('[Cashfree] Sending order request:', JSON.stringify({
+        console.log('[Cashfree] Order Request Properties:', {
+            orderId: cFOrderRequest['order_id'],
             amount: cFOrderRequest.orderAmount,
+            currency: cFOrderRequest.orderCurrency,
             customerId: customerDetails.customerId,
-            returnUrl: orderMeta.return_url
-        }, null, 2));
+            allKeys: Object.keys(cFOrderRequest)
+        });
 
         // ── Call Cashfree using official SDK ─────────────────────────────────
         let cfOrderResponse;
         try {
             const apiInstance = new CFPaymentGateway();
+            console.log('[Cashfree] Calling orderCreate with config:', {
+                env: process.env.CASHFREE_ENV,
+                hasAppId: !!process.env.CASHFREE_APP_ID,
+                hasSecret: !!process.env.CASHFREE_SECRET_KEY
+            });
+            
             cfOrderResponse = await apiInstance.orderCreate(cfConfig, cFOrderRequest);
             
-            console.log('[Cashfree Order Response]', JSON.stringify({
-                cfOrder: cfOrderResponse?.cfOrder,
-                cfHeaders: cfOrderResponse?.cfHeaders
-            }, null, 2));
+            console.log('[Cashfree] Full SDK Response:', JSON.stringify(cfOrderResponse, null, 2));
+            if (cfOrderResponse?.cfOrder) {
+                console.log('[Cashfree] cfOrder keys:', Object.keys(cfOrderResponse.cfOrder));
+                // Try to extract session ID with various naming conventions
+                const possibleNames = [
+                    'paymentSessionId', 'payment_session_id',
+                    'sessionId', 'session_id', 
+                    'cf_payment_session_id', 'cfPaymentSessionId'
+                ];
+                console.log('[Cashfree] Checking for payment session ID:', possibleNames.map(name => ({
+                    name,
+                    value: cfOrderResponse.cfOrder[name]
+                })));
+            }
         } catch (sdkError) {
-            console.error('[Cashfree SDK Error]:', sdkError.message);
+            console.error('[Cashfree SDK Error]:', {
+                message: sdkError.message,
+                code: sdkError.code,
+                statusCode: sdkError.statusCode,
+                response: sdkError.response?.data || sdkError.response,
+                fullError: JSON.stringify(sdkError, null, 2)
+            });
             throw sdkError;
         }
 
         const cfOrder = cfOrderResponse?.cfOrder;
 
-        if (!cfOrder.orderId) {
-            console.error('❌ Cashfree order creation failed - no orderId:', cfOrder);
+        if (!cfOrder) {
+            console.error('❌ No cfOrder in response. Full response:', cfOrderResponse);
             return res.status(500).json({
-                message: 'Failed to create order with Cashfree',
-                error: cfOrder
+                message: 'Invalid response from Cashfree',
+                error: 'No order object in SDK response'
             });
         }
 
-        // ── Payment Session is included in order response ────────────────────
-        let paymentSessionId = cfOrder.paymentSessionId;
+        // Try to extract values with all possible naming conventions
+        let paymentSessionId = cfOrder.paymentSessionId || 
+                              cfOrder.payment_session_id || 
+                              cfOrder.cf_payment_session_id ||
+                              cfOrder.cfPaymentSessionId;
         
-        if (!paymentSessionId) {
-            console.error('❌ No paymentSessionId in Cashfree response:', {
-                orderResponse: cfOrder,
+        let orderIdFromCf = cfOrder.orderId || cfOrder.order_id;
+        
+        console.log('[Cashfree] Extracted values:', {
+            paymentSessionId,
+            orderIdFromCf,
+            cfOrderKeys: Object.keys(cfOrder)
+        });
+
+        if (!orderIdFromCf) {
+            console.error('❌ No order ID in response');
+            return res.status(500).json({
+                message: 'Order creation failed',
                 availableFields: Object.keys(cfOrder)
             });
+        }
+
+        if (!paymentSessionId) {
+            console.error('❌ No payment session ID in response');
             return res.status(500).json({
-                message: 'Failed to get payment session from Cashfree',
-                details: 'Cashfree response missing paymentSessionId',
-                orderFields: Object.keys(cfOrder)
+                message: 'Payment session not created',
+                availableFields: Object.keys(cfOrder),
+                suggestion: 'Check Cashfree credentials in .env'
             });
         }
 
         // ── Persist Cashfree IDs to DB ──────────────────────────────────────
-        booking.cashfreeOrderId  = cfOrder.orderId;
+        booking.cashfreeOrderId  = orderIdFromCf;
         booking.paymentSessionId = paymentSessionId;
         booking.paymentStatus    = 'PENDING';
-        booking.vendorAmount     = 0;        // No split payment
-        booking.platformFee      = amount;   // Full amount to admin
+        booking.vendorAmount     = 0;
+        booking.platformFee      = amount;
         await booking.save();
 
-        console.log(`✅ Cashfree order created: ${cfOrder.orderId} | Session: ${paymentSessionId}`);
+        console.log(`✅ Cashfree order created: ${orderIdFromCf} | Session: ${paymentSessionId}`);
 
         return res.status(201).json({
-            cashfreeOrderId:  cfOrder.orderId,
+            cashfreeOrderId:  orderIdFromCf,
             paymentSessionId: paymentSessionId,
             paymentStatus:    'PENDING',
             amount,

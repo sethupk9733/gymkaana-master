@@ -135,18 +135,25 @@ export function PaymentScreen({
       // 3. Open Cashfree Checkout Modal
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 
-      // 4. Verify Status (Even if they closed it, they might have paid)
-      const verifyPayment = async (silent = false) => {
+      // 4. Verify Status with Retry Logic (Even if they closed it, they might have paid)
+      const verifyPayment = async (silent = false, retryCount = 0) => {
         try {
           const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
           });
           const checkData = await checkRes.json();
           
+          console.log(`[Payment Verification] Status: ${checkData.paymentStatus} (Attempt: ${retryCount + 1})`);
+          
           if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
             console.log("✅ Payment status confirmed SUCCESS");
             onPaymentSuccess(checkData.booking || booking);
             return true;
+          } else if (retryCount < 2 && (checkData.paymentStatus === 'PENDING' || !checkData.paymentStatus)) {
+            // Retry once more after delay - webhook may still be processing
+            if (!silent) console.log("Status pending, retrying in 2 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return verifyPayment(silent, retryCount + 1);
           } else if (!silent) {
             console.log("Payment still pending according to API");
           }
@@ -156,17 +163,25 @@ export function PaymentScreen({
         return false;
       };
 
+      // Wait briefly for Cashfree to process before checking status
+      console.log("[Payment] Waiting for payment processing...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Handle Modal Result
       if (checkoutResult.error) {
-         // Just finished/closed modal. Polling check.
-         console.log("Checking final status...");
-         const isConfirmed = await verifyPayment(true);
+         // User closed modal or error occurred. Check status anyway.
+         console.log("[Payment] Checkout closed/errored. Verifying final status...");
+         const isConfirmed = await verifyPayment(false);
          if (!isConfirmed) {
            alert("Your payment is currently being processed. If you've already paid, it will update shortly.");
          }
       } else {
-         // Some SDK versions return non-error on success
-         await verifyPayment(true);
+         // No error in modal result - attempt verification
+         console.log("[Payment] Checkout completed. Verifying payment status...");
+         const isConfirmed = await verifyPayment(false);
+         if (!isConfirmed) {
+           alert("Your payment is currently being processed. If you've already paid, it will update shortly.");
+         }
       }
 
     } catch (err: any) {
