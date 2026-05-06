@@ -133,9 +133,6 @@ export function PaymentScreen({
 
       console.log("[Payment] Cashfree order created, opening checkout");
 
-      // 3. Open Cashfree Checkout Modal using Official SDK
-      const checkoutResult = await initiateCheckout(result.paymentSessionId);
-
       // 4. Verify Payment Status After Modal Closes with Retry Logic
       const verifyPayment = async (retryCount = 0) => {
         try {
@@ -146,20 +143,41 @@ export function PaymentScreen({
           
           console.log(`[Payment Verification] Status: ${checkData.paymentStatus} (Attempt: ${retryCount + 1})`);
           
-          if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
+          // SUCCESS - Payment confirmed
+          if (checkData.paymentStatus === 'SUCCESS') {
             console.log("✅ Payment confirmed SUCCESS");
             onPaymentSuccess(checkData.booking || booking);
             return true;
-          } else if (retryCount < 2 && (checkData.paymentStatus === 'PENDING' || !checkData.paymentStatus)) {
-            // Retry after delay - webhook may still be processing
+          } 
+          // FAILED - Payment was cancelled or rejected
+          else if (checkData.paymentStatus === 'FAILED' || checkData.paymentStatus === 'CANCELLED' || checkData.paymentStatus === 'USER_DROPPED') {
+            console.error("❌ Payment was cancelled or failed");
+            throw new Error(`Payment was ${checkData.paymentStatus.toLowerCase()}. Please try again.`);
+          }
+          // PENDING - Still processing, retry
+          else if (retryCount < 2 && checkData.paymentStatus === 'PENDING') {
             console.log("Status pending, retrying in 2 seconds...");
             await new Promise(resolve => setTimeout(resolve, 2000));
             return verifyPayment(retryCount + 1);
+          } 
+          // NOT_FOUND - Order doesn't exist
+          else if (checkData.paymentStatus === 'NOT_FOUND') {
+            throw new Error("Payment session not found. Please try again.");
+          }
+          // Unknown status after retries
+          else {
+            console.warn(`Unknown payment status: ${checkData.paymentStatus}`);
+            if (retryCount < 2 && !checkData.paymentStatus) {
+              console.log("Status unclear, retrying in 2 seconds...");
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              return verifyPayment(retryCount + 1);
+            }
+            throw new Error("Unable to verify payment status. Please check your bookings.");
           }
         } catch (e) {
-          console.error("Status verification failed:", e);
+          console.error("Status verification error:", e);
+          throw e;
         }
-        return false;
       };
 
       // Wait briefly for Cashfree to process before checking status
@@ -169,15 +187,17 @@ export function PaymentScreen({
       // Handle checkout result
       if (checkoutResult.error) {
         console.log("Checkout closed/error, checking final status...");
-        const isConfirmed = await verifyPayment();
-        if (!isConfirmed) {
-          alert("Your payment is being processed. It will update shortly.");
+        try {
+          await verifyPayment();
+        } catch (err) {
+          throw err;
         }
       } else {
         console.log("Checkout completed, verifying payment status...");
-        const isConfirmed = await verifyPayment();
-        if (!isConfirmed) {
-          alert("Your payment is being processed. It will update shortly.");
+        try {
+          await verifyPayment();
+        } catch (err) {
+          throw err;
         }
       }
 

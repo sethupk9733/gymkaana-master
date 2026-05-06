@@ -135,7 +135,7 @@ export function PaymentScreen({
       // 3. Open Cashfree Checkout Modal
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 
-      // 4. Verify Status with Retry Logic (Even if they closed it, they might have paid)
+      // 4. Verify Payment Status with Retry Logic (Even if they closed it, they might have paid)
       const verifyPayment = async (silent = false, retryCount = 0) => {
         try {
           const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
@@ -145,22 +145,41 @@ export function PaymentScreen({
           
           console.log(`[Payment Verification] Status: ${checkData.paymentStatus} (Attempt: ${retryCount + 1})`);
           
-          if (checkData.status === 'SUCCESS' || checkData.paymentStatus === 'SUCCESS') {
+          // SUCCESS - Payment confirmed
+          if (checkData.paymentStatus === 'SUCCESS') {
             console.log("✅ Payment status confirmed SUCCESS");
             onPaymentSuccess(checkData.booking || booking);
             return true;
-          } else if (retryCount < 2 && (checkData.paymentStatus === 'PENDING' || !checkData.paymentStatus)) {
-            // Retry once more after delay - webhook may still be processing
+          } 
+          // FAILED - Payment was cancelled or rejected
+          else if (checkData.paymentStatus === 'FAILED' || checkData.paymentStatus === 'CANCELLED' || checkData.paymentStatus === 'USER_DROPPED') {
+            console.error("❌ Payment was cancelled or failed");
+            throw new Error(`Payment was ${checkData.paymentStatus.toLowerCase()}. Please try again.`);
+          }
+          // PENDING - Still processing, retry
+          else if (retryCount < 2 && checkData.paymentStatus === 'PENDING') {
             if (!silent) console.log("Status pending, retrying in 2 seconds...");
             await new Promise(resolve => setTimeout(resolve, 2000));
             return verifyPayment(silent, retryCount + 1);
-          } else if (!silent) {
-            console.log("Payment still pending according to API");
+          } 
+          // NOT_FOUND - Order doesn't exist
+          else if (checkData.paymentStatus === 'NOT_FOUND') {
+            throw new Error("Payment session not found. Please try again.");
+          }
+          // Unknown status after retries
+          else {
+            console.warn(`Unknown payment status: ${checkData.paymentStatus}`);
+            if (retryCount < 2 && !checkData.paymentStatus) {
+              if (!silent) console.log("Status unclear, retrying in 2 seconds...");
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              return verifyPayment(silent, retryCount + 1);
+            }
+            throw new Error("Unable to verify payment status. Please check your bookings.");
           }
         } catch (e) {
-          console.error("Status verification failed:", e);
+          console.error("Status verification error:", e);
+          throw e;
         }
-        return false;
       };
 
       // Wait briefly for Cashfree to process before checking status
@@ -169,18 +188,20 @@ export function PaymentScreen({
 
       // Handle Modal Result
       if (checkoutResult.error) {
-         // User closed modal or error occurred. Check status anyway.
+         // User closed modal or error occurred. Check status.
          console.log("[Payment] Checkout closed/errored. Verifying final status...");
-         const isConfirmed = await verifyPayment(false);
-         if (!isConfirmed) {
-           alert("Your payment is currently being processed. If you've already paid, it will update shortly.");
+         try {
+           await verifyPayment(false);
+         } catch (err) {
+           throw err;
          }
       } else {
-         // No error in modal result - attempt verification
+         // No error in modal result - verify status
          console.log("[Payment] Checkout completed. Verifying payment status...");
-         const isConfirmed = await verifyPayment(false);
-         if (!isConfirmed) {
-           alert("Your payment is currently being processed. If you've already paid, it will update shortly.");
+         try {
+           await verifyPayment(false);
+         } catch (err) {
+           throw err;
          }
       }
 

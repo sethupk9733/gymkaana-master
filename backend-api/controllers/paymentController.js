@@ -432,41 +432,72 @@ exports.getPaymentStatus = async (req, res) => {
         const booking = await Booking.findOne({ cashfreeOrderId: orderId });
 
         if (!booking) {
-            return res.status(404).json({ message: 'Order not found' });
+            return res.status(404).json({ 
+                message: 'Order not found',
+                status: 'NOT_FOUND',
+                paymentStatus: 'NOT_FOUND'
+            });
         }
 
-        // If local status is PENDING, we CRITICALLY need to verify with Cashfree directly
-        // in case the webhook was missed or delayed.
+        // If local status is PENDING, verify with Cashfree directly
+        // to catch cancelled or failed payments
         if (booking.paymentStatus === 'PENDING') {
-            console.log(`[StatusCheck] Re-verifying order ${orderId} with Cashfree...`);
+            console.log(`[StatusCheck] Verifying PENDING order ${orderId} with Cashfree API...`);
             try {
                 const apiInstance = new CFPaymentGateway();
                 const result = await apiInstance.orderFetch(cfConfig, orderId);
                 const cfOrder = result?.cfOrder;
                 
-                // If Cashfree says it's PAID, we update everything locally now
-                if (cfOrder?.orderStatus === 'PAID') {
-                    console.log(`[StatusCheck] Order ${orderId} confirmed PAID by API. Updating DB...`);
+                console.log(`[StatusCheck] Cashfree response for ${orderId}:`, {
+                    orderStatus: cfOrder?.orderStatus,
+                    transactionStatus: cfOrder?.paymentSessionId ? 'Has Session' : 'No Session'
+                });
+                
+                // Handle different Cashfree order statuses
+                if (cfOrder?.orderStatus === 'PAID' || cfOrder?.paymentStatus === 'PAID') {
+                    console.log(`✅ [StatusCheck] Order ${orderId} PAID - Updating booking...`);
                     
                     booking.paymentStatus = 'SUCCESS';
                     booking.status        = 'upcoming';
                     booking.paidAt        = new Date();
                     await booking.save();
                     
-                    // Trigger emails if they haven't been sent
-                    // (The handlePaymentSuccess logic is reused here)
-                    const populated = await Booking.findById(booking._id)
-                        .populate({ path: 'gymId', populate: { path: 'ownerId' } })
-                        .populate('planId')
-                        .populate('userId');
+                    // Send confirmation emails
+                    try {
+                        const populated = await Booking.findById(booking._id)
+                            .populate({ path: 'gymId', populate: { path: 'ownerId' } })
+                            .populate('planId')
+                            .populate('userId');
 
-                    const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
-                    sendBookingConfirmation(populated.memberEmail, populated).catch(e => console.error(e));
-                    const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
-                    if (ownerEmail) sendOwnerBookingNotification(ownerEmail, populated).catch(e => console.error(e));
+                        const { sendBookingConfirmation, sendOwnerBookingNotification } = require('../utils/emailService');
+                        sendBookingConfirmation(populated.memberEmail, populated).catch(e => 
+                            console.error('❌ Member email failed:', e.message)
+                        );
+                        const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
+                        if (ownerEmail) {
+                            sendOwnerBookingNotification(ownerEmail, populated).catch(e => 
+                                console.error('❌ Owner email failed:', e.message)
+                            );
+                        }
+                    } catch (mailErr) {
+                        console.error('⚠ Email trigger failed:', mailErr.message);
+                    }
+                    
+                } else if (cfOrder?.orderStatus === 'CANCELLED' || cfOrder?.orderStatus === 'FAILED') {
+                    console.log(`❌ [StatusCheck] Order ${orderId} ${cfOrder.orderStatus} - Marking as FAILED...`);
+                    booking.paymentStatus = 'FAILED';
+                    booking.failureReason = cfOrder?.orderStatus;
+                    await booking.save();
+                    
+                } else if (cfOrder?.orderStatus === 'ACTIVE' || cfOrder?.orderStatus === 'PENDING') {
+                    console.log(`⏳ [StatusCheck] Order ${orderId} still ${cfOrder.orderStatus}`);
+                    // Keep as PENDING
+                } else {
+                    console.warn(`[StatusCheck] Unknown order status: ${cfOrder?.orderStatus}`);
                 }
             } catch (cfErr) {
                 console.error('[StatusCheck] Cashfree API check failed:', cfErr.response?.data || cfErr.message);
+                // On error, return current local status
             }
         }
 
@@ -477,12 +508,16 @@ exports.getPaymentStatus = async (req, res) => {
             amount:          booking.amount,
             startDate:       booking.startDate,
             endDate:         booking.endDate,
-            booking:         booking // Full object for success screen
+            booking:         booking
         });
 
     } catch (err) {
         console.error('❌ getPaymentStatus error:', err.message);
-        return res.status(500).json({ message: err.message });
+        return res.status(500).json({ 
+            message: err.message,
+            status: 'ERROR',
+            paymentStatus: 'ERROR'
+        });
     }
 };
 

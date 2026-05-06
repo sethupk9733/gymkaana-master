@@ -18,9 +18,10 @@ const bookingSchema = new mongoose.Schema({
     paymentSessionId:   { type: String },                               // CF payment_session_id → sent to frontend SDK
     paymentStatus:      {                                               // mirrors CF order status
         type: String,
-        enum: ['PENDING', 'SUCCESS', 'FAILED', 'USER_DROPPED', 'REFUNDED', 'PARTIALLY_REFUNDED'],
+        enum: ['PENDING', 'SUCCESS', 'FAILED', 'CANCELLED', 'USER_DROPPED', 'REFUNDED', 'PARTIALLY_REFUNDED'],
         default: 'PENDING'
     },
+    failureReason:      { type: String, sparse: true },                // reason for payment failure
     cashfreeVendorId:   { type: String },                               // EasySplit vendor_id of the gym
     vendorAmount:       { type: Number },                               // 85% → gym owner
     platformFee:        { type: Number },                               // 15% → Gymkaana
