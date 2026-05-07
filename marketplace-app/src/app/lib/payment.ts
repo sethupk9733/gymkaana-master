@@ -53,30 +53,32 @@ const getCashfree = async () => {
  * @param paymentSessionId - Session ID from backend
  */
 export const initiateCheckout = async (paymentSessionId: string) => {
-    try {
-        if (!paymentSessionId?.trim()) {
-            throw new Error("Invalid or missing payment session ID");
-        }
-
-        console.log(`[Cashfree] Opening checkout modal`);
-        
-        const cashfree = await getCashfree();
-        
-        const checkoutOptions = {
-            paymentSessionId: paymentSessionId,
-            returnUrl: `${window.location.origin}/?order_id={order_id}`,
-            redirectTarget: "_modal"
-        };
-
-        const result = await cashfree.checkout(checkoutOptions);
-        console.log(`[Cashfree] Checkout completed`);
-        
-        return result;
-    } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error("[Cashfree] Checkout failed:", errorMsg);
-        throw new Error(`Payment gateway error: ${errorMsg}`);
+    if (!paymentSessionId?.trim()) {
+        throw new Error("Invalid or missing payment session ID");
     }
+
+    const cashfree = await getCashfree();
+    
+    const checkoutOptions = {
+        paymentSessionId: paymentSessionId,
+        returnUrl: `${window.location.origin}/?order_id={order_id}`,
+        redirectTarget: "_modal"
+    };
+
+    console.log(`[Cashfree] Opening checkout modal for session: ${paymentSessionId.substring(0, 20)}...`);
+    console.log(`[Cashfree] Checkout options:`, checkoutOptions);
+
+    // SDK checkout() resolves (not rejects) even for aborts/failures
+    // It returns { error: true, errorCode: 'payment_aborted' } for cancellations
+    const result = await cashfree.checkout(checkoutOptions);
+    console.log(`[Cashfree] Checkout result:`, result);
+    
+    return {
+        success: !result?.error,
+        errorCode: result?.error ? (result?.errorCode || 'unknown') : null,
+        aborted: result?.errorCode === 'payment_aborted',
+        raw: result
+    };
 };
 
 /**

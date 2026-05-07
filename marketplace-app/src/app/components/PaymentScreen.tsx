@@ -185,25 +185,24 @@ export function PaymentScreen({
         }
       };
 
-      // Wait briefly for Cashfree to process before checking status
-      console.log("[Payment] Waiting for payment processing...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("[Payment] Cashfree checkout returned:", checkoutResult);
 
-      // Handle checkout result
-      if (checkoutResult.error) {
-        console.log("Checkout closed/error, checking final status...");
-        try {
-          await verifyPayment();
-        } catch (err) {
-          throw err;
-        }
-      } else {
-        console.log("Checkout completed, verifying payment status...");
-        try {
-          await verifyPayment();
-        } catch (err) {
-          throw err;
-        }
+      // If user explicitly aborted/cancelled, don't poll — just show message
+      if (checkoutResult.aborted) {
+        throw new Error("Payment was cancelled. You can try again when ready.");
+      }
+
+      // If there was a hard error (not abort), still check backend status once
+      // in case payment actually went through before the error
+      console.log("[Payment] Checkout closed/errored. Verifying final status...");
+
+      // Wait briefly for Cashfree to process before checking status
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      try {
+        await verifyPayment();
+      } catch (err) {
+        throw err;
       }
 
     } catch (err: any) {
