@@ -170,8 +170,10 @@ export default function App() {
           <PaymentScreen
             gymId={selectedGymId}
             plan={selectedPlan}
+            user={userProfile}
             startDate={selectedStartDate}
             onBack={() => setCurrentScreen("checkout")}
+            onEditProfile={() => setCurrentScreen("profile")}
             onPaymentSuccess={(booking) => {
               setLatestBooking(booking);
               setCurrentScreen("success");
