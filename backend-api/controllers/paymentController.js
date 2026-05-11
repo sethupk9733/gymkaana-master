@@ -293,20 +293,46 @@ exports.verifyWebhook = async (req, res) => {
             return;
         }
 
-        const secretKey      = process.env.CASHFREE_WEBHOOK_SECRET || process.env.CASHFREE_SECRET_KEY;
+        const secretKey = process.env.CASHFREE_WEBHOOK_SECRET;
+        
+        if (!secretKey) {
+            console.error('[Webhook] CRITICAL: CASHFREE_WEBHOOK_SECRET not set in .env');
+            return;
+        }
+
         const signatureInput = timestamp + rawBody.toString('utf8');
 
-        const expectedSig = crypto
+        const expectedSigBase64 = crypto
             .createHmac('sha256', secretKey)
             .update(signatureInput)
             .digest('base64');
+            
+        const expectedSigHex = crypto
+            .createHmac('sha256', secretKey)
+            .update(signatureInput)
+            .digest('hex');
 
-        if (expectedSig !== receivedSig) {
-            console.warn('[Webhook] ⚠ Signature Mismatch!');
-            console.warn(`[Webhook] Expected: ${expectedSig.substring(0, 10)}...`);
-            console.warn(`[Webhook] Received: ${receivedSig.substring(0, 10)}...`);
+        const matchBase64 = expectedSigBase64 === receivedSig;
+        const matchHex = expectedSigHex === receivedSig;
+
+        console.log('[Webhook] Signature verification details:', {
+            timestamp: timestamp,
+            receivedSig: receivedSig.substring(0, 10) + '...',
+            matchBase64,
+            matchHex
+        });
+
+        if (!matchBase64 && !matchHex) {
+            console.warn('[Webhook] ⚠ Signature Mismatch! Webhook potentially insecure or secretKey invalid.');
+            console.warn(`[Webhook] Expected (Base64): ${expectedSigBase64}`);
+            console.warn(`[Webhook] Expected (Hex): ${expectedSigHex}`);
+            console.warn(`[Webhook] Received: ${receivedSig}`);
+            // In development, we might allow it, but in production we must block.
+            // However, to debug, let's just log it and RETURN for now.
             return;
         }
+
+        const expectedSig = matchHex ? expectedSigHex : expectedSigBase64;
 
         const event = JSON.parse(rawBody.toString('utf8'));
         const { type, data } = event;
@@ -444,17 +470,47 @@ exports.getPaymentStatus = async (req, res) => {
         if (booking.paymentStatus === 'PENDING') {
             console.log(`[StatusCheck] Verifying PENDING order ${orderId} with Cashfree API...`);
             try {
-                const apiInstance = new CFPaymentGateway();
-                const result = await apiInstance.orderFetch(cfConfig, orderId);
-                const cfOrder = result?.cfOrder;
+                // Use direct API call instead of SDK method that may not exist
+                const axios = require('axios');
                 
-                console.log(`[StatusCheck] Cashfree response for ${orderId}:`, {
-                    orderStatus: cfOrder?.orderStatus,
-                    transactionStatus: cfOrder?.paymentSessionId ? 'Has Session' : 'No Session'
+                // Auto-detect environment based on App ID prefix
+                const isSandbox = (process.env.CASHFREE_APP_ID || '').startsWith('TEST');
+                const baseURL = isSandbox ? 'https://sandbox.cashfree.com' : 'https://api.cashfree.com';
+                
+                console.log(`[StatusCheck] Using ${isSandbox ? 'SANDBOX' : 'PRODUCTION'} URL: ${baseURL}`);
+
+                const response = await axios.get(`${baseURL}/pg/orders/${orderId}`, {
+                    headers: {
+                        'x-api-version': '2022-09-01',
+                        'x-client-id': process.env.CASHFREE_APP_ID,
+                        'x-client-secret': process.env.CASHFREE_SECRET_KEY
+                    },
+                    validateStatus: () => true // Allow us to handle 4xx/5xx responses manually
                 });
                 
-                // Handle different Cashfree order statuses
-                if (cfOrder?.orderStatus === 'PAID' || cfOrder?.paymentStatus === 'PAID') {
+                if (response.status !== 200) {
+                    console.error(`❌ [StatusCheck] Cashfree API returned ${response.status}:`, response.data);
+                    // On 404, we might want to check if we're hitting the wrong environment
+                    if (response.status === 404) {
+                        console.warn(`[StatusCheck] Order ${orderId} not found. Check if keys match the environment (isSandbox: ${isSandbox})`);
+                    }
+                }
+
+                const cfOrder = response.data;
+                const cfStatus = (cfOrder?.order_status || '').toUpperCase();
+                const payStatus = (cfOrder?.payment_status || '').toUpperCase();
+
+                console.log(`[StatusCheck] Cashfree response for ${orderId}:`, {
+                    orderStatus: cfStatus,
+                    paymentStatus: payStatus,
+                    cf_payment_id: cfOrder?.cf_payment_id,
+                    rawResponse: cfOrder
+                });
+                
+                const isSuccess = ['PAID', 'SUCCESS', 'COMPLETED'].includes(cfStatus) ||
+                                  ['SUCCESS'].includes(payStatus);
+                
+                if (isSuccess) {
                     console.log(`✅ [StatusCheck] Order ${orderId} PAID - Updating booking...`);
                     
                     booking.paymentStatus = 'SUCCESS';
@@ -483,17 +539,18 @@ exports.getPaymentStatus = async (req, res) => {
                         console.error('⚠ Email trigger failed:', mailErr.message);
                     }
                     
-                } else if (cfOrder?.orderStatus === 'CANCELLED' || cfOrder?.orderStatus === 'FAILED') {
-                    console.log(`❌ [StatusCheck] Order ${orderId} ${cfOrder.orderStatus} - Marking as FAILED...`);
-                    booking.paymentStatus = 'FAILED';
-                    booking.failureReason = cfOrder?.orderStatus;
+                } else if (cfStatus === 'CANCELLED' || cfStatus === 'FAILED' || payStatus === 'FAILED' || payStatus === 'CANCELLED' || payStatus === 'USER_DROPPED') {
+                    const finalStatus = (cfStatus === 'CANCELLED' || payStatus === 'CANCELLED' || payStatus === 'USER_DROPPED') ? 'CANCELLED' : 'FAILED';
+                    console.log(`❌ [StatusCheck] Order ${orderId} ${finalStatus} - Updating booking...`);
+                    booking.paymentStatus = finalStatus;
+                    booking.failureReason = cfStatus || payStatus;
                     await booking.save();
                     
-                } else if (cfOrder?.orderStatus === 'ACTIVE' || cfOrder?.orderStatus === 'PENDING') {
-                    console.log(`⏳ [StatusCheck] Order ${orderId} still ${cfOrder.orderStatus}`);
+                } else if (cfStatus === 'ACTIVE' || cfStatus === 'PENDING') {
+                    console.log(`⏳ [StatusCheck] Order ${orderId} still ${cfStatus}`);
                     // Keep as PENDING
                 } else {
-                    console.warn(`[StatusCheck] Unknown order status: ${cfOrder?.orderStatus}`);
+                    console.warn(`[StatusCheck] Unknown order status: ${cfStatus} / ${payStatus}`);
                 }
             } catch (cfErr) {
                 console.error('[StatusCheck] Cashfree API check failed:', cfErr.response?.data || cfErr.message);

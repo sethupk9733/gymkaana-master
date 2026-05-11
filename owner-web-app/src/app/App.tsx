@@ -229,7 +229,17 @@ export default function App() {
       return <EditGym gymId={selectedGymId} onBack={() => navigate('gymDetails', activeTab, selectedGymId)} />;
     }
     if (currentScreen === "addGym") {
-      return <AddGym onBack={() => navigate('main', 'gyms')} />;
+      return <AddGym
+        onBack={() => navigate('main', 'gyms')}
+        onSuccess={async () => {
+          // Refresh gyms list so the guard doesn't redirect back to addGym
+          try {
+            const gymsData = await fetchGyms();
+            setGyms(Array.isArray(gymsData) ? gymsData : (gymsData.gyms || []));
+          } catch { /* ignore */ }
+          navigate('main', 'dashboard');
+        }}
+      />;
     }
     if (currentScreen === "membershipPlans" && selectedGymId) {
       return (

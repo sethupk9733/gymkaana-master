@@ -122,7 +122,16 @@ export function Accounting({ onBack }: AccountingProps) {
     };
 
     const filteredTransactions = filterTransactions();
-    const totalAmount = filteredTransactions.reduce((sum: number, tx: any) => sum + (tx.type === 'IN' ? tx.amount : -tx.amount), 0);
+    // Only count non-cancelled transactions in the total
+    const isCancelled = (tx: any) => {
+        const status = (tx.status || '').toLowerCase();
+        const pStatus = (tx.paymentStatus || '').toLowerCase();
+        return status === 'cancelled' || status === 'failed' || status === 'user_dropped' ||
+               pStatus === 'cancelled' || pStatus === 'failed' || pStatus === 'user_dropped';
+    };
+    const totalAmount = filteredTransactions
+        .filter((tx: any) => !isCancelled(tx))
+        .reduce((sum: number, tx: any) => sum + (tx.type === 'IN' ? tx.amount : -tx.amount), 0);
 
     if (loading) {
         return (
@@ -366,16 +375,24 @@ export function Accounting({ onBack }: AccountingProps) {
                                                 </span>
                                             </td>
                                             <td className="px-8 py-5">
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${tx.type === 'IN' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                                                    }`}>
-                                                    {tx.type === 'IN' ? 'Credit' : 'Debit'}
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                    isCancelled(tx)
+                                                        ? 'bg-gray-100 text-gray-400'
+                                                        : tx.type === 'IN' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                                                }`}>
+                                                    {isCancelled(tx) ? 'Cancelled' : tx.type === 'IN' ? 'Credit' : 'Debit'}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-5 text-right">
-                                                <span className={`font-mono font-bold text-lg ${tx.type === 'IN' ? 'text-green-600' : 'text-red-600'
-                                                    }`}>
-                                                    {tx.type === 'IN' ? '+' : '-'}₹{tx.amount.toLocaleString()}
-                                                </span>
+                                                {isCancelled(tx) ? (
+                                                    <span className="font-mono text-sm text-gray-300 line-through">
+                                                        ₹{tx.amount.toLocaleString()}
+                                                    </span>
+                                                ) : (
+                                                    <span className={`font-mono font-bold text-lg ${tx.type === 'IN' ? 'text-green-600' : 'text-red-600'}` }>
+                                                        {tx.type === 'IN' ? '+' : '-'}₹{tx.amount.toLocaleString()}
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

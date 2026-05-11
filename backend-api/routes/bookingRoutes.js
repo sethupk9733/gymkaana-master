@@ -13,6 +13,7 @@ router.get('/', bookingController.getAllBookings);
 router.get('/my', bookingController.getMyBookings);
 router.get('/gym/:gymId', bookingController.getBookingsByGym);
 router.get('/:id', bookingController.getBookingById);
+router.put('/:id/activate', bookingController.activateBooking);
 router.put('/:id/cancel', bookingController.cancelBooking);
 router.put('/:id/update-date', bookingController.updateBookingDate);
 router.post('/verify-qr', bookingController.verifyBooking);

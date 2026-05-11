@@ -311,3 +311,15 @@ exports.updateBookingDate = async (req, res) => {
     }
 };
 
+exports.activateBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
+        booking.status = 'upcoming';
+        await booking.save();
+        res.json({ message: 'Booking activated', booking });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+

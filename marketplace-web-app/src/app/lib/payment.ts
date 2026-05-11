@@ -81,43 +81,43 @@ const getCashfree = async () => {
  * 3. result.paymentDetails: Payment completed (always verify server-side)
  */
 export const initiateCheckout = async (paymentSessionId: string) => {
-    try {
-        if (!paymentSessionId?.trim()) {
-            throw new Error("Invalid or missing payment session ID");
-        }
-
-        console.log(`[Cashfree] Opening checkout modal for session: ${paymentSessionId.substring(0, 20)}...`);
-        
-        const cashfree = await getCashfree();
-        
-        const checkoutOptions = {
-            paymentSessionId: paymentSessionId,
-            returnUrl: `${window.location.origin}/?order_id={order_id}`,
-            redirectTarget: "_modal" // Opens in beautiful popup (non-blocking)
-        };
-
-        console.log(`[Cashfree] Checkout options:`, {
-            returnUrl: checkoutOptions.returnUrl,
-            redirectTarget: checkoutOptions.redirectTarget,
-            sessionId: paymentSessionId.substring(0, 20) + '...'
-        });
-        
-        const result = await cashfree.checkout(checkoutOptions);
-        
-        console.log(`[Cashfree] Checkout result:`, {
-            hasError: !!result?.error,
-            hasRedirect: !!result?.redirect,
-            hasPaymentDetails: !!result?.paymentDetails,
-            errorCode: result?.error?.code,
-            errorDescription: result?.error?.description
-        });
-        
-        return result;
-    } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error("[Cashfree] Checkout initialization failed:", errorMsg);
-        throw new Error(`Payment gateway error: ${errorMsg}`);
+    if (!paymentSessionId?.trim()) {
+        throw new Error("Invalid or missing payment session ID");
     }
+
+    console.log(`[Cashfree] Opening checkout modal for session: ${paymentSessionId.substring(0, 20)}...`);
+    
+    const cashfree = await getCashfree();
+    
+    const checkoutOptions = {
+        paymentSessionId: paymentSessionId,
+        returnUrl: `${window.location.origin}/?order_id={order_id}`,
+        redirectTarget: "_modal"
+    };
+
+    console.log(`[Cashfree] Checkout options:`, {
+        returnUrl: checkoutOptions.returnUrl,
+        redirectTarget: checkoutOptions.redirectTarget,
+        sessionId: paymentSessionId.substring(0, 20) + '...'
+    });
+    
+    // SDK checkout() resolves (does NOT reject) even for aborts/failures.
+    // It returns { error: true, errorCode: 'payment_aborted' } for cancellations.
+    const result = await cashfree.checkout(checkoutOptions);
+    
+    console.log(`[Cashfree] Checkout result:`, {
+        hasError: !!result?.error,
+        hasRedirect: !!result?.redirect,
+        hasPaymentDetails: !!result?.paymentDetails,
+        errorCode: result?.errorCode || result?.error?.code,
+    });
+    
+    return {
+        success: !result?.error,
+        errorCode: result?.error ? (result?.errorCode || result?.error?.code || 'unknown') : null,
+        aborted: result?.errorCode === 'payment_aborted' || result?.error?.code === 'payment_aborted',
+        raw: result
+    };
 };
 
 /**

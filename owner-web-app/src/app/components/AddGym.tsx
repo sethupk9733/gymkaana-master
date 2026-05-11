@@ -7,6 +7,7 @@ import * as api from "../lib/api";
 
 interface AddGymProps {
     onBack: () => void;
+    onSuccess?: () => void;
 }
 
 // Compress image to reduce size before storing
@@ -31,7 +32,7 @@ const compressImage = (base64: string, maxWidth = 800, quality = 0.7): Promise<s
     });
 };
 
-export function AddGym({ onBack }: AddGymProps) {
+export function AddGym({ onBack, onSuccess }: AddGymProps) {
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
     const [images, setImages] = useState<string[]>([]);
@@ -242,7 +243,12 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
             });
             console.log('✅ Declaration submitted successfully');
 
-            onBack();
+            // Navigate to dashboard on success (caller refreshes gyms list)
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                onBack();
+            }
         } catch (err: any) {
             console.error('❌ Submission Error:', err);
             const errorMsg = err.message || err.toString() || 'Submission failed. If you uploaded many photos, try with fewer images.';

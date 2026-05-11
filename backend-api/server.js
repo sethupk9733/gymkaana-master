@@ -32,7 +32,7 @@ app.use(cors({
 
 // ── Payment Infrastructure ──────────────────────────────────────────────────
 // Webhook needs raw body for HMAC verification; others need standard JSON.
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/payments/webhook', express.raw({ type: '*/*' }));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

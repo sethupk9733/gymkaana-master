@@ -95,7 +95,7 @@ export function PaymentScreen({
         amount: total,
         startDate: start.toISOString(),
         endDate: end.toISOString(),
-        status: 'upcoming'
+        status: 'cancelled' // Only activate after payment success
       };
 
       const booking = await createBooking(bookingData);
@@ -135,8 +135,21 @@ export function PaymentScreen({
       // 3. Open Cashfree Checkout Modal
       const checkoutResult = await initiateCheckout(result.paymentSessionId);
 
-      // 4. Verify Payment Status with Retry Logic (Even if they closed it, they might have paid)
-      const verifyPayment = async (silent = false, retryCount = 0) => {
+      // Activate booking on confirmed payment success
+      const activateBooking = async (bookingId: string) => {
+        try {
+          const res = await fetch(`${API_URL}/bookings/${bookingId}/activate`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
+          });
+          if (!res.ok) throw new Error('Failed to activate booking');
+        } catch (e) {
+          console.error('Booking activation failed:', e);
+        }
+      };
+
+      // 4. Verify Payment Status with Retry Logic
+      const verifyPayment = async (silent = false, retryCount = 0): Promise<boolean> => {
         try {
           const checkRes = await fetch(`${API_URL}/payments/status/${result.cashfreeOrderId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('gymkaana_token')}` }
@@ -145,36 +158,28 @@ export function PaymentScreen({
           
           console.log(`[Payment Verification] Status: ${checkData.paymentStatus} (Attempt: ${retryCount + 1})`);
           
-          // SUCCESS - Payment confirmed
           if (checkData.paymentStatus === 'SUCCESS') {
             console.log("✅ Payment status confirmed SUCCESS");
+            await activateBooking(booking._id);
             onPaymentSuccess(checkData.booking || booking);
             return true;
-          } 
-          // FAILED - Payment was cancelled or rejected
-          else if (checkData.paymentStatus === 'FAILED' || checkData.paymentStatus === 'CANCELLED' || checkData.paymentStatus === 'USER_DROPPED') {
+          } else if (checkData.paymentStatus === 'FAILED' || checkData.paymentStatus === 'CANCELLED' || checkData.paymentStatus === 'USER_DROPPED') {
             console.error("❌ Payment was cancelled or failed");
             throw new Error(`Payment was ${checkData.paymentStatus.toLowerCase()}. Please try again.`);
-          }
-          // PENDING - Still processing, retry
-          else if (retryCount < 2 && checkData.paymentStatus === 'PENDING') {
-            if (!silent) console.log("Status pending, retrying in 2 seconds...");
+          } else if (retryCount < 14 && (checkData.paymentStatus === 'PENDING' || checkData.paymentStatus === 'ACTIVE')) {
+            if (!silent) console.log(`Status ${checkData.paymentStatus}, retrying in 2 seconds... (Attempt ${retryCount + 1}/15)`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             return verifyPayment(silent, retryCount + 1);
-          } 
-          // NOT_FOUND - Order doesn't exist
-          else if (checkData.paymentStatus === 'NOT_FOUND') {
+          } else if (checkData.paymentStatus === 'NOT_FOUND') {
             throw new Error("Payment session not found. Please try again.");
-          }
-          // Unknown status after retries
-          else {
-            console.warn(`Unknown payment status: ${checkData.paymentStatus}`);
-            if (retryCount < 2 && !checkData.paymentStatus) {
+          } else {
+            console.warn(`Payment verification timeout or unknown status: ${checkData.paymentStatus}`);
+            if (retryCount < 14 && !checkData.paymentStatus) {
               if (!silent) console.log("Status unclear, retrying in 2 seconds...");
               await new Promise(resolve => setTimeout(resolve, 2000));
               return verifyPayment(silent, retryCount + 1);
             }
-            throw new Error("Unable to verify payment status. Please check your bookings.");
+            throw new Error("Unable to verify payment status. Please check your bookings in a few moments.");
           }
         } catch (e) {
           console.error("Status verification error:", e);
@@ -182,28 +187,16 @@ export function PaymentScreen({
         }
       };
 
-      // Wait briefly for Cashfree to process before checking status
-      console.log("[Payment] Waiting for payment processing...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("[Payment] Cashfree checkout returned:", { success: checkoutResult.success, errorCode: checkoutResult.errorCode });
 
-      // Handle Modal Result
-      if (checkoutResult.error) {
-         // User closed modal or error occurred. Check status.
-         console.log("[Payment] Checkout closed/errored. Verifying final status...");
-         try {
-           await verifyPayment(false);
-         } catch (err) {
-           throw err;
-         }
-      } else {
-         // No error in modal result - verify status
-         console.log("[Payment] Checkout completed. Verifying payment status...");
-         try {
-           await verifyPayment(false);
-         } catch (err) {
-           throw err;
-         }
+      if (checkoutResult.aborted) {
+        throw new Error("Payment was cancelled. You can try again when ready.");
       }
+
+      console.log("[Payment] Checkout closed. Verifying final status...");
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      await verifyPayment(false);
 
     } catch (err: any) {
       console.error("Payment flow interrupted:", err);
