@@ -229,27 +229,23 @@ export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
 
             clearTimeout(timeoutId);
 
-                if (success) {
-                    setSubmitStatus("success");
-                    setEnquiryForm({ gymName: "", contact: "", location: "" });
-                    
-                    if (window.fbq) {
-                        window.fbq('track', 'Lead', {
-                            content_name: 'Gym Enquiry',
-                            value: 0,
-                            currency: 'INR'
-                        });
-                    }
-
-                    if (isHeaderForm) {
-                        setTimeout(() => setShowHeaderForm(false), 1000);
-                    }
-
-                    setTimeout(() => setSubmitStatus("idle"), 3000);
-                } else {
-                    setSubmitStatus("error");
-                    console.error("All enquiry endpoints failed");
+            if (success) {
+                setSubmitStatus("success");
+                setEnquiryForm({ gymName: "", contact: "", location: "" });
+                
+                if (window.fbq) {
+                    window.fbq('track', 'Lead', {
+                        content_name: 'Gym Enquiry',
+                        value: 0,
+                        currency: 'INR'
+                    });
                 }
+
+                if (isHeaderForm) {
+                    setTimeout(() => setShowHeaderForm(false), 1000);
+                }
+
+                setTimeout(() => setSubmitStatus("idle"), 3000);
             } else {
                 setSubmitStatus("error");
                 console.error("All enquiry endpoints failed");
