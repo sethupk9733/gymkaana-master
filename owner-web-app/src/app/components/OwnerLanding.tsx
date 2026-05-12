@@ -1,576 +1,643 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  BarChart3,
-  Users,
-  TrendingUp,
-  Zap,
-  ArrowRight,
-  CheckCircle2,
-  Star,
-  Globe,
-  Lock,
+    Eye,
+    MessageCircle,
+    TrendingUp,
+    CheckCircle2,
+    Zap,
+    ChevronDown,
+    Phone,
+    ArrowRight,
+    Send,
+    AlertCircle,
+    CheckCircle,
+    MapPin,
+    ChevronLeft,
+    ChevronRight,
+    Star,
+    Users
 } from "lucide-react";
 
 type OwnerLandingProps = {
-  onNavigateToLogin: (mode: "login" | "signup") => void;
+    onNavigateToLogin: (mode: "login" | "signup") => void;
 };
 
+const FAQ_ITEMS = [
+    {
+        question: "Is onboarding free?",
+        answer: "Yes! Onboarding is completely free. You only pay a small commission on successful memberships."
+    },
+    {
+        question: "How does Gymkaana work?",
+        answer: "Users nearby search for gyms on Gymkaana. Your gym gets discovered. They contact you directly for membership."
+    },
+    {
+        question: "Will users contact us directly?",
+        answer: "Yes! Interested users message your gym directly. You handle conversations and conversions."
+    },
+    {
+        question: "Is Gymkaana available in my city?",
+        answer: "We're expanding rapidly across Tamil Nadu and major Indian cities. Contact us to confirm availability."
+    },
+    {
+        question: "How long does onboarding take?",
+        answer: "Just 5 minutes! Provide your gym details and you're live. Our team helps with the rest."
+    }
+];
+
+const PAIN_POINTS = [
+    { icon: Eye, title: "Low Visibility", desc: "Hard to get discovered locally" },
+    { icon: MessageCircle, title: "Inconsistent Enquiries", desc: "Relying only on Instagram ads" },
+    { icon: Users, title: "Few Local Members", desc: "Difficult to attract nearby users" },
+    { icon: Zap, title: "Marketing Burnout", desc: "Constant content creation needed" }
+];
+
+const BENEFITS = [
+    "Better local visibility for your gym",
+    "Direct enquiries from interested users",
+    "Increase membership revenue",
+    "5-minute easy onboarding",
+    "Mobile-friendly member management",
+    "Discover more local gym members"
+];
+
+const SAMPLE_GYMS = [
+    { _id: "1", name: "PowerFlex Gym", city: "Chennai", rating: 4.8, reviews: 156, image: "https://picsum.photos/800/600?random=1", tags: ["Strength", "Cardio"] },
+    { _id: "2", name: "FitZone Studio", city: "Bangalore", rating: 4.9, reviews: 203, image: "https://picsum.photos/800/600?random=2", tags: ["Yoga", "Wellness"] },
+    { _id: "3", name: "Titan Strength", city: "Tamil Nadu", rating: 4.7, reviews: 187, image: "https://picsum.photos/800/600?random=3", tags: ["Bodybuilding", "CrossFit"] },
+    { _id: "4", name: "Elite Fitness", city: "Hyderabad", rating: 4.8, reviews: 219, image: "https://picsum.photos/800/600?random=4", tags: ["Premium", "Personal Training"] },
+    { _id: "5", name: "Iron House", city: "Mumbai", rating: 4.9, reviews: 245, image: "https://picsum.photos/800/600?random=5", tags: ["Open Gym", "Training"] },
+    { _id: "6", name: "Muscle Hub", city: "Delhi", rating: 4.6, reviews: 178, image: "https://picsum.photos/800/600?random=6", tags: ["Strength", "Cardio"] },
+    { _id: "7", name: "Strong Body", city: "Pune", rating: 4.8, reviews: 162, image: "https://picsum.photos/800/600?random=7", tags: ["Fitness", "Wellness"] },
+    { _id: "8", name: "Ultimate Gym", city: "Kolkata", rating: 4.7, reviews: 149, image: "https://picsum.photos/800/600?random=8", tags: ["Gym", "Training"] },
+    { _id: "9", name: "Fit Warriors", city: "Jaipur", rating: 4.8, reviews: 134, image: "https://picsum.photos/800/600?random=9", tags: ["CrossFit", "Strength"] },
+    { _id: "10", name: "Power Zone", city: "Ahmedabad", rating: 4.6, reviews: 121, image: "https://picsum.photos/800/600?random=10", tags: ["Cardio", "Fitness"] },
+    { _id: "11", name: "Victory Fitness", city: "Lucknow", rating: 4.7, reviews: 108, image: "https://picsum.photos/800/600?random=11", tags: ["Strength", "Training"] },
+    { _id: "12", name: "Apex Gym", city: "Chandigarh", rating: 4.8, reviews: 97, image: "https://picsum.photos/800/600?random=12", tags: ["Premium", "Wellness"] }
+];
+
 export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
-  const [liveStats, setLiveStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+    const [liveStats, setLiveStats] = useState<any>(null);
+    const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [onboardedGyms, setOnboardedGyms] = useState<any[]>(SAMPLE_GYMS);
+    const [scrollPosition, setScrollPosition] = useState(0);
+    const carouselRef = useRef<HTMLDivElement>(null);
+    
+    // Enquiry form state
+    const [enquiryForm, setEnquiryForm] = useState({ gymName: "", contact: "", location: "" });
+    const [submitting, setSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+    const [showHeaderForm, setShowHeaderForm] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || "https://api.gymkaana.com/api";
+    const API_URL = import.meta.env.VITE_API_URL || "https://api.gymkaana.com/api";
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+    // Fetch stats and gyms
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const res = await fetch(`${API_URL}/dashboard/public-stats`, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
+                // Fetch stats
+                const statsRes = await fetch(`${API_URL}/dashboard/public-stats`, {
+                    signal: controller.signal,
+                });
+                
+                if (statsRes.ok) {
+                    const data = await statsRes.json();
+                    setLiveStats(data);
+                }
 
-        if (res.ok) {
-          const data = await res.json();
-          setLiveStats({ ...data, isConnected: true });
+                // Fetch gyms (with fallback to sample data)
+                try {
+                    const gymsRes = await fetch(`${API_URL}/gyms`, {
+                        signal: controller.signal,
+                    });
+
+                    if (gymsRes.ok) {
+                        const gymsData = await gymsRes.json();
+                        const processedGyms = Array.isArray(gymsData) 
+                            ? gymsData.slice(0, 12) 
+                            : gymsData.data?.slice(0, 12) || [];
+                        
+                        if (processedGyms.length > 0) {
+                            setOnboardedGyms(processedGyms);
+                        }
+                    }
+                } catch (gymErr) {
+                    console.warn("Could not fetch real gyms, using sample data:", gymErr);
+                    // Keep sample gyms as fallback
+                }
+
+                clearTimeout(timeoutId);
+            } catch (err) {
+                console.error("Failed to fetch data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // Auto-scroll carousel
+    useEffect(() => {
+        if (onboardedGyms.length === 0) return;
+
+        const interval = setInterval(() => {
+            if (carouselRef.current) {
+                const maxScroll = carouselRef.current.scrollWidth - carouselRef.current.clientWidth;
+                let newPosition = scrollPosition + 350;
+                
+                if (newPosition >= maxScroll) {
+                    newPosition = 0;
+                }
+                
+                carouselRef.current.scrollTo({
+                    left: newPosition,
+                    behavior: 'smooth'
+                });
+                setScrollPosition(newPosition);
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [scrollPosition, onboardedGyms.length]);
+
+    const handleSignUp = () => {
+        if (window.fbq) {
+            window.fbq('track', 'Lead', {
+                content_name: 'Gym Owner Registration',
+                value: 0,
+                currency: 'INR'
+            });
         }
-      } catch (err) {
-        console.error("Failed to fetch owner stats:", err);
-      } finally {
-        setLoading(false);
-      }
+        onNavigateToLogin("signup");
     };
 
-    fetchStats();
-  }, []);
+    const handleEnquirySubmit = async (e: React.FormEvent, isHeaderForm: boolean = false) => {
+        e.preventDefault();
+        
+        // Trim whitespace and validate
+        const trimmed = {
+            gymName: enquiryForm.gymName.trim(),
+            contact: enquiryForm.contact.trim(),
+            location: enquiryForm.location.trim()
+        };
 
-  const features = [
-    {
-      icon: Users,
-      title: "Attract More Members",
-      description:
-        "Get discovered by thousands of fitness enthusiasts actively searching for your services on Gymkaana.",
-    },
-    {
-      icon: BarChart3,
-      title: "Smart Pricing Control",
-      description:
-        "Create custom plans, hourly passes, and seasonal offers. Full control over your pricing strategy.",
-    },
-    {
-      icon: TrendingUp,
-      title: "Real-Time Bookings",
-      description:
-        "Instant booking notifications, live occupancy tracking, and member management in one dashboard.",
-    },
-    {
-      icon: Lock,
-      title: "Secure & Reliable",
-      description:
-        "Bank-grade security, automated payouts, and transparent reporting for your business growth.",
-    },
-  ];
+        if (!trimmed.gymName || !trimmed.contact || !trimmed.location) {
+            setSubmitStatus("error");
+            return;
+        }
 
-  const statsCards = [
-    {
-      label: "Gym Partners",
-      value: liveStats?.totalGyms || "500+",
-      icon: Globe,
-    },
-    {
-      label: "Active Bookings",
-      value: liveStats?.activeBookings || "12.4K+",
-      icon: CheckCircle2,
-    },
-    {
-      label: "Platform Rating",
-      value: liveStats?.platformRating || "4.9",
-      suffix: "/5",
-      icon: Star,
-    },
-    {
-      label: "Monthly Growth",
-      value: liveStats?.monthlyGrowth || "+42%",
-      icon: TrendingUp,
-    },
-  ];
+        setSubmitting(true);
+        setSubmitStatus("idle");
 
-  const steps = [
-    {
-      num: 1,
-      title: "Register Your Gym",
-      description:
-        "Complete your profile with gym details, photos, and location information.",
-    },
-    {
-      num: 2,
-      title: "Set Your Plans",
-      description:
-        "Create membership packages, hourly rates, class passes, and seasonal offers.",
-    },
-    {
-      num: 3,
-      title: "Start Growing",
-      description:
-        "Go live on Gymkaana and start receiving bookings from your local fitness community.",
-    },
-  ];
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-  return (
-    <div className="min-h-screen bg-white selection:bg-[#2EDD3B] selection:text-black overflow-x-hidden">
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="sticky top-0 z-[100] backdrop-blur-xl bg-white/80 border-b border-slate-200/40"
-      >
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
-            <span className="text-slate-900">GYM</span>
-            <span className="italic ml-0.5" style={{ color: "#2EDD3B" }}>
-              KAA
-            </span>
-            <span className="text-slate-900">NA</span>
-          </div>
+            // Try multiple endpoints in order
+            const endpoints = [
+                {
+                    url: `${API_URL}/inquiry`,
+                    data: trimmed
+                }
+            ];
 
-          <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="#features"
-              className="text-[10px] font-black text-slate-600 hover:text-[#2EDD3B] transition-colors uppercase tracking-widest"
+            let success = false;
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(endpoint.data),
+                        signal: controller.signal,
+                    });
+
+                    if (response.ok || response.status === 201) {
+                        success = true;
+                        console.log("Enquiry submitted to:", endpoint.url);
+                        break;
+                    }
+                } catch (e) {
+                    console.warn(`Endpoint ${endpoint.url} failed, trying next...`, e);
+                }
+            }
+
+            clearTimeout(timeoutId);
+
+                if (success) {
+                    setSubmitStatus("success");
+                    setEnquiryForm({ gymName: "", contact: "", location: "" });
+                    
+                    if (window.fbq) {
+                        window.fbq('track', 'Lead', {
+                            content_name: 'Gym Enquiry',
+                            value: 0,
+                            currency: 'INR'
+                        });
+                    }
+
+                    if (isHeaderForm) {
+                        setTimeout(() => setShowHeaderForm(false), 1000);
+                    }
+
+                    setTimeout(() => setSubmitStatus("idle"), 3000);
+                } else {
+                    setSubmitStatus("error");
+                    console.error("All enquiry endpoints failed");
+                }
+            } else {
+                setSubmitStatus("error");
+                console.error("All enquiry endpoints failed");
+            }
+        } catch (err) {
+            console.error("Enquiry submission failed:", err);
+            setSubmitStatus("error");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const scrollCarousel = (direction: 'left' | 'right') => {
+        if (carouselRef.current) {
+            const scrollAmount = direction === 'left' ? -350 : 350;
+            carouselRef.current.scrollBy({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-white text-slate-900 overflow-hidden">
+            {/* ===== STICKY HEADER ===== */}
+            <motion.header
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="sticky top-0 z-[100] backdrop-blur-md bg-white/90 border-b border-slate-200"
             >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="text-[10px] font-black text-slate-600 hover:text-[#2EDD3B] transition-colors uppercase tracking-widest"
-            >
-              How It Works
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => onNavigateToLogin("login")}
-              className="text-[10px] font-black text-slate-600 hover:text-[#2EDD3B] transition-colors uppercase tracking-widest hidden sm:block"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => onNavigateToLogin("signup")}
-              className="px-6 py-3 rounded-full bg-[#2EDD3B] text-black font-black uppercase tracking-widest text-[10px] shadow-lg shadow-[#2EDD3B]/20 hover:opacity-90 transition-all"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      </motion.header>
-
-      <section className="relative overflow-hidden pt-20 pb-24 lg:pt-32 lg:pb-40">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#2EDD3B]/5 rounded-full blur-[200px]" />
-        </div>
-
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="lg:w-1/2 text-center lg:text-left"
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2EDD3B]/10 text-[#2EDD3B] text-[10px] font-black mb-6 animate-pulse uppercase tracking-widest">
-                <Zap size={14} /> For Gym Owners
-              </div>
-              <h1 className="text-5xl lg:text-7xl font-[1000] tracking-tighter text-slate-900 leading-[1] mb-6">
-                Fill Your Gym.{" "}
-                <span className="text-[#2EDD3B] italic">Maximize Revenue.</span>
-              </h1>
-              <p className="text-xl text-slate-600 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                Connect with thousands of fitness enthusiasts. Manage bookings in real-time, list your gym for free, and grow your business with a transparent 5% commission.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onNavigateToLogin("signup")}
-                  className="h-16 px-10 rounded-2xl text-lg font-black bg-[#2EDD3B] hover:bg-[#2EDD3B]/90 shadow-xl shadow-[#2EDD3B]/25 transition-all uppercase tracking-wider text-black flex items-center justify-center gap-2"
-                >
-                  Get Started <ArrowRight className="h-5 w-5" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onNavigateToLogin("login")}
-                  className="h-16 px-10 rounded-2xl text-lg font-black border-2 border-slate-300 hover:bg-slate-50 transition-all uppercase tracking-wider text-slate-900"
-                >
-                  Sign In
-                </motion.button>
-              </div>
-              <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-start gap-4 text-slate-600">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-[#2EDD3B]" size={20} />
-                  <span className="font-bold text-sm">Free listing on Gymkaana</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-[#2EDD3B]" size={20} />
-                  <span className="font-bold text-sm">5% fixed commission, no hidden charges</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="lg:w-1/2"
-            >
-              <div className="relative">
-                <div className="rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white bg-slate-100">
-                  <img
-                    src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1200"
-                    alt="Gym Owner Dashboard"
-                    className="w-full h-auto object-cover"
-                    loading="lazy"
-                  />
-                </div>
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                  className="absolute -bottom-6 -right-6 bg-white p-6 rounded-3xl shadow-2xl border border-slate-100 z-20 max-w-xs"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#2EDD3B] flex items-center justify-center">
-                      <TrendingUp className="text-black" size={24} />
+                <div className="container mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
+                    <div className="text-2xl md:text-3xl font-[1000] tracking-[-0.08em] uppercase">
+                        <span>GYM</span>
+                        <span className="text-[#2EDD3B] italic">KAANA</span>
                     </div>
-                    <div>
-                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                        Avg Revenue Increase
-                      </p>
-                      <p className="text-2xl font-[1000] text-slate-900">
-                        {loading ? "Loading..." : `${liveStats?.avgRevenueIncrease || "32"}%`}
-                      </p>
+
+                    <nav className="hidden md:flex items-center gap-8">
+                        <a href="#features" className="text-xs font-black text-slate-600 hover:text-[#2EDD3B] uppercase">Features</a>
+                        <a href="#gyms" className="text-xs font-black text-slate-600 hover:text-[#2EDD3B] uppercase">Gyms</a>
+                        <a href="#faq" className="text-xs font-black text-slate-600 hover:text-[#2EDD3B] uppercase">FAQ</a>
+                    </nav>
+
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setShowHeaderForm(true)} className="text-xs font-black text-slate-600 hover:text-[#2EDD3B] uppercase hidden sm:block">Quick Enquiry</button>
+                        <button onClick={() => onNavigateToLogin("login")} className="text-xs font-black text-slate-600 hover:text-[#2EDD3B] uppercase hidden sm:block">Sign In</button>
+                        <button onClick={handleSignUp} className="px-6 py-2.5 rounded-lg bg-[#2EDD3B] text-black font-black uppercase text-xs shadow-lg hover:shadow-xl hover:bg-[#2EDD3B]/90 transition-all">Get Started</button>
                     </div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-slate-50 border-y border-slate-200/40">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statsCards.map((stat, idx) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="rounded-3xl bg-white p-6 border border-slate-200/40 shadow-sm hover:-translate-y-1 transition-transform"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-[#2EDD3B]/10 flex items-center justify-center mb-4">
-                    <Icon className="text-[#2EDD3B]" size={24} />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                    {stat.label}
-                  </p>
-                  <p className="text-3xl font-[1000] text-slate-900">
-                    {stat.value}
-                    {stat.suffix && <span className="text-xl">{stat.suffix}</span>}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="features" className="py-24 container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          className="text-center mb-16"
-        >
-          <span className="inline-block px-4 py-2 rounded-full bg-[#2EDD3B]/10 text-[#2EDD3B] text-[10px] font-black uppercase tracking-widest mb-6">
-            Why Choose Gymkaana
-          </span>
-          <h2 className="text-4xl lg:text-5xl font-[1000] text-slate-900 mb-4">
-            Everything you need to grow your gym
-          </h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            From member acquisition to revenue management, Gymkaana handles the operations while you focus on fitness.
-          </p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, idx) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="rounded-3xl bg-white p-8 border border-slate-200/40 shadow-sm hover:-translate-y-2 transition-transform"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-[#2EDD3B]/10 flex items-center justify-center mb-6">
-                  <Icon className="text-[#2EDD3B]" size={28} />
                 </div>
-                <h3 className="text-xl font-[1000] text-slate-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600 text-sm leading-7">{feature.description}</p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
 
-      <section id="how-it-works" className="py-24 bg-slate-50">
-        <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <span className="inline-block px-4 py-2 rounded-full bg-[#2EDD3B]/10 text-[#2EDD3B] text-[10px] font-black uppercase tracking-widest mb-6">
-              Simple & Fast
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-[1000] text-slate-900 mb-4">
-              Launch in 3 simple steps
-            </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              From signup to first booking in under an hour.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {steps.map((step, idx) => (
-              <motion.div
-                key={step.num}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="relative"
-              >
-                {idx < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-20 left-[calc(100%+1rem)] w-[calc((100%-3rem)/3-1rem)] h-1 bg-gradient-to-r from-[#2EDD3B] to-[#2EDD3B]/30"></div>
+                {/* Header Enquiry Form Modal */}
+                {showHeaderForm && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-slate-50 border-t border-slate-200"
+                    >
+                        <div className="container mx-auto px-6 py-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-black">Quick Enquiry</h3>
+                                <button onClick={() => setShowHeaderForm(false)} className="text-slate-600 hover:text-slate-900">
+                                    <ChevronDown className="rotate-180" size={20} />
+                                </button>
+                            </div>
+                            <form onSubmit={(e) => handleEnquirySubmit(e, true)} className="grid md:grid-cols-4 gap-3 items-end">
+                                <input type="text" placeholder="Gym Name" value={enquiryForm.gymName} onChange={(e) => setEnquiryForm({ ...enquiryForm, gymName: e.target.value })} className="px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20" required />
+                                <input type="tel" placeholder="Contact" value={enquiryForm.contact} onChange={(e) => setEnquiryForm({ ...enquiryForm, contact: e.target.value })} className="px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20" required />
+                                <input type="text" placeholder="Location" value={enquiryForm.location} onChange={(e) => setEnquiryForm({ ...enquiryForm, location: e.target.value })} className="px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20" required />
+                                <button type="submit" disabled={submitting} className="px-6 py-3 bg-[#2EDD3B] text-black font-black rounded-lg hover:bg-[#2EDD3B]/90 disabled:opacity-50 uppercase text-xs">
+                                    {submitting ? "Sending..." : "Send"}
+                                </button>
+                                {submitStatus === "success" && <p className="col-span-4 text-green-600 text-sm font-medium">✓ Enquiry sent!</p>}
+                                {submitStatus === "error" && (
+                                    <p className="col-span-4 text-red-600 text-sm font-medium">
+                                        {enquiryForm.gymName && enquiryForm.contact && enquiryForm.location 
+                                            ? "Submission failed. Please try again." 
+                                            : "Please fill all fields"}
+                                    </p>
+                                )}
+                            </form>
+                        </div>
+                    </motion.div>
                 )}
-                <div className="rounded-3xl bg-white p-8 border border-slate-200/40 shadow-sm h-full relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-[#2EDD3B] text-white flex items-center justify-center font-[1000] text-2xl mb-6">
-                    {step.num}
-                  </div>
-                  <h3 className="text-2xl font-[1000] text-slate-900 mb-3">{step.title}</h3>
-                  <p className="text-slate-600 text-sm leading-7">{step.description}</p>
+            </motion.header>
+
+            <section className="relative min-h-[100vh] flex items-center justify-center px-6 py-20">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2EDD3B]/5 via-transparent to-transparent" />
+                
+                <div className="relative z-10 max-w-4xl mx-auto text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2EDD3B]/10 text-[#2EDD3B] text-xs font-black mb-8 uppercase tracking-widest border border-[#2EDD3B]/30">
+                            <Zap size={14} />
+                            Free Onboarding
+                        </div>
+
+                        <h1 className="text-6xl md:text-8xl font-[1000] mb-8 leading-[1.1] tracking-tighter">
+                            Get More <span className="text-[#2EDD3B]">Local Members</span> for Your Gym
+                        </h1>
+
+                        <p className="text-xl md:text-2xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
+                            Gymkaana connects nearby fitness enthusiasts with your gym. Simple discovery. Direct memberships. Real growth.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
+                            <button onClick={handleSignUp} className="px-10 py-4 bg-[#2EDD3B] text-black font-black rounded-lg hover:bg-[#2EDD3B]/90 transition-all active:scale-95 uppercase text-sm shadow-2xl flex items-center justify-center gap-2">
+                                List Your Gym <ArrowRight size={18} />
+                            </button>
+                            <button onClick={() => onNavigateToLogin("login")} className="px-10 py-4 bg-slate-100 text-black font-black rounded-lg hover:bg-slate-200 transition-all uppercase text-sm flex items-center justify-center gap-2">
+                                <Phone size={18} /> Sign In
+                            </button>
+                        </div>
+
+                        <motion.div
+                            animate={{ y: [0, -15, 0] }}
+                            transition={{ repeat: Infinity, duration: 4 }}
+                            className="relative"
+                        >
+                            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=900" alt="Gym" className="w-full h-96 object-cover rounded-2xl shadow-2xl" />
+                        </motion.div>
+                    </motion.div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+            </section>
+
+            {/* ===== ENQUIRY FORM (BELOW HERO) ===== */}
+            <section className="py-12 px-6 bg-white border-b border-slate-200">
+                <div className="max-w-3xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-8">
+                        <h2 className="text-3xl md:text-4xl font-[1000] mb-3 tracking-tighter">Get Your Gym on Gymkaana</h2>
+                        <p className="text-lg text-slate-600">Join hundreds of gyms discovering local members. Fill this to get started.</p>
+                    </motion.div>
+
+                    <motion.form initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} onSubmit={(e) => handleEnquirySubmit(e, false)} className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="grid md:grid-cols-3 gap-4 mb-6">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Gym Name</label>
+                                <input type="text" placeholder="Enter your gym name" value={enquiryForm.gymName} onChange={(e) => setEnquiryForm({ ...enquiryForm, gymName: e.target.value })} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20 transition-all" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Contact Number</label>
+                                <input type="tel" placeholder="Your phone number" value={enquiryForm.contact} onChange={(e) => setEnquiryForm({ ...enquiryForm, contact: e.target.value })} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20 transition-all" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">City/Location</label>
+                                <input type="text" placeholder="Your city" value={enquiryForm.location} onChange={(e) => setEnquiryForm({ ...enquiryForm, location: e.target.value })} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#2EDD3B] focus:ring-2 focus:ring-[#2EDD3B]/20 transition-all" required />
+                            </div>
+                        </div>
+
+                        {submitStatus === "error" && (
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg">
+                                <AlertCircle size={18} />
+                                {enquiryForm.gymName && enquiryForm.contact && enquiryForm.location 
+                                    ? "Submission failed. Our team is looking into it, please try again later." 
+                                    : "Please fill all fields correctly."}
+                            </motion.div>
+                        )}
+
+                        {submitStatus === "success" && (
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-center gap-2 text-green-600 text-sm font-medium bg-green-50 p-3 rounded-lg">
+                                <CheckCircle size={18} />
+                                Submitted! We'll contact you soon.
+                            </motion.div>
+                        )}
+
+                        <button type="submit" disabled={submitting} className="w-full px-6 py-4 bg-[#2EDD3B] text-black font-black rounded-lg hover:bg-[#2EDD3B]/90 disabled:opacity-50 transition-all uppercase text-base flex items-center justify-center gap-2 shadow-lg">
+                            {submitting ? "Submitting..." : "Submit Enquiry"} <Send size={18} />
+                        </button>
+                    </motion.form>
+                </div>
+            </section>
+
+            {/* ===== PAIN POINTS ===== */}
+            <section className="py-20 px-6 bg-slate-50">
+                <div className="max-w-5xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-20">
+                        <h2 className="text-5xl md:text-6xl font-[1000] mb-6 tracking-tighter">The Gym Owner's Challenge</h2>
+                        <p className="text-xl text-slate-600 max-w-2xl mx-auto">You know these problems too well:</p>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {PAIN_POINTS.map((point, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-slate-200">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-lg bg-[#2EDD3B]/10 flex items-center justify-center flex-shrink-0">
+                                        <point.icon className="text-[#2EDD3B]" size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-[1000] text-lg mb-2">{point.title}</h3>
+                                        <p className="text-slate-600">{point.desc}</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== HOW IT WORKS ===== */}
+            <section id="features" className="py-28 px-6">
+                <div className="max-w-5xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-20">
+                        <h2 className="text-5xl md:text-6xl font-[1000] mb-6 tracking-tighter">How Gymkaana Works</h2>
+                        <p className="text-xl text-slate-600">Three simple steps to grow your gym:</p>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-3 gap-12">
+                        {[
+                            { icon: Eye, title: "Get Discovered", desc: "Local fitness users find your gym when searching nearby.", num: "01" },
+                            { icon: MessageCircle, title: "Receive Enquiries", desc: "Interested users contact you directly through Gymkaana.", num: "02" },
+                            { icon: TrendingUp, title: "Grow Memberships", desc: "Convert interested users into paying members.", num: "03" }
+                        ].map((item, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
+                                <div className="text-5xl font-[1000] text-[#2EDD3B]/20 mb-4">{item.num}</div>
+                                <div className="w-16 h-16 rounded-xl bg-[#2EDD3B]/10 flex items-center justify-center mb-6">
+                                    <item.icon size={32} className="text-[#2EDD3B]" />
+                                </div>
+                                <h3 className="text-2xl font-[1000] mb-3">{item.title}</h3>
+                                <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== ONBOARDED GYMS CAROUSEL ===== */}
+            <section id="gyms" className="py-28 px-6 bg-slate-50">
+                <div className="max-w-7xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
+                        <h2 className="text-5xl md:text-6xl font-[1000] mb-4 tracking-tighter">Gyms Growing with Gymkaana</h2>
+                        <p className="text-xl text-slate-600">{onboardedGyms.length}+ gyms discovering local members</p>
+                    </motion.div>
+
+                    <div className="relative">
+                        <div ref={carouselRef} className="overflow-x-auto scrollbar-hide flex gap-6 pb-6">
+                            {onboardedGyms.map((gym, i) => (
+                                    <motion.div 
+                                        key={gym._id || i} 
+                                        initial={{ opacity: 0 }} 
+                                        whileInView={{ opacity: 1 }} 
+                                        viewport={{ once: true }} 
+                                        onClick={() => {
+                                            const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || "https://app.gymkaana.com";
+                                            window.open(`${marketplaceUrl}?screen=details&gym=${gym._id}`, '_blank');
+                                        }}
+                                        className="flex-shrink-0 w-80 bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-slate-200 group cursor-pointer"
+                                    >
+                                        {/* Gym Image */}
+                                        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                                            <img 
+                                                src={
+                                                    gym.images?.[0] 
+                                                        ? (gym.images[0].startsWith('http') ? gym.images[0] : `${API_URL.replace('/api', '')}/${gym.images[0]}`)
+                                                        : (gym.image?.startsWith('http') ? gym.image : (gym.image ? `${API_URL.replace('/api', '')}/${gym.image}` : "https://picsum.photos/800/600?random=" + i))
+                                                } 
+                                                alt={gym.name} 
+                                                loading="lazy"
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://picsum.photos/800/600?random=" + i;
+                                                }}
+                                            />
+                                            {/* Rating Badge */}
+                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                                <Star className="text-yellow-500 fill-yellow-500" size={14} />
+                                                <span className="text-xs font-black text-slate-900">{gym.rating || "4.8"}</span>
+                                            </div>
+                                            {/* Tags */}
+                                            {gym.tags && gym.tags.length > 0 && (
+                                                <div className="absolute bottom-4 left-4 flex gap-2">
+                                                    {gym.tags.map((tag: string) => (
+                                                        <span key={tag} className="bg-slate-900/40 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Gym Info */}
+                                        <div className="p-6">
+                                            <h3 className="text-lg font-black text-slate-900 group-hover:text-[#2EDD3B] transition-colors mb-2 line-clamp-1">
+                                                {gym.name}
+                                            </h3>
+                                            <div className="flex items-center gap-2 text-slate-600 mb-4">
+                                                <MapPin size={14} className="shrink-0" />
+                                                <span className="text-sm font-medium line-clamp-1">{gym.city || gym.location || "Local Hub"}</span>
+                                            </div>
+                                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                                <div className="flex items-center gap-1">
+                                                    <Star className="text-yellow-500 fill-yellow-500" size={12} />
+                                                    <span className="text-xs font-bold text-slate-600">{gym.reviews || "100+"} reviews</span>
+                                                </div>
+                                                <span className="text-[10px] font-black text-[#2EDD3B] uppercase tracking-widest flex items-center gap-1">
+                                                    View Gym <ArrowRight size={10} />
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                            ))}
+                        </div>
+
+                        {onboardedGyms.length > 0 && (
+                            <div className="flex gap-3 mt-8 justify-center">
+                                <button onClick={() => scrollCarousel('left')} className="w-12 h-12 rounded-lg bg-[#2EDD3B]/10 hover:bg-[#2EDD3B]/20 flex items-center justify-center transition-colors">
+                                    <ChevronLeft className="text-[#2EDD3B]" size={20} />
+                                </button>
+                                <button onClick={() => scrollCarousel('right')} className="w-12 h-12 rounded-lg bg-[#2EDD3B]/10 hover:bg-[#2EDD3B]/20 flex items-center justify-center transition-colors">
+                                    <ChevronRight className="text-[#2EDD3B]" size={20} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 mt-24 text-center">
+                        <div>
+                            <p className="text-5xl font-[1000] text-[#2EDD3B] mb-2">{liveStats?.totalGyms || "500+"}</p>
+                            <p className="text-slate-600 font-medium">Gym Partners</p>
+                        </div>
+                        <div>
+                            <p className="text-5xl font-[1000] text-[#2EDD3B] mb-2">{liveStats?.activeMembers || "50K+"}</p>
+                            <p className="text-slate-600 font-medium">Active Members</p>
+                        </div>
+                        <div>
+                            <p className="text-5xl font-[1000] text-[#2EDD3B] mb-2">10+</p>
+                            <p className="text-slate-600 font-medium">Indian States</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== BENEFITS ===== */}
+            <section className="py-28 px-6">
+                <div className="max-w-4xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-20">
+                        <h2 className="text-5xl md:text-6xl font-[1000] mb-4 tracking-tighter">Why Choose Gymkaana</h2>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {BENEFITS.map((benefit, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} className="flex items-center gap-4 p-6 rounded-lg bg-[#2EDD3B]/5 border border-[#2EDD3B]/20 hover:border-[#2EDD3B]/40 transition-colors">
+                                <CheckCircle2 className="text-[#2EDD3B] flex-shrink-0" size={28} />
+                                <span className="font-bold text-lg">{benefit}</span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== FAQ ===== */}
+            <section id="faq" className="py-28 px-6">
+                <div className="max-w-3xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-20">
+                        <h2 className="text-5xl md:text-6xl font-[1000] mb-4 tracking-tighter">Frequently Asked Questions</h2>
+                    </motion.div>
+
+                    <div className="space-y-4">
+                        {FAQ_ITEMS.map((item, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                                <button onClick={() => setExpandedFaq(expandedFaq === i ? null : i)} className="w-full px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left">
+                                    <h3 className="font-black text-lg">{item.question}</h3>
+                                    <motion.div animate={{ rotate: expandedFaq === i ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                                        <ChevronDown className="text-[#2EDD3B]" size={24} />
+                                    </motion.div>
+                                </button>
+
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: expandedFaq === i ? "auto" : 0, opacity: expandedFaq === i ? 1 : 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
+                                    <p className="px-6 py-5 text-slate-600 border-t border-slate-200 leading-relaxed">{item.answer}</p>
+                                </motion.div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== FOOTER CTA ===== */}
+            <section className="py-20 px-6 bg-slate-900 text-white text-center">
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                    <h2 className="text-4xl md:text-5xl font-[1000] mb-6 tracking-tighter">Start Growing Your Gym Today</h2>
+                    <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">Join hundreds of gym owners who are getting discovered by local fitness enthusiasts and converting them to paying members.</p>
+                    <button onClick={handleSignUp} className="px-10 py-5 bg-[#2EDD3B] text-black font-black rounded-lg hover:bg-[#2EDD3B]/90 transition-all uppercase text-lg inline-flex items-center gap-2 shadow-2xl">
+                        List Your Gym Now <ArrowRight size={20} />
+                    </button>
+                </motion.div>
+            </section>
         </div>
-      </section>
-
-      <section className="py-20 bg-white border-t border-slate-200/40">
-        <div className="container mx-auto px-6">
-          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] items-start">
-            <div className="space-y-6">
-              <span className="inline-flex rounded-full bg-[#2EDD3B]/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#2EDD3B]">
-                What you need to join
-              </span>
-              <h2 className="text-4xl font-[1000] text-slate-900">
-                Ready to onboard? Here’s what you need.
-              </h2>
-              <p className="text-lg text-slate-600 max-w-xl leading-8">
-                Gymkaana makes it easy for gym owners to list and manage their facility. Provide the essentials below and start receiving bookings fast.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-slate-200/50 bg-slate-50 p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-[0.35em] text-[#2EDD3B] font-black mb-3">Requirement</p>
-                <p className="text-slate-700 font-semibold">Bank account in owner or business name</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200/50 bg-slate-50 p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-[0.35em] text-[#2EDD3B] font-black mb-3">Requirement</p>
-                <p className="text-slate-700 font-semibold">PAN card or GST registration</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200/50 bg-slate-50 p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-[0.35em] text-[#2EDD3B] font-black mb-3">Requirement</p>
-                <p className="text-slate-700 font-semibold">Gym address, plan details, and pricing</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200/50 bg-slate-50 p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-[0.35em] text-[#2EDD3B] font-black mb-3">Requirement</p>
-                <p className="text-slate-700 font-semibold">Contact details for business and customer support</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-24 container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-16 text-center"
-        >
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#2EDD3B]/10 rounded-full blur-[200px]" />
-          </div>
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <h2 className="text-4xl lg:text-5xl font-[1000] text-white mb-6">
-              Stop losing revenue to slow bookings
-            </h2>
-            <p className="text-xl text-slate-200 mb-10">
-              Join 500+ gym owners growing their business with Gymkaana. Get instant bookings, real-time management, transparent payouts, and a fixed 5% commission.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onNavigateToLogin("signup")}
-                className="px-10 py-4 rounded-2xl bg-[#2EDD3B] text-black font-black uppercase tracking-widest text-sm shadow-xl shadow-[#2EDD3B]/30 hover:opacity-90 transition-all"
-              >
-                Join for free
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onNavigateToLogin("login")}
-                className="px-10 py-4 rounded-2xl border-2 border-white text-white font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all"
-              >
-                Sign In
-              </motion.button>
-            </div>
-            <p className="text-slate-300 text-sm mt-8">
-              ✓ Free listing • ✓ 5% fixed commission • ✓ No hidden charges
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      <footer className="bg-black text-white pt-20 pb-10 px-6 lg:px-12 mt-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
-            {/* Brand & Mission */}
-            <div className="space-y-6">
-              <h2 className="text-3xl font-[1000] tracking-[-0.08em] uppercase flex items-center -skew-x-12">
-                <span className="text-white">GYM</span>
-                <span className="text-[#2EDD3B] italic mx-0.5">KAA</span>
-                <span className="text-white">NA</span>
-              </h2>
-              <p className="text-gray-400 text-sm font-medium leading-relaxed max-w-xs">
-                ELEVATING THE FITNESS ECOSYSTEM. UNIVERSAL ACCESS TO THE FINEST VENUES, POWERED BY INTELLIGENT TECHNOLOGY.
-              </p>
-            </div>
-
-            {/* Backlinks */}
-            <div className="lg:self-start lg:text-left">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2EDD3B] mb-6">
-                Quick Links
-              </h3>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=about"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=contact"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Privacy & Security
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=help"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Help & Support
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=faq"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    FAQs
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=refund"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Refund Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=partner"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Partner with Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://app.gymkaana.com/?screen=careers"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors block py-1"
-                  >
-                    Careers
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5 pt-8 text-center text-gray-400 text-xs">
-            <p>© {new Date().getFullYear()} Gymkaana. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+    );
 }

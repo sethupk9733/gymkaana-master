@@ -18,6 +18,7 @@ import {
 import { Button } from "./components/Button";
 import { SEO } from "./components/SEO";
 import { VenueCard } from "./components/VenueCard";
+import OwnerLandingPage from "./OwnerLandingPage";
 
 const FEATURED_GYMS = [
     {
@@ -62,6 +63,22 @@ export default function App() {
     const [loadingGyms, setLoadingGyms] = useState(true);
     const [liveStats, setLiveStats] = useState<any>(null);
     const [fetchError, setFetchError] = useState(false);
+
+    // Detect if this is owner landing page traffic
+    const isOwnerLanding = (() => {
+        const params = new URLSearchParams(window.location.search);
+        // Check for owner intent via URL parameters
+        if (params.get('type') === 'owner' || params.get('mode') === 'owner') return true;
+        // Check if coming from owner-specific ad campaigns
+        if (params.get('utm_source')?.includes('owner') || params.get('utm_campaign')?.includes('owner')) return true;
+        // Default to customer landing page
+        return false;
+    })();
+
+    // If this is owner landing traffic, show the owner landing page
+    if (isOwnerLanding) {
+        return <OwnerLandingPage />;
+    }
 
     const onExplore = () => { window.location.href = `${URLS.MARKETPLACE}?screen=home&action=explore`; };
     const onLogin = () => { window.location.href = `${URLS.MARKETPLACE}?action=login`; };
