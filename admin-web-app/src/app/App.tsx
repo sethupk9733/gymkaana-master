@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star } from 'lucide-react';
+import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star, MessageSquare } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { PartnerManagement } from './components/PartnerManagement';
 import { UserManagement } from './components/UserManagement';
@@ -10,6 +10,7 @@ import { BookingManagement } from './components/BookingManagement';
 import { SupportTickets } from './components/SupportTickets';
 import { AdminLogin } from './components/AdminLogin';
 import { ReviewManagement } from './components/ReviewManagement';
+import { EnquiryManagement } from './components/EnquiryManagement';
 import { logout, getUnreadTicketCount } from './lib/api';
 
 export default function App() {
@@ -61,6 +62,7 @@ export default function App() {
       case 'promotions': return <Promotions />;
       case 'support': return <SupportTickets />;
       case 'reviews': return <ReviewManagement />;
+      case 'enquiries': return <EnquiryManagement />;
       case 'settings': return <Settings />;
       default: return <AdminDashboard />;
     }
@@ -98,6 +100,12 @@ export default function App() {
             label="User Reviews"
             active={currentTab === 'reviews'}
             onClick={() => setCurrentTab('reviews')}
+          />
+          <NavItem
+            icon={MessageSquare}
+            label="Gym Enquiries"
+            active={currentTab === 'enquiries'}
+            onClick={() => setCurrentTab('enquiries')}
           />
           <NavItem icon={SettingsIcon} label="Settings" active={currentTab === 'settings'} onClick={() => setCurrentTab('settings')} />
         </nav>

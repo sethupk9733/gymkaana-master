@@ -15,7 +15,7 @@ const inquirySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['new', 'contacted', 'onboarded', 'ignored'],
+        enum: ['new', 'on progress', 'conversion on process', 'success', 'contacted', 'onboarded', 'ignored'],
         default: 'new'
     },
     createdAt: {

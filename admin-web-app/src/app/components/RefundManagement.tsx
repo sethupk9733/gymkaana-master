@@ -43,9 +43,16 @@ export function RefundManagement() {
 
     const transactions: Transaction[] = data?.transactions?.map((t: any) => ({
         ...t,
-        amount: `₹${Number(t.amount).toLocaleString()}`,
-        commission: `₹${Number(t.commission).toLocaleString()}`,
-        netPayout: `₹${Number(t.netPayout).toLocaleString()}`
+        id: t.id || `TXN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        user: t.user || 'Guest User',
+        gym: t.gym || 'General Platform',
+        amount: `₹${Number(t.amount || 0).toLocaleString()}`,
+        commission: `₹${Number(t.commission || 0).toLocaleString()}`,
+        netPayout: `₹${Number(t.netPayout || 0).toLocaleString()}`,
+        status: t.status || 'Pending',
+        method: t.method || 'UPI',
+        date: t.date || new Date().toLocaleDateString(),
+        time: t.time || new Date().toLocaleTimeString()
     })) || [];
 
     const stats = data?.stats || {
@@ -56,9 +63,13 @@ export function RefundManagement() {
     };
 
     const filteredTransactions = transactions.filter(txn => {
-        const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            txn.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            txn.gym.toLowerCase().includes(searchQuery.toLowerCase());
+        const id = txn.id || "";
+        const user = txn.user || "";
+        const gym = txn.gym || "";
+
+        const matchesSearch = id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            gym.toLowerCase().includes(searchQuery.toLowerCase());
 
         const matchesFilter = filterStatus === "All"
             ? true
@@ -102,10 +113,10 @@ export function RefundManagement() {
 
             {/* Platform Stats Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FinanceStat label="Gross Revenue" value={formatLakhs(stats.grossRevenue)} trend="+0%" sub="Live Network GMV" color="black" />
-                <FinanceStat label="Total Yield" value={formatLakhs(stats.totalCommission)} trend="+0%" sub="Platform (15%)" color="primary" />
-                <FinanceStat label="Total Refunds" value={formatLakhs(stats.totalRefunds)} trend="-0%" sub="User Reversals" color="red" />
-                <FinanceStat label="Settled Payouts" value={formatLakhs(stats.settledPayouts)} trend="+0%" sub="Paid to Gyms" color="emerald" />
+                <FinanceStat label="Gross Revenue" value={formatLakhs(stats?.grossRevenue || 0)} trend="+0%" sub="Live Network GMV" color="black" />
+                <FinanceStat label="Total Yield" value={formatLakhs(stats?.totalCommission || 0)} trend="+0%" sub="Platform (15%)" color="primary" />
+                <FinanceStat label="Total Refunds" value={formatLakhs(stats?.totalRefunds || 0)} trend="-0%" sub="User Reversals" color="red" />
+                <FinanceStat label="Settled Payouts" value={formatLakhs(stats?.settledPayouts || 0)} trend="+0%" sub="Paid to Gyms" color="emerald" />
             </div>
 
             {/* Custom Search & Filters */}
@@ -160,11 +171,11 @@ export function RefundManagement() {
                                     <td className="py-6 px-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[10px] font-black italic">
-                                                {txn.gym.charAt(0)}
+                                                {(txn.gym || 'G').charAt(0)}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-gray-900 text-sm">{txn.gym}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{txn.user}</p>
+                                                <p className="font-bold text-gray-900 text-sm">{txn.gym || 'Unknown Hub'}</p>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{txn.user || 'Unknown User'}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -211,20 +222,20 @@ export function RefundManagement() {
 
                             <div className="p-12 overflow-y-auto custom-scrollbar">
                                 <div className="text-center mb-10">
-                                    <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                                    <div className={`w-20 h-20 rounded-[32px] mx-auto flex items-center justify-center mb-4 ${selectedTxn?.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
                                         }`}>
                                         <CreditCard className="w-10 h-10" />
                                     </div>
                                     <h3 className="text-3xl font-black italic uppercase tracking-tighter">Transaction Detail</h3>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn.id}</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Receipt ID: {selectedTxn?.id}</p>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-100 grid grid-cols-2 gap-8">
-                                        <SummaryItem label="Customer" value={selectedTxn.user} sub={selectedTxn.email} />
-                                        <SummaryItem label="Gym Venue" value={selectedTxn.gym} sub="Primary Partner" />
-                                        <SummaryItem label="Payment Info" value={selectedTxn.method} sub={selectedTxn.type} />
-                                        <SummaryItem label="Timestamp" value={selectedTxn.date} sub={selectedTxn.time} />
+                                        <SummaryItem label="Customer" value={selectedTxn?.user || 'Guest'} sub={selectedTxn?.email || 'No Email'} />
+                                        <SummaryItem label="Gym Venue" value={selectedTxn?.gym || 'General'} sub="Primary Partner" />
+                                        <SummaryItem label="Payment Info" value={selectedTxn?.method || 'UPI'} sub={selectedTxn?.type || 'Booking'} />
+                                        <SummaryItem label="Timestamp" value={selectedTxn?.date || 'N/A'} sub={selectedTxn?.time || ''} />
                                     </div>
 
                                     <div className="p-8 bg-black text-white rounded-[32px] space-y-4">
@@ -232,13 +243,13 @@ export function RefundManagement() {
                                             <span>Ledger Breakdown</span>
                                             <span>Amount (INR)</span>
                                         </div>
-                                        <LedgerLine label="Order Amount" value={selectedTxn.amount} />
-                                        <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn.commission}`} color="text-primary" />
+                                        <LedgerLine label="Order Amount" value={selectedTxn?.amount || '₹0'} />
+                                        <LedgerLine label="Platform Commission (15%)" value={`- ${selectedTxn?.commission || '₹0'}`} color="text-primary" />
                                         <LedgerLine label="GST @ 18%" value="- ₹89.00" />
                                         <div className="pt-4 border-t border-white/10 flex justify-between items-end">
                                             <div>
                                                 <p className="text-[10px] font-black uppercase text-white/40">Net Partner Payout</p>
-                                                <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn.netPayout}</p>
+                                                <p className="text-3xl font-black italic tracking-tighter text-primary">{selectedTxn?.netPayout || '₹0'}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[10px] font-black uppercase text-white/40">Settlement Code</p>

@@ -475,26 +475,27 @@ export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
             </section>
 
             {/* ===== ONBOARDED GYMS CAROUSEL ===== */}
-            <section id="gyms" className="py-28 px-6 bg-slate-50">
-                <div className="max-w-7xl mx-auto">
-                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
-                        <h2 className="text-5xl md:text-6xl font-[1000] mb-4 tracking-tighter">Gyms Growing with Gymkaana</h2>
-                        <p className="text-xl text-slate-600">{onboardedGyms.length}+ gyms discovering local members</p>
-                    </motion.div>
+            <section id="gyms" className="py-32 px-8 bg-slate-50 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto mb-20">
+                    <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-8">
+                        <div className="max-w-2xl">
+                            <h2 className="text-5xl font-[1000] text-slate-900 mb-6 tracking-tighter uppercase italic leading-none">Gyms Growing with Gymkaana</h2>
+                            <p className="text-slate-400 text-lg font-medium">Join these successful venues already transforming their business through our partner network.</p>
+                        </div>
+                    </div>
 
-                    <div className="relative">
-                        <div ref={carouselRef} className="overflow-x-auto scrollbar-hide flex gap-6 pb-6">
-                            {onboardedGyms.map((gym, i) => (
-                                    <motion.div 
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                            {onboardedGyms.map((gym, i) => (                                    <motion.div 
                                         key={gym._id || i} 
-                                        initial={{ opacity: 0 }} 
-                                        whileInView={{ opacity: 1 }} 
+                                        initial={{ opacity: 0, y: 20 }} 
+                                        whileInView={{ opacity: 1, y: 0 }} 
+                                        transition={{ delay: i * 0.1 }}
                                         viewport={{ once: true }} 
                                         onClick={() => {
                                             const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || "https://app.gymkaana.com";
                                             window.open(`${marketplaceUrl}?screen=details&gym=${gym._id}`, '_blank');
                                         }}
-                                        className="flex-shrink-0 w-80 bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-slate-200 group cursor-pointer"
+                                        className="group cursor-pointer bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col"
                                     >
                                         {/* Gym Image */}
                                         <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
@@ -502,13 +503,13 @@ export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
                                                 src={
                                                     gym.images?.[0] 
                                                         ? (gym.images[0].startsWith('http') ? gym.images[0] : `${API_URL.replace('/api', '')}/${gym.images[0]}`)
-                                                        : (gym.image?.startsWith('http') ? gym.image : (gym.image ? `${API_URL.replace('/api', '')}/${gym.image}` : "https://picsum.photos/800/600?random=" + i))
+                                                        : (gym.image?.startsWith('http') ? gym.image : (gym.image ? `${API_URL.replace('/api', '')}/${gym.image}` : "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800"))
                                                 } 
                                                 alt={gym.name} 
                                                 loading="lazy"
                                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                                                 onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://picsum.photos/800/600?random=" + i;
+                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800";
                                                 }}
                                             />
                                             {/* Rating Badge */}
@@ -516,52 +517,41 @@ export function OwnerLanding({ onNavigateToLogin }: OwnerLandingProps) {
                                                 <Star className="text-yellow-500 fill-yellow-500" size={14} />
                                                 <span className="text-xs font-black text-slate-900">{gym.rating || "4.8"}</span>
                                             </div>
-                                            {/* Tags */}
-                                            {gym.tags && gym.tags.length > 0 && (
-                                                <div className="absolute bottom-4 left-4 flex gap-2">
-                                                    {gym.tags.map((tag: string) => (
-                                                        <span key={tag} className="bg-slate-900/40 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            <div className="absolute bottom-4 left-4 flex gap-2">
+                                                <span className="bg-slate-900/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                                    Partner Hub
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {/* Gym Info */}
-                                        <div className="p-6">
-                                            <h3 className="text-lg font-black text-slate-900 group-hover:text-[#2EDD3B] transition-colors mb-2 line-clamp-1">
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h3 className="text-xl font-black text-slate-900 group-hover:text-black transition-colors mb-2 line-clamp-1 italic uppercase tracking-tight">
                                                 {gym.name}
                                             </h3>
-                                            <div className="flex items-center gap-2 text-slate-600 mb-4">
+                                            <div className="flex items-center gap-2 text-slate-400 mb-6">
                                                 <MapPin size={14} className="shrink-0" />
                                                 <span className="text-sm font-medium line-clamp-1">{gym.city || gym.location || "Local Hub"}</span>
                                             </div>
-                                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                                <div className="flex items-center gap-1">
-                                                    <Star className="text-yellow-500 fill-yellow-500" size={12} />
-                                                    <span className="text-xs font-bold text-slate-600">{gym.reviews || "100+"} reviews</span>
+                                            <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
+                                                <div className="flex -space-x-2">
+                                                    {[...Array(3)].map((_, i) => (
+                                                        <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-400">
+                                                            {String.fromCharCode(65 + i)}
+                                                        </div>
+                                                    ))}
+                                                    <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-900 text-white flex items-center justify-center text-[8px] font-bold">
+                                                        +{gym.reviews || "12"}
+                                                    </div>
                                                 </div>
-                                                <span className="text-[10px] font-black text-[#2EDD3B] uppercase tracking-widest flex items-center gap-1">
-                                                    View Gym <ArrowRight size={10} />
+                                                <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
+                                                    Book Now <ArrowRight size={14} />
                                                 </span>
                                             </div>
                                         </div>
                                     </motion.div>
                             ))}
                         </div>
-
-                        {onboardedGyms.length > 0 && (
-                            <div className="flex gap-3 mt-8 justify-center">
-                                <button onClick={() => scrollCarousel('left')} className="w-12 h-12 rounded-lg bg-[#2EDD3B]/10 hover:bg-[#2EDD3B]/20 flex items-center justify-center transition-colors">
-                                    <ChevronLeft className="text-[#2EDD3B]" size={20} />
-                                </button>
-                                <button onClick={() => scrollCarousel('right')} className="w-12 h-12 rounded-lg bg-[#2EDD3B]/10 hover:bg-[#2EDD3B]/20 flex items-center justify-center transition-colors">
-                                    <ChevronRight className="text-[#2EDD3B]" size={20} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
 
                     <div className="grid md:grid-cols-3 gap-8 mt-24 text-center">
                         <div>

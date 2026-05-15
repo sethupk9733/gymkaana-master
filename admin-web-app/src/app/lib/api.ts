@@ -225,7 +225,7 @@ export const fetchActivities = async () => {
 };
 
 export const fetchAdminAccounting = async () => {
-    const response = await fetch(`${BASE_URL}/accounting`, {
+    const response = await fetch(`${BASE_URL}/accounting/admin`, {
         headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error('Failed to fetch accounting data');
@@ -242,5 +242,35 @@ export const updateGymFinancials = async (id: string, financialData: { cashfreeV
         body: JSON.stringify(financialData)
     });
     if (!response.ok) throw new Error('Failed to update financial settings');
+    return await response.json();
+};
+
+export const fetchInquiries = async () => {
+    const response = await fetch(`${BASE_URL}/inquiry`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch enquiries');
+    return await response.json();
+};
+
+export const deleteInquiry = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/inquiry/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to delete enquiry');
+    return true;
+};
+
+export const updateInquiryStatus = async (id: string, status: string) => {
+    const response = await fetch(`${BASE_URL}/inquiry/${id}/status`, {
+        method: 'PUT',
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error('Failed to update enquiry status');
     return await response.json();
 };

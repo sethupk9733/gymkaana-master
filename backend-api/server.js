@@ -24,6 +24,8 @@ app.use(cors({
         'https://app.gymkaana.com',
         'http://localhost:5173',
         'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:5176',
         'http://localhost:3000',
         'http://localhost:3001'
     ],
@@ -39,6 +41,15 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Disable buffering to catch connection errors immediately
 mongoose.set('bufferCommands', false);
+ 
+// Static files
+const path = require('path');
+const fs = require('fs');
+const uploadsPath = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath);
+}
+app.use('/uploads', express.static(uploadsPath));
 
 
 // SEO Routes

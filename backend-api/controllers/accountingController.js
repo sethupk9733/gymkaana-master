@@ -97,7 +97,7 @@ const getAdminAccountingData = async (req, res) => {
         // 1. Get all Gyms
         const gyms = await Gym.find({});
         const gymMap = gyms.reduce((acc, gym) => {
-            acc[gym._id.toString()] = gym.name;
+            acc[gym._id.toString()] = { name: gym.name, commission: gym.commissionPercent || 15 };
             return acc;
         }, {});
 
@@ -116,19 +116,22 @@ const getAdminAccountingData = async (req, res) => {
         const transactions = [];
 
         bookings.forEach(b => {
+            const gymComm = gymMap[b.gymId?.toString()]?.commission || 15;
+            const commRate = gymComm / 100;
+
             transactions.push({
                 id: `TXN-${b._id.toString().slice(-7).toUpperCase()}`,
                 user: b.userId?.name || b.memberName || 'Unknown User',
                 email: b.userId?.email || b.memberEmail || '',
-                gym: gymMap[b.gymId?.toString()] || 'Unknown Hub',
+                gym: gymMap[b.gymId?.toString()]?.name || 'Unknown Hub',
                 amount: b.amount,
                 date: new Date(b.bookingDate || b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                 time: new Date(b.bookingDate || b.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                status: b.status === 'active' || b.status === 'completed' ? 'Completed' : b.status === 'cancelled' ? 'Refunded' : 'Pending',
+                status: b.paymentStatus === 'SUCCESS' ? 'Completed' : (b.paymentStatus === 'REFUNDED' || b.status === 'cancelled') ? 'Refunded' : 'Pending',
                 type: 'Booking',
                 method: 'UPI',
-                commission: b.amount * 0.15,
-                netPayout: b.amount * 0.85
+                commission: b.amount * commRate,
+                netPayout: b.amount * (1 - commRate)
             });
         });
 
