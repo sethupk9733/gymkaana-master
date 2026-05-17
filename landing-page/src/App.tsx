@@ -66,6 +66,9 @@ export default function App() {
 
     // Detect if this is owner landing page traffic
     const isOwnerLanding = (() => {
+        // Check if current domain is owner subdomain
+        if (window.location.hostname.includes('owner')) return true;
+        
         const params = new URLSearchParams(window.location.search);
         // Check for owner intent via URL parameters
         if (params.get('type') === 'owner' || params.get('mode') === 'owner') return true;
