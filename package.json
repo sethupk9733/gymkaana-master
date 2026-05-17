@@ -3,7 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "npm run build --prefix landing-page && mkdir -p dist && cp -r landing-page/dist/* dist/",
+    "build": "npm run build:landing-page",
+    "build:landing-page": "cd landing-page && npm install && npm run build",
+    "build:admin-web": "cd admin-web-app && npm install && npm run build",
+    "build:marketplace-web": "cd marketplace-web-app && npm install && npm run build",
+    "build:owner-portal": "cd owner-mobile-app && npm install && npm run build",
     "push:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./push-all-git.ps1"
   }
 }
