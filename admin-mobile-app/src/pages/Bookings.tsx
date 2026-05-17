@@ -38,7 +38,7 @@ export default function Bookings() {
                         title="Select Gym"
                     >
                         <option value="All Gyms">All Gyms</option>
-                        {MOCK_GYMS.map(gym => (
+                        {MOCK_GYMS.map((gym: any) => (
                             <option key={gym.id} value={gym.name}>{gym.name}</option>
                         ))}
                     </select>

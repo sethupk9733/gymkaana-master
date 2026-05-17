@@ -212,3 +212,43 @@ export const fetchDashboardStats = async () => {
     if (!response.ok) throw new Error('Failed to fetch dashboard stats');
     return await response.json();
 };
+
+// Mock data for development/testing
+export const MOCK_GYMS = [
+    {
+        id: 1,
+        name: 'PowerHouse Fitness',
+        location: 'Koramangala, Bangalore',
+        status: 'Active',
+        members: 156,
+        revenue: '₹45K',
+        description: 'Premium fitness facility with state-of-the-art equipment'
+    },
+    {
+        id: 2,
+        name: 'Elite Sports Club',
+        location: 'Indiranagar, Bangalore',
+        status: 'Active',
+        members: 89,
+        revenue: '₹28K',
+        description: 'Exclusive sports club with premium amenities'
+    },
+    {
+        id: 3,
+        name: 'Titan Strength Center',
+        location: 'Whitefield, Bangalore',
+        status: 'Active',
+        members: 234,
+        revenue: '₹67K',
+        description: 'Bodybuilding and strength training center'
+    },
+    {
+        id: 4,
+        name: 'Zen Yoga Studio',
+        location: 'MG Road, Bangalore',
+        status: 'Inactive',
+        members: 45,
+        revenue: '₹12K',
+        description: 'Yoga and wellness studio'
+    }
+];

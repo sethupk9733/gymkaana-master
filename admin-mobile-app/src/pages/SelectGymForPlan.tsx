@@ -17,7 +17,7 @@ export default function SelectGymForPlan() {
             <p className="text-gray-500 mb-4 text-sm">Choose a gym to add a new membership plan.</p>
 
             <div className="space-y-3">
-                {MOCK_GYMS.map((gym) => (
+                {MOCK_GYMS.map((gym: any) => (
                     gym.status === 'Active' ? (
                         <button
                             key={gym.id}

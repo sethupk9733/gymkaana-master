@@ -50,7 +50,7 @@ export default function Earnings() {
                         className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-4 pr-8 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary/100 shadow-sm"
                     >
                         <option value="all">All Gyms</option>
-                        {MOCK_GYMS.filter(g => g.status === 'Active').map(g => (
+                        {MOCK_GYMS.filter((g: any) => g.status === 'Active').map((g: any) => (
                             <option key={g.id} value={g.id.toString()}>{g.name}</option>
                         ))}
                     </select>

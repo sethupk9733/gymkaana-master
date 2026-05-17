@@ -41,11 +41,6 @@ export default function GymDetails() {
         { id: 'photos', label: 'Photos', icon: ImageIcon },
     ];
 
-    const MOCK_PLANS = [
-        { id: 1, name: 'Silver Membership', price: '₹1,500', duration: '1 Month' },
-        { id: 2, name: 'Gold Membership', price: '₹4,000', duration: '3 Months' },
-    ];
-
     const facilities = ['WiFi', 'AC', 'Showers', 'Lockers', 'Cardio', 'Weights', 'Personal Training'];
 
     return (

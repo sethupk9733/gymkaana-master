@@ -15,7 +15,7 @@ export default function EditGym() {
     const [description, setDescription] = useState('');
 
     useEffect(() => {
-        const gym = MOCK_GYMS.find(g => g.id === Number(id));
+        const gym = MOCK_GYMS.find((g: any) => g.id === Number(id));
         if (gym) {
             setName(gym.name);
             setLocation(gym.location);

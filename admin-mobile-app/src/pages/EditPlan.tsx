@@ -15,7 +15,7 @@ export default function EditPlan() {
     const { id: planId } = useParams();
     const [searchParams] = useSearchParams();
     const gymId = searchParams.get('gymId');
-    const gym = MOCK_GYMS.find(g => g.id === Number(gymId));
+    const gym = MOCK_GYMS.find((g: any) => g.id === Number(gymId));
 
     const [loading, setLoading] = useState(false);
     const [planData, setPlanData] = useState({

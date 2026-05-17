@@ -8,7 +8,7 @@ export default function AddPlan() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const gymId = searchParams.get('gymId');
-    const gym = MOCK_GYMS.find(g => g.id === Number(gymId));
+    const gym = MOCK_GYMS.find((g: any) => g.id === Number(gymId));
 
     const [loading, setLoading] = useState(false);
 
