@@ -55,15 +55,21 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const screenParam = params.get('screen') as Screen;
     const actionParam = params.get('action');
+    const gymParam = params.get('gym');
 
     if (actionParam === 'login') return 'login';
+    if (actionParam === 'explore') return 'home';
+    if (screenParam === 'details' && gymParam) return 'details';
     if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi'].includes(screenParam)) {
       return screenParam;
     }
     return "splash";
   });
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
+  const [selectedGymId, setSelectedGymId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('gym') || null;
+  });
   const [selectedStartDate, setSelectedStartDate] = useState<string | null>(null);
   const [recentBooking, setRecentBooking] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
