@@ -218,7 +218,7 @@ export function ReviewsList() {
 
                             <div className="pt-4 border-t border-gray-200">
                                 <a
-                                    href={`mailto:support@gymkaana.com?subject=Inquiry about Member ${selectedUser.name}&body=I would like to discuss a review from member ${selectedUser.name} (ID: ${selectedUser._id}).`}
+                                    href={`mailto:gymkaana.help@gmail.com?subject=Inquiry about Member ${selectedUser.name}&body=I would like to discuss a review from member ${selectedUser.name} (ID: ${selectedUser._id}).`}
                                     className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-black transition-colors group cursor-pointer"
                                 >
                                     <div className="flex items-center gap-3">

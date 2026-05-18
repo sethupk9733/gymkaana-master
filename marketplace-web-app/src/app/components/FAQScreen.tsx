@@ -178,7 +178,7 @@ export function FAQScreen({ onBack, onContactSupport }: { onBack: () => void; on
                                     <Mail className="w-6 h-6 text-primary" />
                                 </div>
                                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Email Relay</p>
-                                <p className="text-lg font-black italic uppercase tracking-tighter break-all">SUPPORT@GYMKAANA.COM</p>
+                                <p className="text-lg font-black italic uppercase tracking-tighter break-all">GYMKAANA.HELP@GMAIL.COM</p>
                             </div>
 
                             <button

@@ -262,8 +262,8 @@ export function Profile({ onLogout }: ProfileProps) {
             <Mail size={20} className="text-blue-600" />
             Email Support
           </h3>
-          <a href="mailto:support@gymkaana.com" className="text-blue-600 hover:underline font-medium">
-            support@gymkaana.com
+          <a href="mailto:gymkaana.help@gmail.com" className="text-blue-600 hover:underline font-medium">
+            gymkaana.help@gmail.com
           </a>
           <p className="text-sm text-gray-500">We typically respond within 24 hours</p>
         </div>

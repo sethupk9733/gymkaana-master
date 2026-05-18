@@ -14,7 +14,7 @@ export function ContactUsScreen({ onBack, onLiveChat }: { onBack: () => void; on
         {
             icon: Mail,
             title: "Digital Relay",
-            detail: "SUPPORT@GYMKAANA.COM",
+            detail: "GYMKAANA.HELP@GMAIL.COM",
             sub: "24/7 Monitoring",
             action: "Send Message"
         },

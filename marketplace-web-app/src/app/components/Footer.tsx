@@ -168,7 +168,7 @@ export function Footer({
                                     <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                                         <Mail className="w-4 h-4" />
                                     </div>
-                                    <span className="text-xs font-bold tracking-wider">SUPPORT@GYMKAANA.COM</span>
+                                    <span className="text-xs font-bold tracking-wider">GYMKAANA.HELP@GMAIL.COM</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-gray-400 group cursor-pointer hover:text-white transition-colors">
                                     <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
