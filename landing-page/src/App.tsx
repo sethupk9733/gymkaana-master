@@ -67,7 +67,7 @@ export default function App() {
     // Detect if this is owner landing page traffic
     const isOwnerLanding = (() => {
         const params = new URLSearchParams(window.location.search);
-        // Check for owner intent via URL parameters only
+        // Check for owner intent via URL parameters
         if (params.get('type') === 'owner' || params.get('mode') === 'owner') return true;
         // Check if coming from owner-specific ad campaigns
         if (params.get('utm_source')?.includes('owner') || params.get('utm_campaign')?.includes('owner')) return true;

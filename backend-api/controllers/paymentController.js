@@ -398,6 +398,18 @@ async function handlePaymentSuccess(data) {
             console.error('❌ Member email failed:', e.message)
         );
 
+        // Gamification Points
+        try {
+            const pointsEngine = require('../utils/pointsEngine');
+            const isTrial = populated.planId?.name?.toLowerCase().includes('day') || 
+                            populated.planId?.name?.toLowerCase().includes('trial') || 
+                            populated.planId?.sessions === 1;
+            const actionType = isTrial ? 'BOOK_TRIAL' : 'PURCHASE_MEMBERSHIP';
+            await pointsEngine.awardPoints(populated.userId._id || populated.userId, actionType, populated._id, 'Booking');
+        } catch (e) {
+            console.error('Gamification points error:', e.message);
+        }
+
         const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
         if (ownerEmail) {
             sendOwnerBookingNotification(ownerEmail, populated).catch(e =>
@@ -529,6 +541,19 @@ exports.getPaymentStatus = async (req, res) => {
                         sendBookingConfirmation(populated.memberEmail, populated).catch(e => 
                             console.error('❌ Member email failed:', e.message)
                         );
+
+                        // Gamification Points
+                        try {
+                            const pointsEngine = require('../utils/pointsEngine');
+                            const isTrial = populated.planId?.name?.toLowerCase().includes('day') || 
+                                            populated.planId?.name?.toLowerCase().includes('trial') || 
+                                            populated.planId?.sessions === 1;
+                            const actionType = isTrial ? 'BOOK_TRIAL' : 'PURCHASE_MEMBERSHIP';
+                            await pointsEngine.awardPoints(populated.userId._id || populated.userId, actionType, populated._id, 'Booking');
+                        } catch (e) {
+                            console.error('Gamification points error:', e.message);
+                        }
+
                         const ownerEmail = populated.gymId?.ownerId?.email || populated.gymId?.email;
                         if (ownerEmail) {
                             sendOwnerBookingNotification(ownerEmail, populated).catch(e => 

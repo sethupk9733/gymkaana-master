@@ -6,6 +6,7 @@ const Session = require('../models/Session');
 const { sendWelcomeEmail, sendOTPEmail, sendLoginNotification } = require('../utils/emailService');
 const crypto = require('crypto');
 const OTP = require('../models/OTP');
+const pointsEngine = require('../utils/pointsEngine');
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -175,6 +176,13 @@ exports.login = async (req, res) => {
 
             console.log('Login successful for:', email, 'roles:', user.roles);
 
+            // Award points for login
+            try {
+                await pointsEngine.awardPoints(user._id, 'LOGIN');
+            } catch (err) {
+                console.error('Points engine error on login:', err);
+            }
+
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -254,6 +262,13 @@ exports.googleLogin = async (req, res) => {
         });
 
         setAuthCookies(res, accessToken, refreshToken);
+
+        // Award points for Google login
+        try {
+            await pointsEngine.awardPoints(user._id, 'LOGIN');
+        } catch (err) {
+            console.error('Points engine error on Google login:', err);
+        }
 
         res.json({
             _id: user._id,

@@ -26,6 +26,8 @@ const CareersScreen = lazy(() => import("./components/CareersScreen").then(m => 
 const TermsScreen = lazy(() => import("./components/TermsScreen").then(m => ({ default: m.TermsScreen })));
 const PartnerScreen = lazy(() => import("./components/PartnerScreen").then(m => ({ default: m.PartnerScreen })));
 const RefundScreen = lazy(() => import("./components/RefundScreen").then(m => ({ default: m.RefundScreen })));
+const ChallengeDashboardScreen = lazy(() => import("./components/ChallengeDashboardScreen").then(m => ({ default: m.ChallengeDashboardScreen })));
+const LeaderboardScreen = lazy(() => import("./components/LeaderboardScreen").then(m => ({ default: m.LeaderboardScreen })));
 
 type Screen =
   | "splash"
@@ -47,7 +49,9 @@ type Screen =
   | "partner"
   | "refund"
   | "bmi"
-  | "weight_guide";
+  | "weight_guide"
+  | "challenge_dashboard"
+  | "leaderboard";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
@@ -60,7 +64,7 @@ export default function App() {
     if (actionParam === 'login') return 'login';
     if (actionParam === 'explore') return 'home';
     if (screenParam === 'details' && gymParam) return 'details';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi'].includes(screenParam)) {
+    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi', 'challenge_dashboard', 'leaderboard'].includes(screenParam)) {
       return screenParam;
     }
     return "splash";
@@ -251,6 +255,8 @@ export default function App() {
             onClearInitialDiscipline={() => setInitialDiscipline(null)}
             initialSearch={initialSearch}
             onClearInitialSearch={() => setInitialSearch(null)}
+            onChallengeDashboard={() => handleProtectedAction("challenge_dashboard")}
+            onLeaderboard={() => setCurrentScreen("leaderboard")}
           />
         );
 
@@ -420,6 +426,20 @@ export default function App() {
         return (
           <WeightGuideScreen
             onBack={() => setCurrentScreen("bmi")}
+          />
+        );
+
+      case "challenge_dashboard":
+        return (
+          <ChallengeDashboardScreen
+            onBack={() => setCurrentScreen("home")}
+          />
+        );
+
+      case "leaderboard":
+        return (
+          <LeaderboardScreen
+            onBack={() => setCurrentScreen("home")}
           />
         );
 

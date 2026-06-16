@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star, MessageSquare } from 'lucide-react';
+import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star, MessageSquare, Trophy, BarChart3 } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { PartnerManagement } from './components/PartnerManagement';
 import { UserManagement } from './components/UserManagement';
@@ -11,6 +11,8 @@ import { SupportTickets } from './components/SupportTickets';
 import { AdminLogin } from './components/AdminLogin';
 import { ReviewManagement } from './components/ReviewManagement';
 import { EnquiryManagement } from './components/EnquiryManagement';
+import { ChallengeManager } from './components/ChallengeManager';
+import { GamificationAnalytics } from './components/GamificationAnalytics';
 import { logout, getUnreadTicketCount } from './lib/api';
 
 export default function App() {
@@ -63,6 +65,8 @@ export default function App() {
       case 'support': return <SupportTickets />;
       case 'reviews': return <ReviewManagement />;
       case 'enquiries': return <EnquiryManagement />;
+      case 'challenges': return <ChallengeManager />;
+      case 'gamification': return <GamificationAnalytics />;
       case 'settings': return <Settings />;
       default: return <AdminDashboard />;
     }
@@ -107,6 +111,8 @@ export default function App() {
             active={currentTab === 'enquiries'}
             onClick={() => setCurrentTab('enquiries')}
           />
+          <NavItem icon={Trophy} label="Challenges" active={currentTab === 'challenges'} onClick={() => setCurrentTab('challenges')} />
+          <NavItem icon={BarChart3} label="Gamification" active={currentTab === 'gamification'} onClick={() => setCurrentTab('gamification')} />
           <NavItem icon={SettingsIcon} label="Settings" active={currentTab === 'settings'} onClick={() => setCurrentTab('settings')} />
         </nav>
 

@@ -4,6 +4,7 @@ import { VenueCard } from "./ui/VenueCard";
 import { useEffect, useState, useMemo } from "react";
 import { fetchGyms } from "../lib/api";
 import { SEO } from "./SEO";
+import { ChallengeBanner } from "./ChallengeBanner";
 
 const SPECIALIZATIONS = [
   "Bodybuilding", "CrossFit", "Yoga", "Zumba", "MMA/Kickboxing",
@@ -27,6 +28,8 @@ export function HomeScreen({
   onClearInitialDiscipline?: () => void;
   initialSearch?: string | null;
   onClearInitialSearch?: () => void;
+  onChallengeDashboard?: () => void;
+  onLeaderboard?: () => void;
 }) {
   const [gyms, setGyms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -327,6 +330,13 @@ export function HomeScreen({
                 <div className="text-sm font-black italic uppercase text-white group-hover:text-primary transition-colors">BMI Calculator</div>
               </div>
             </motion.button>
+          </div>
+          {/* New Gamification CTA */}
+          <div className="mt-8">
+            <ChallengeBanner 
+              onDashboardClick={() => onChallengeDashboard?.()} 
+              onLeaderboardClick={() => onLeaderboard?.()} 
+            />
           </div>
         </div>
       </div>

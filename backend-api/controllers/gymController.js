@@ -1,6 +1,7 @@
 const Gym = require('../models/Gym');
 const PartnerDeclaration = require('../models/PartnerDeclaration');
 const { logActivity } = require('./activityController');
+const pointsEngine = require('../utils/pointsEngine');
 
 // Diverse fitness placeholder images
 const PLACEHOLDER_IMAGES = [
@@ -212,6 +213,15 @@ exports.getGymById = async (req, res) => {
         const gymObj = gym.toObject();
         gymObj.realRevenue = revenueResult[0]?.total || 0;
         gymObj.realBookings = revenueResult[0]?.count || 0;
+
+        // Gamification: Award points if user is logged in
+        if (req.user && req.user._id) {
+            try {
+                await pointsEngine.awardPoints(req.user._id, 'VIEW_GYM', gym._id, 'Gym');
+            } catch (err) {
+                console.error('Points engine error on gym view:', err);
+            }
+        }
 
         res.json(gymObj);
     } catch (err) {

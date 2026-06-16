@@ -293,3 +293,39 @@ export const getUnreadTicketCount = async () => {
     return await response.json();
 };
 
+// Gamification APIs
+export const fetchGamificationDashboard = async () => {
+    const response = await fetch(`${BASE_URL}/gamification/dashboard`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Failed to fetch dashboard');
+    return await response.json();
+};
+
+export const fetchLeaderboard = async () => {
+    const response = await fetch(`${BASE_URL}/gamification/leaderboard`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch leaderboard');
+    return await response.json();
+};
+
+export const fetchActiveChallenges = async () => {
+    const response = await fetch(`${BASE_URL}/gamification/challenges`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to fetch challenges');
+    return await response.json();
+};
+
+export const joinChallenge = async (challengeId: string) => {
+    const response = await fetch(`${BASE_URL}/gamification/challenges/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ challengeId }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to join challenge');
+    return data;
+};
+
