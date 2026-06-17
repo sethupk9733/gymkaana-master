@@ -19,7 +19,9 @@ export function HomeScreen({
   initialDiscipline,
   onClearInitialDiscipline,
   initialSearch,
-  onClearInitialSearch
+  onClearInitialSearch,
+  onChallengeDashboard,
+  onLeaderboard
 }: {
   onGymClick: (gymId: any) => void;
   onProfile: () => void;
