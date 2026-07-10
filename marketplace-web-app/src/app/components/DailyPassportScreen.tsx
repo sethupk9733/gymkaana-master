@@ -704,16 +704,21 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                     ) : (
                         <motion.div key="monthly" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                             {/* Monthly Summary Cards */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[32px] p-6 text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden">
-                                    <Flame className="w-16 h-16 absolute -right-4 -bottom-4 opacity-20" />
-                                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80">Total Calories</h3>
-                                    <p className="text-4xl font-black italic mt-1">{(monthlyStats?.monthlyTotalCalories || 0).toLocaleString()}</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[28px] p-5 text-white shadow-lg shadow-indigo-500/20 relative overflow-hidden">
+                                    <Flame className="w-12 h-12 absolute -right-3 -bottom-3 opacity-20" />
+                                    <h3 className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80">Total Calories</h3>
+                                    <p className="text-2xl font-black italic mt-1">{(monthlyStats?.monthlyTotalCalories || 0).toLocaleString()}</p>
                                 </div>
-                                <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-[32px] p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-                                    <Activity className="w-16 h-16 absolute -right-4 -bottom-4 opacity-20" />
-                                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80">Active Days</h3>
-                                    <p className="text-4xl font-black italic mt-1">{monthlyStats?.activeDays || 0}</p>
+                                <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-[28px] p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+                                    <Activity className="w-12 h-12 absolute -right-3 -bottom-3 opacity-20" />
+                                    <h3 className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80">Active Days</h3>
+                                    <p className="text-2xl font-black italic mt-1">{monthlyStats?.activeDays || 0}</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-[28px] p-5 text-white shadow-lg shadow-sky-500/20 relative overflow-hidden">
+                                    <Droplet className="w-12 h-12 absolute -right-3 -bottom-3 opacity-20" />
+                                    <h3 className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80">Total Water</h3>
+                                    <p className="text-2xl font-black italic mt-1">{((monthlyStats?.monthlyTotalWater || 0) / 1000).toFixed(1)} <span className="text-[10px] font-black uppercase">L</span></p>
                                 </div>
                             </div>
 
@@ -784,21 +789,29 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                                                 <button onClick={() => setSelectedDate(null)} className="p-1 hover:bg-slate-200 rounded-full"><X className="w-4 h-4" /></button>
                                             </div>
                                             {selectedDayData ? (
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-3 gap-3">
                                                     <div className="bg-white rounded-2xl p-4 shadow-sm">
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Calories Burned</p>
-                                                        <p className="text-xl font-black text-orange-500">{selectedDayData.totalCalories} <span className="text-xs">kcal</span></p>
+                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Calories</p>
+                                                        <p className="text-base font-black text-orange-500">{selectedDayData.totalCalories} <span className="text-[9px] font-bold opacity-60">kcal</span></p>
                                                     </div>
                                                     <div className="bg-white rounded-2xl p-4 shadow-sm">
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Workouts</p>
-                                                        <p className="text-xl font-black text-blue-500">{selectedDayData.workoutCount} <span className="text-xs">sessions</span></p>
+                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Workouts</p>
+                                                        <p className="text-base font-black text-blue-500">{selectedDayData.workoutCount} <span className="text-[9px] font-bold opacity-60">logs</span></p>
                                                     </div>
-                                                    <div className="col-span-2 bg-white rounded-2xl p-4 shadow-sm">
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Activities</p>
+                                                    <div className="bg-white rounded-2xl p-4 shadow-sm">
+                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Water</p>
+                                                        <p className="text-base font-black text-sky-500">{selectedDayData.totalWater || 0} <span className="text-[9px] font-bold opacity-60">ml</span></p>
+                                                    </div>
+                                                    <div className="col-span-3 bg-white rounded-2xl p-4 shadow-sm">
+                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Activities Logged</p>
                                                         <div className="flex flex-wrap gap-2 mt-2">
-                                                            {selectedDayData.workoutTypes.map((t: string) => (
-                                                                <span key={t} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-wider">{t}</span>
-                                                            ))}
+                                                            {selectedDayData.workoutTypes && selectedDayData.workoutTypes.length > 0 ? (
+                                                                selectedDayData.workoutTypes.map((t: string) => (
+                                                                    <span key={t} className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[9px] font-black uppercase tracking-wider">{t}</span>
+                                                                ))
+                                                            ) : (
+                                                                <span className="text-[9px] text-slate-400 font-bold italic">No workouts logged on this day</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

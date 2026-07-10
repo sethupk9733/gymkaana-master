@@ -175,13 +175,20 @@ exports.getMonthlyStats = async (req, res) => {
             date: { $gte: startOfMonth, $lte: endOfMonth }
         }).sort({ date: 1 });
 
+        const waterLogs = await WaterLog.find({
+            userId,
+            date: { $gte: startOfMonth, $lte: endOfMonth }
+        }).sort({ date: 1 });
+
         // Aggregate per day
         const dayMap = {};
+        
+        // Process workouts
         for (const w of workouts) {
             const d = new Date(w.date);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             if (!dayMap[key]) {
-                dayMap[key] = { date: key, totalCalories: 0, totalMinutes: 0, workoutCount: 0, workoutTypes: [] };
+                dayMap[key] = { date: key, totalCalories: 0, totalMinutes: 0, workoutCount: 0, workoutTypes: [], totalWater: 0 };
             }
             dayMap[key].totalCalories  += w.caloriesBurned;
             dayMap[key].totalMinutes   += w.durationMinutes;
@@ -191,13 +198,26 @@ exports.getMonthlyStats = async (req, res) => {
             }
         }
 
+        // Process water logs
+        for (const wl of waterLogs) {
+            const d = new Date(wl.date);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!dayMap[key]) {
+                dayMap[key] = { date: key, totalCalories: 0, totalMinutes: 0, workoutCount: 0, workoutTypes: [], totalWater: 0 };
+            }
+            dayMap[key].totalWater += wl.amount;
+        }
+
         const days = Object.values(dayMap);
 
         // Monthly totals
         const monthlyTotalCalories  = workouts.reduce((s, w) => s + w.caloriesBurned, 0);
         const monthlyTotalMinutes   = workouts.reduce((s, w) => s + w.durationMinutes, 0);
+        const monthlyTotalWater     = waterLogs.reduce((s, w) => s + w.amount, 0);
         const monthlyWorkoutCount   = workouts.length;
-        const activeDays            = days.length;
+        
+        // Active days: days with at least one workout or water log
+        const activeDays = days.length;
 
         // Best day
         const bestDay = days.reduce((best, d) => (!best || d.totalCalories > best.totalCalories) ? d : best, null);
@@ -213,9 +233,11 @@ exports.getMonthlyStats = async (req, res) => {
             year,
             month,
             dailyCalorieTarget: user.dailyCalorieTarget,
-            days,                    // array of { date, totalCalories, totalMinutes, workoutCount, workoutTypes }
+            dailyWaterTarget: user.dailyWaterTarget || 2000,
+            days,                    // array of { date, totalCalories, totalMinutes, workoutCount, workoutTypes, totalWater }
             monthlyTotalCalories,
             monthlyTotalMinutes,
+            monthlyTotalWater,
             monthlyWorkoutCount,
             activeDays,
             bestDay,
