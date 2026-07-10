@@ -123,13 +123,21 @@ exports.getDailyPassport = async (req, res) => {
         // Calculate active workout streak
         const workoutStreak = await calculateWorkoutStreak(userId);
 
+        let bmi = null;
+        if (user.weight && user.height) {
+            bmi = Number((user.weight / Math.pow(user.height / 100, 2)).toFixed(1));
+        }
+
         res.status(200).json({
             dailyCalorieTarget: user.dailyCalorieTarget,
             totalCaloriesBurnedToday,
             workouts: todaysWorkouts,
             totalWaterToday,
             dailyWaterTarget: user.dailyWaterTarget || 2000,
-            workoutStreak
+            workoutStreak,
+            weight: user.weight || null,
+            height: user.height || null,
+            bmi
         });
     } catch (error) {
         console.error('Error fetching daily passport:', error);
@@ -301,6 +309,35 @@ exports.updateWaterTarget = async (req, res) => {
     } catch (error) {
         console.error('Error updating water target:', error);
         res.status(500).json({ message: 'Server error updating water target', error: error.message });
+    }
+};
+
+// Update weight and height
+exports.updateVitals = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { weight, height } = req.body;
+
+        const updateObj = {};
+        if (weight !== undefined) updateObj.weight = Number(weight);
+        if (height !== undefined) updateObj.height = Number(height);
+
+        const user = await User.findByIdAndUpdate(userId, updateObj, { new: true });
+
+        let bmi = null;
+        if (user.weight && user.height) {
+            bmi = Number((user.weight / Math.pow(user.height / 100, 2)).toFixed(1));
+        }
+
+        res.status(200).json({ 
+            message: 'Vitals updated successfully', 
+            weight: user.weight, 
+            height: user.height,
+            bmi 
+        });
+    } catch (error) {
+        console.error('Error updating vitals:', error);
+        res.status(500).json({ message: 'Server error updating vitals', error: error.message });
     }
 };
 

@@ -5,7 +5,7 @@ import {
     CalendarDays, Award, Gauge, Trophy, Droplet, Minus
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { fetchDailyPassport, logWorkout, updateCalorieTarget, fetchMonthlyStats, logWater, updateWaterTarget, createCustomChallenge } from "../lib/api";
+import { fetchDailyPassport, logWorkout, updateCalorieTarget, fetchMonthlyStats, logWater, updateWaterTarget, createCustomChallenge, updateVitals } from "../lib/api";
 
 const WORKOUT_TYPES = [
     { type: "Running", icon: "🏃", baseCals: 10, color: "from-orange-400 to-red-500" },
@@ -38,6 +38,12 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
     const [waterTargetInput, setWaterTargetInput] = useState("");
     const [savingWaterTarget, setSavingWaterTarget] = useState(false);
     const [loggingWater, setLoggingWater] = useState(false);
+
+    // Vitals State
+    const [editVitals, setEditVitals] = useState(false);
+    const [weightInput, setWeightInput] = useState("");
+    const [heightInput, setHeightInput] = useState("");
+    const [savingVitals, setSavingVitals] = useState(false);
 
     // Challenge Creation State
     const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
@@ -90,6 +96,8 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                 setPassport(todayData);
                 setTargetInput(String(todayData.dailyCalorieTarget || 2000));
                 setWaterTargetInput(String(todayData.dailyWaterTarget || 2000));
+                setWeightInput(String(todayData.weight || ""));
+                setHeightInput(String(todayData.height || ""));
             }
             if (monthData) {
                 setMonthlyStats(monthData);
@@ -202,6 +210,27 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
         }
     };
 
+    const handleSaveVitals = async () => {
+        if (!weightInput || isNaN(Number(weightInput)) || !heightInput || isNaN(Number(heightInput))) {
+            alert("Please enter valid weight and height values.");
+            return;
+        }
+        setSavingVitals(true);
+        try {
+            await updateVitals({
+                weight: Number(weightInput),
+                height: Number(heightInput)
+            });
+            setEditVitals(false);
+            await loadData();
+        } catch (err) {
+            console.error("Failed to save vitals:", err);
+            alert("Failed to save vitals. Please try again.");
+        } finally {
+            setSavingVitals(false);
+        }
+    };
+
     const handleCreateChallenge = async () => {
         if (!challengeForm.name || !challengeForm.target || !challengeForm.durationDays) {
             alert("Please fill in the challenge name and targets.");
@@ -260,7 +289,7 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
         );
     }
 
-    const { dailyCalorieTarget = 2000, totalCaloriesBurnedToday = 0, workouts = [], totalWaterToday = 0, dailyWaterTarget = 2000, workoutStreak = 0 } = passport || {};
+    const { dailyCalorieTarget = 2000, totalCaloriesBurnedToday = 0, workouts = [], totalWaterToday = 0, dailyWaterTarget = 2000, workoutStreak = 0, weight = null, height = null, bmi = null } = passport || {};
     const progressPct = Math.min((totalCaloriesBurnedToday / dailyCalorieTarget) * 100, 100);
     const isGoalMet = totalCaloriesBurnedToday >= dailyCalorieTarget;
 
@@ -627,6 +656,130 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                                         transition={{ duration: 1.2, ease: "easeOut" }}
                                         className={`h-full rounded-full ${isWaterGoalMet ? 'bg-sky-400' : 'bg-blue-500'}`}
                                     />
+                                </div>
+                            </div>
+
+                            {/* Vitals & BMI Card */}
+                            <div className="relative bg-gradient-to-br from-slate-900 to-slate-950 rounded-[40px] p-8 text-white overflow-hidden shadow-2xl">
+                                <div className="absolute inset-0 opacity-10">
+                                    <div className="absolute top-4 right-4 w-48 h-48 rounded-full bg-emerald-500 blur-3xl" />
+                                    <div className="absolute bottom-4 left-4 w-32 h-32 rounded-full bg-teal-500 blur-2xl" />
+                                </div>
+                                <div className="relative flex flex-col md:flex-row items-center gap-8">
+                                    {/* Left side: Vitals display / inputs */}
+                                    <div className="flex-1 w-full">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60 mb-3 flex items-center gap-1">
+                                            📊 Body Vitals
+                                        </h3>
+
+                                        {editVitals ? (
+                                            <div className="space-y-4 bg-white/5 p-5 rounded-[24px] border border-white/10">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-[9px] font-black uppercase tracking-wider opacity-60 mb-1 ml-1">Weight (kg)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={weightInput}
+                                                            onChange={(e) => setWeightInput(e.target.value)}
+                                                            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm font-black outline-none focus:border-emerald-500 transition-all text-white"
+                                                            placeholder="kg"
+                                                            min="1"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[9px] font-black uppercase tracking-wider opacity-60 mb-1 ml-1">Height (cm)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={heightInput}
+                                                            onChange={(e) => setHeightInput(e.target.value)}
+                                                            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm font-black outline-none focus:border-emerald-500 transition-all text-white"
+                                                            placeholder="cm"
+                                                            min="1"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleSaveVitals}
+                                                        disabled={savingVitals}
+                                                        className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                                                    >
+                                                        {savingVitals ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditVitals(false);
+                                                            setWeightInput(weight ? String(weight) : "");
+                                                            setHeightInput(height ? String(height) : "");
+                                                        }}
+                                                        disabled={savingVitals}
+                                                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                                        <p className="text-[9px] font-bold opacity-50 uppercase tracking-wide mb-1">Weight</p>
+                                                        <p className="text-3xl font-black italic">{weight ? `${weight} kg` : "--"}</p>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                                        <p className="text-[9px] font-bold opacity-50 uppercase tracking-wide mb-1">Height</p>
+                                                        <p className="text-3xl font-black italic">{height ? `${height} cm` : "--"}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setEditVitals(true)}
+                                                    className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2 transition-all text-xs font-bold"
+                                                >
+                                                    <Edit3 className="w-3.5 h-3.5 opacity-60" />
+                                                    <span>Update Vitals</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Right side: BMI Circular Scale/Progress */}
+                                    <div className="flex flex-col items-center justify-center text-center w-full md:w-auto md:shrink-0 bg-white/5 p-6 rounded-[32px] border border-white/5 min-w-[180px]">
+                                        <p className="text-[9px] font-bold opacity-50 uppercase tracking-wider mb-2">Body Mass Index</p>
+                                        
+                                        {bmi ? (
+                                            <>
+                                                <div className="text-4xl font-black italic text-emerald-400 mb-1">{bmi}</div>
+                                                
+                                                {/* BMI Category Badge */}
+                                                <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                    bmi < 18.5 ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' :
+                                                    bmi < 25   ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                                    bmi < 30   ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                                    'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                }`}>
+                                                    {bmi < 18.5 ? 'Underweight' :
+                                                     bmi < 25   ? 'Healthy' :
+                                                     bmi < 30   ? 'Overweight' :
+                                                     'Obese'}
+                                                </span>
+                                                
+                                                <p className="text-[9px] text-slate-400 font-bold mt-3 leading-tight max-w-[140px]">
+                                                    {bmi < 18.5 ? 'Below healthy weight. Consult a dietitian.' :
+                                                     bmi < 25   ? 'Perfect score! Keep up the consistency.' :
+                                                     bmi < 30   ? 'Slightly above normal. Add more activity.' :
+                                                     'High health risk. Schedule a consultant.'}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <div className="py-4 flex flex-col items-center justify-center gap-2">
+                                                <div className="text-3xl">⚖️</div>
+                                                <p className="text-[10px] text-slate-400 font-bold italic leading-tight max-w-[140px]">
+                                                    Enter height and weight to view BMI summary.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

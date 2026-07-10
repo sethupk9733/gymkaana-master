@@ -431,3 +431,16 @@ export const updateWaterTarget = async (target: number) => {
     return data;
 };
 
+export const updateVitals = async (vitalsData: { weight?: number, height?: number }) => {
+    const response = await fetch(`${BASE_URL}/workouts/vitals`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(vitalsData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to update vitals');
+    return data;
+};
+
