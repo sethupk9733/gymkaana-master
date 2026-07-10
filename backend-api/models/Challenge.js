@@ -34,7 +34,7 @@ const challengeSchema = new mongoose.Schema({
     },
     targetType: {
         type: String,
-        enum: ['WORKOUTS', 'CALORIES', 'OTHER'],
+        enum: ['WORKOUTS', 'CALORIES', 'WATER', 'OTHER'],
         default: 'OTHER'
     },
     // How many actions/points needed to complete this challenge

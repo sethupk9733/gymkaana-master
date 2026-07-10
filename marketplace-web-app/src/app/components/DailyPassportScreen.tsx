@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import {
     ArrowLeft, Flame, Plus, Target, CheckCircle2, Clock, ChevronDown, Loader2,
     Dumbbell, Bike, PersonStanding, Waves, Zap, Activity, TrendingUp, Edit3, Check, X,
-    CalendarDays, Award, Gauge
+    CalendarDays, Award, Gauge, Trophy, Droplet, Minus
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { fetchDailyPassport, logWorkout, updateCalorieTarget, fetchMonthlyStats } from "../lib/api";
+import { fetchDailyPassport, logWorkout, updateCalorieTarget, fetchMonthlyStats, logWater, updateWaterTarget, createCustomChallenge } from "../lib/api";
 
 const WORKOUT_TYPES = [
     { type: "Running", icon: "🏃", baseCals: 10, color: "from-orange-400 to-red-500" },
@@ -33,6 +33,38 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
     const [submitting, setSubmitting] = useState(false);
     const [savingTarget, setSavingTarget] = useState(false);
 
+    // Water Tracking State
+    const [editWaterTarget, setEditWaterTarget] = useState(false);
+    const [waterTargetInput, setWaterTargetInput] = useState("");
+    const [savingWaterTarget, setSavingWaterTarget] = useState(false);
+    const [loggingWater, setLoggingWater] = useState(false);
+
+    // Challenge Creation State
+    const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
+    const [creatingChallenge, setCreatingChallenge] = useState(false);
+    const [selectedChallengePreset, setSelectedChallengePreset] = useState<number | null>(1);
+    const [challengeForm, setChallengeForm] = useState({
+        name: "",
+        description: "",
+        durationDays: 30,
+        targetType: "WORKOUTS",
+        target: 30,
+    });
+
+    const CHALLENGE_PRESETS = [
+        { days: 7, label: "7-Day Spark", emoji: "⚡" },
+        { days: 30, label: "30-Day Fire", emoji: "🔥" },
+        { days: 60, label: "60-Day Elite", emoji: "🦅" },
+        { days: 100, label: "100-Day Legend", emoji: "🏆" },
+    ];
+
+    const TARGET_TYPES = [
+        { value: "WORKOUTS", label: "Total Workouts", icon: "🏋️", hint: "e.g. 30 sessions" },
+        { value: "CALORIES", label: "Total Calories", icon: "🔥", hint: "e.g. 30,000 kcal" },
+        { value: "WATER", label: "Water Intake (ml)", icon: "💧", hint: "e.g. 60,000 ml" },
+        { value: "OTHER", label: "Custom Goal", icon: "🎯", hint: "Any custom target" },
+    ];
+
     // Form State
     const [intensity, setIntensity] = useState<"Low" | "Medium" | "High">("Medium");
     const [formData, setFormData] = useState({
@@ -57,6 +89,7 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
             if (todayData) {
                 setPassport(todayData);
                 setTargetInput(String(todayData.dailyCalorieTarget || 2000));
+                setWaterTargetInput(String(todayData.dailyWaterTarget || 2000));
             }
             if (monthData) {
                 setMonthlyStats(monthData);
@@ -142,6 +175,59 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
         }
     };
 
+    const handleLogWater = async (amount: number) => {
+        setLoggingWater(true);
+        try {
+            await logWater(amount);
+            await loadData();
+        } catch (err) {
+            console.error("Failed to log water:", err);
+            alert("Failed to log water. Please try again.");
+        } finally {
+            setLoggingWater(false);
+        }
+    };
+
+    const handleSaveWaterTarget = async () => {
+        if (!waterTargetInput || isNaN(Number(waterTargetInput))) return;
+        setSavingWaterTarget(true);
+        try {
+            await updateWaterTarget(Number(waterTargetInput));
+            setEditWaterTarget(false);
+            await loadData();
+        } catch (err) {
+            console.error("Failed to save water target:", err);
+        } finally {
+            setSavingWaterTarget(false);
+        }
+    };
+
+    const handleCreateChallenge = async () => {
+        if (!challengeForm.name || !challengeForm.target || !challengeForm.durationDays) {
+            alert("Please fill in the challenge name and targets.");
+            return;
+        }
+        setCreatingChallenge(true);
+        try {
+            await createCustomChallenge(challengeForm);
+            setChallengeForm({
+                name: "",
+                description: "",
+                durationDays: 30,
+                targetType: "WORKOUTS",
+                target: 30,
+            });
+            setSelectedChallengePreset(1);
+            setShowCreateChallengeModal(false);
+            alert("Challenge created successfully!");
+        } catch (err: any) {
+            console.error("Failed to create challenge:", err);
+            alert(err.message || "Failed to create challenge.");
+        } finally {
+            setCreatingChallenge(false);
+        }
+    };
+
     const scrollToForm = () => {
         if (formRef.current) {
             formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -174,9 +260,12 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
         );
     }
 
-    const { dailyCalorieTarget = 2000, totalCaloriesBurnedToday = 0, workouts = [] } = passport || {};
+    const { dailyCalorieTarget = 2000, totalCaloriesBurnedToday = 0, workouts = [], totalWaterToday = 0, dailyWaterTarget = 2000, workoutStreak = 0 } = passport || {};
     const progressPct = Math.min((totalCaloriesBurnedToday / dailyCalorieTarget) * 100, 100);
     const isGoalMet = totalCaloriesBurnedToday >= dailyCalorieTarget;
+
+    const waterProgressPct = Math.min((totalWaterToday / dailyWaterTarget) * 100, 100);
+    const isWaterGoalMet = totalWaterToday >= dailyWaterTarget;
 
     const calendarGrid = generateCalendarDays();
     const selectedDayData = selectedDate ? monthlyStats?.days?.find((d: any) => d.date === selectedDate) : null;
@@ -203,13 +292,22 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                         </div>
                     </div>
                     {viewMode === "today" && (
-                        <button
-                            onClick={scrollToForm}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-full text-[11px] font-black uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-primary/30"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Log
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowCreateChallengeModal(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-full text-[11px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all shadow-lg shadow-slate-950/10"
+                            >
+                                <Trophy className="w-4 h-4 text-primary" />
+                                Create Challenge
+                            </button>
+                            <button
+                                onClick={scrollToForm}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-full text-[11px] font-black uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-primary/30"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Log
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -350,6 +448,15 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                                     <div className="absolute top-4 right-4 w-48 h-48 rounded-full bg-primary blur-3xl" />
                                     <div className="absolute bottom-4 left-4 w-32 h-32 rounded-full bg-orange-500 blur-2xl" />
                                 </div>
+                                
+                                {/* Streak Badge */}
+                                {workoutStreak > 0 && (
+                                    <div className="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg shadow-red-500/25 border border-red-400/25">
+                                        <Flame className="w-3.5 h-3.5 text-white animate-bounce" fill="white" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-white">{workoutStreak} Day Streak</span>
+                                    </div>
+                                )}
+
                                 <div className="relative flex items-center gap-8">
                                     {/* Circular Progress */}
                                     <div className="relative w-28 h-28 shrink-0">
@@ -418,6 +525,107 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                                         animate={{ width: `${progressPct}%` }}
                                         transition={{ duration: 1.2, ease: "easeOut" }}
                                         className={`h-full rounded-full ${isGoalMet ? 'bg-green-400' : 'bg-primary'}`}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Water Intake / Hydration Card */}
+                            <div className="relative bg-gradient-to-br from-blue-900 to-indigo-950 rounded-[40px] p-8 text-white overflow-hidden shadow-2xl">
+                                <div className="absolute inset-0 opacity-10">
+                                    <div className="absolute top-4 right-4 w-48 h-48 rounded-full bg-cyan-400 blur-3xl" />
+                                    <div className="absolute bottom-4 left-4 w-32 h-32 rounded-full bg-blue-500 blur-2xl" />
+                                </div>
+                                <div className="relative flex items-center gap-8">
+                                    {/* Circular Progress */}
+                                    <div className="relative w-28 h-28 shrink-0">
+                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
+                                            <motion.circle
+                                                cx="50" cy="50" r="42" fill="none"
+                                                stroke={isWaterGoalMet ? "#38bdf8" : "#60a5fa"}
+                                                strokeWidth="8"
+                                                strokeLinecap="round"
+                                                strokeDasharray={`${2 * Math.PI * 42}`}
+                                                initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                                                animate={{ strokeDashoffset: (1 - waterProgressPct / 100) * 2 * Math.PI * 42 }}
+                                                transition={{ duration: 1.2, ease: "easeOut" }}
+                                            />
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                            <span className="text-2xl font-black">{Math.round(waterProgressPct)}%</span>
+                                            {isWaterGoalMet && <CheckCircle2 className="w-4 h-4 text-sky-400 mt-0.5" />}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60 mb-1 flex items-center gap-1">
+                                            <Droplet className="w-3.5 h-3.5 text-sky-400 animate-pulse" /> Water Intake
+                                        </h3>
+                                        <div className="flex items-baseline gap-2 mb-3">
+                                            <span className="text-5xl font-black italic">{totalWaterToday.toLocaleString()}</span>
+                                            <span className="text-sm font-bold opacity-50">ml</span>
+                                        </div>
+
+                                        {/* Target & Increment Row */}
+                                        <div className="flex flex-col gap-3">
+                                            {/* Target Input */}
+                                            <div className="flex items-center gap-2">
+                                                {editWaterTarget ? (
+                                                    <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-1.5">
+                                                        <Target className="w-3.5 h-3.5 opacity-60" />
+                                                        <input
+                                                            type="number"
+                                                            value={waterTargetInput}
+                                                            onChange={(e) => setWaterTargetInput(e.target.value)}
+                                                            className="w-20 bg-transparent text-sm font-black outline-none"
+                                                            autoFocus
+                                                        />
+                                                        <button onClick={handleSaveWaterTarget} disabled={savingWaterTarget} className="text-sky-400">
+                                                            {savingWaterTarget ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                        </button>
+                                                        <button onClick={() => setEditWaterTarget(false)} className="text-red-400">
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setEditWaterTarget(true)}
+                                                        className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1.5 transition-all text-xs font-bold"
+                                                    >
+                                                        <Target className="w-3.5 h-3.5 opacity-60" />
+                                                        <span>Target: {dailyWaterTarget.toLocaleString()} ml</span>
+                                                        <Edit3 className="w-3 h-3 opacity-40" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Glass Controls (+ / - 250ml) */}
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleLogWater(-250)}
+                                                    disabled={loggingWater || totalWaterToday <= 0}
+                                                    className="flex items-center justify-center gap-1 px-3 py-1.5 bg-white/10 hover:bg-red-500/20 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30"
+                                                >
+                                                    <Minus className="w-3 h-3" /> -250ml
+                                                </button>
+                                                <button
+                                                    onClick={() => handleLogWater(250)}
+                                                    disabled={loggingWater}
+                                                    className="flex items-center justify-center gap-1 px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-lg shadow-sky-500/20"
+                                                >
+                                                    <Plus className="w-3 h-3" /> +250ml
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Progress bar */}
+                                <div className="relative mt-6 h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${waterProgressPct}%` }}
+                                        transition={{ duration: 1.2, ease: "easeOut" }}
+                                        className={`h-full rounded-full ${isWaterGoalMet ? 'bg-sky-400' : 'bg-blue-500'}`}
                                     />
                                 </div>
                             </div>
@@ -639,6 +847,144 @@ export function DailyPassportScreen({ onBack }: { onBack: () => void }) {
                 </AnimatePresence>
 
             </div>
+
+            {/* Create Challenge Modal */}
+            <AnimatePresence>
+                {showCreateChallengeModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowCreateChallengeModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-md rounded-[32px] p-6 shadow-2xl relative overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setShowCreateChallengeModal(false)}
+                                className="absolute right-6 top-6 p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/20">
+                                    <Trophy className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black italic uppercase tracking-tight text-secondary">Create A Challenge</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Set your personalized target</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {/* Presets */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Select Preset</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {CHALLENGE_PRESETS.map((preset, idx) => (
+                                            <button
+                                                key={preset.days}
+                                                onClick={() => {
+                                                    setSelectedChallengePreset(idx);
+                                                    setChallengeForm(f => ({
+                                                        ...f,
+                                                        name: f.name || preset.label,
+                                                        durationDays: preset.days
+                                                    }));
+                                                }}
+                                                className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
+                                                    selectedChallengePreset === idx
+                                                        ? 'border-orange-500 bg-orange-50/50 scale-[1.02]'
+                                                        : 'border-border/60 hover:border-orange-400/40 bg-slate-50'
+                                                }`}
+                                            >
+                                                <span className="text-xl mb-1">{preset.emoji}</span>
+                                                <span className="text-[9px] font-black text-secondary leading-tight text-center truncate w-full">{preset.days} Days</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Form Inputs */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1.5 ml-1">Challenge Name</label>
+                                        <input
+                                            type="text"
+                                            value={challengeForm.name}
+                                            onChange={(e) => setChallengeForm(f => ({ ...f, name: e.target.value }))}
+                                            className="w-full p-4 bg-slate-50 border border-border/60 rounded-2xl font-extrabold text-secondary outline-none focus:border-orange-500 transition-all text-sm"
+                                            placeholder="e.g. My 30-Day Fire"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1.5 ml-1">Description (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={challengeForm.description}
+                                            onChange={(e) => setChallengeForm(f => ({ ...f, description: e.target.value }))}
+                                            className="w-full p-4 bg-slate-50 border border-border/60 rounded-2xl font-extrabold text-secondary outline-none focus:border-orange-500 transition-all text-sm"
+                                            placeholder="e.g. Building daily consistency"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Target Type */}
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1.5 ml-1">Target Type</label>
+                                            <select
+                                                value={challengeForm.targetType}
+                                                onChange={(e) => setChallengeForm(f => ({ ...f, targetType: e.target.value, target: e.target.value === 'CALORIES' ? 10000 : e.target.value === 'WATER' ? 60000 : 30 }))}
+                                                className="w-full p-4 bg-slate-50 border border-border/60 rounded-2xl font-extrabold text-secondary outline-none focus:border-orange-500 transition-all text-sm"
+                                            >
+                                                {TARGET_TYPES.map(t => (
+                                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Target Goal Value */}
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1.5 ml-1">Target Value</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={challengeForm.target}
+                                                    onChange={(e) => setChallengeForm(f => ({ ...f, target: Number(e.target.value) }))}
+                                                    className="w-full p-4 bg-slate-50 border border-border/60 rounded-2xl font-extrabold text-secondary outline-none focus:border-orange-500 transition-all text-sm pr-12"
+                                                    min="1"
+                                                    required
+                                                />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase">
+                                                    {challengeForm.targetType === 'CALORIES' ? 'kcal' : challengeForm.targetType === 'WATER' ? 'ml' : 'count'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleCreateChallenge}
+                                    disabled={creatingChallenge || !challengeForm.name || !challengeForm.target}
+                                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] italic text-sm shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all mt-4"
+                                >
+                                    {creatingChallenge ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+                                    {creatingChallenge ? "Creating..." : "Launch Challenge"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
         </motion.div>
     );
 }

@@ -16,6 +16,7 @@ const CHALLENGE_PRESETS = [
 const TARGET_TYPES = [
     { value: "WORKOUTS", label: "Total Workouts", icon: "🏋️", hint: "e.g. 30 sessions in 30 days" },
     { value: "CALORIES", label: "Total Calories", icon: "🔥", hint: "e.g. 30,000 kcal burned" },
+    { value: "WATER", label: "Water Intake (ml)", icon: "💧", hint: "e.g. 60,000 ml water" },
     { value: "OTHER", label: "Custom Goal", icon: "🎯", hint: "Any other measurable target" },
 ];
 

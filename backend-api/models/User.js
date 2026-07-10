@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema({
     dailyCalorieTarget: {
         type: Number,
         default: 2000
+    },
+    dailyWaterTarget: {
+        type: Number,
+        default: 2000 // default 2000 ml (8 glasses)
     }
 }, { timestamps: true });
 

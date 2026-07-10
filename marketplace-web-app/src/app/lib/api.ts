@@ -405,3 +405,29 @@ export const fetchUserCustomChallenges = async () => {
     return data;
 };
 
+export const logWater = async (amount: number) => {
+    const response = await fetch(`${BASE_URL}/workouts/water`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ amount }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to log water intake');
+    return data;
+};
+
+export const updateWaterTarget = async (target: number) => {
+    const response = await fetch(`${BASE_URL}/workouts/water/target`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ target }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to update water target');
+    return data;
+};
+
