@@ -20,6 +20,23 @@ const challengeSchema = new mongoose.Schema({
         enum: ['GYM_EXPLORER', '7_DAY_PASSPORT', 'BRING_A_FRIEND', 'MONTHLY_WARRIOR', 'STREAK_MASTER', 'CUSTOM'],
         default: 'CUSTOM'
     },
+    creatorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    isCustom: {
+        type: Boolean,
+        default: false
+    },
+    durationDays: {
+        type: Number
+    },
+    targetType: {
+        type: String,
+        enum: ['WORKOUTS', 'CALORIES', 'OTHER'],
+        default: 'OTHER'
+    },
     // How many actions/points needed to complete this challenge
     target: {
         type: Number,

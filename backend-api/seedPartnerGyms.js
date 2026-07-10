@@ -8,7 +8,8 @@ const partnerGyms = [
         description: 'Premium CrossFit facility with top-tier equipment and trainers.',
         baseDayPassPrice: 500,
         status: 'Approved',
-        location: { address: 'CrossFit Ave, Gymkaana' },
+        address: 'CrossFit Ave, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -16,7 +17,8 @@ const partnerGyms = [
         description: 'State of the art fitness center for bodybuilding and weight loss.',
         baseDayPassPrice: 300,
         status: 'Approved',
-        location: { address: 'V Fitness St, Gymkaana' },
+        address: 'V Fitness St, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -24,7 +26,8 @@ const partnerGyms = [
         description: 'Next generation fitness club for cardio, strength, and group classes.',
         baseDayPassPrice: 400,
         status: 'Approved',
-        location: { address: 'NXT Blvd, Gymkaana' },
+        address: 'NXT Blvd, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -32,7 +35,8 @@ const partnerGyms = [
         description: 'Welcoming unisex gym focusing on holistic fitness.',
         baseDayPassPrice: 200,
         status: 'Approved',
-        location: { address: 'BiFit Road, Gymkaana' },
+        address: 'BiFit Road, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -40,7 +44,8 @@ const partnerGyms = [
         description: 'Hardcore bodybuilding gym with heavy free weights.',
         baseDayPassPrice: 250,
         status: 'Approved',
-        location: { address: 'Muscle Factory Lane, Gymkaana' },
+        address: 'Muscle Factory Lane, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -48,7 +53,8 @@ const partnerGyms = [
         description: 'Functional training and hexagon cage workouts.',
         baseDayPassPrice: 350,
         status: 'Approved',
-        location: { address: 'Hexagon St, Gymkaana' },
+        address: 'Hexagon St, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -56,7 +62,8 @@ const partnerGyms = [
         description: 'Premium club for mighty gains and wellness.',
         baseDayPassPrice: 600,
         status: 'Approved',
-        location: { address: 'Mighty Rd, Gymkaana' },
+        address: 'Mighty Rd, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     },
     {
@@ -64,7 +71,8 @@ const partnerGyms = [
         description: 'Authentic training methods and dedicated personal trainers.',
         baseDayPassPrice: 450,
         status: 'Approved',
-        location: { address: 'Authentic Ave, Gymkaana' },
+        address: 'Authentic Ave, Gymkaana',
+        location: 'Gymkaana',
         isPartner: true
     }
 ];

@@ -329,3 +329,79 @@ export const joinChallenge = async (challengeId: string) => {
     return data;
 };
 
+// Workout & Daily Passport APIs
+export const logWorkout = async (workoutData: { workoutType: string, durationMinutes: number, intensity?: string, caloriesBurned: number, notes?: string }) => {
+    const response = await fetch(`${BASE_URL}/workouts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(workoutData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to log workout');
+    return data;
+};
+
+export const fetchDailyPassport = async () => {
+    const response = await fetch(`${BASE_URL}/workouts/passport`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch daily passport');
+    return data;
+};
+
+export const updateCalorieTarget = async (target: number) => {
+    const response = await fetch(`${BASE_URL}/workouts/target`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ target }),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to update target');
+    return data;
+};
+
+export const fetchMonthlyStats = async (year?: number, month?: number) => {
+    let url = `${BASE_URL}/workouts/stats`;
+    if (year && month) url += `?year=${year}&month=${month}`;
+    const response = await fetch(url, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch monthly stats');
+    return data;
+};
+
+// Custom Challenge APIs
+export const createCustomChallenge = async (challengeData: { name: string, description?: string, durationDays: number, targetType: string, target: number }) => {
+    const response = await fetch(`${BASE_URL}/gamification/challenges/custom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(challengeData),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to create custom challenge');
+    return data;
+};
+
+export const fetchUserCustomChallenges = async () => {
+    const response = await fetch(`${BASE_URL}/gamification/challenges/custom`, {
+        headers: getAuthHeaders(),
+        //@ts-ignore
+        credentials: 'include'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch custom challenges');
+    return data;
+};
+

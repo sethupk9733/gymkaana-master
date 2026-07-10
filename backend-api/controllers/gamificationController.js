@@ -157,10 +157,57 @@ exports.getLeaderboard = async (req, res) => {
 
 exports.getActiveChallenges = async (req, res) => {
     try {
-        const challenges = await Challenge.find({ isActive: true });
+        // Only return global (non-custom) active challenges
+        const challenges = await Challenge.find({ isActive: true, isCustom: false });
         res.status(200).json({ success: true, data: challenges });
     } catch (error) {
         console.error('Error fetching challenges:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.createCustomChallenge = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        const { name, description, durationDays, targetType, target } = req.body;
+
+        const newChallenge = new Challenge({
+            name,
+            description,
+            type: 'CUSTOM',
+            creatorId: userId,
+            isCustom: true,
+            durationDays,
+            targetType,
+            target,
+            isActive: true,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + (durationDays * 24 * 60 * 60 * 1000))
+        });
+
+        await newChallenge.save();
+
+        // Automatically join the user to their own challenge
+        const userChallenge = new UserChallenge({
+            userId,
+            challengeId: newChallenge._id
+        });
+        await userChallenge.save();
+
+        res.status(201).json({ success: true, data: newChallenge });
+    } catch (error) {
+        console.error('Error creating custom challenge:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.getUserCustomChallenges = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        const challenges = await Challenge.find({ creatorId: userId, isCustom: true });
+        res.status(200).json({ success: true, data: challenges });
+    } catch (error) {
+        console.error('Error fetching custom challenges:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

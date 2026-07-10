@@ -1,4 +1,4 @@
-import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X, Calculator } from "lucide-react";
+import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X, Calculator, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { VenueCard } from "./ui/VenueCard";
 import { useEffect, useState, useMemo } from "react";
@@ -21,7 +21,8 @@ export function HomeScreen({
   initialSearch,
   onClearInitialSearch,
   onChallengeDashboard,
-  onLeaderboard
+  onLeaderboard,
+  onDailyPassport
 }: {
   onGymClick: (gymId: any) => void;
   onProfile: () => void;
@@ -32,6 +33,7 @@ export function HomeScreen({
   onClearInitialSearch?: () => void;
   onChallengeDashboard?: () => void;
   onLeaderboard?: () => void;
+  onDailyPassport?: () => void;
 }) {
   const [gyms, setGyms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +332,20 @@ export function HomeScreen({
               <div className="text-left">
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Free Tool</div>
                 <div className="text-sm font-black italic uppercase text-white group-hover:text-primary transition-colors">BMI Calculator</div>
+              </div>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onDailyPassport?.()}
+              className="px-6 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl flex items-center gap-3 group transition-all hover:bg-white/10"
+            >
+              <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-400">
+                <Flame className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Track Today</div>
+                <div className="text-sm font-black italic uppercase text-white group-hover:text-orange-400 transition-colors">Daily Passport</div>
               </div>
             </motion.button>
           </div>

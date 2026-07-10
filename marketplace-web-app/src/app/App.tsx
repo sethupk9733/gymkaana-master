@@ -28,6 +28,7 @@ const PartnerScreen = lazy(() => import("./components/PartnerScreen").then(m => 
 const RefundScreen = lazy(() => import("./components/RefundScreen").then(m => ({ default: m.RefundScreen })));
 const ChallengeDashboardScreen = lazy(() => import("./components/ChallengeDashboardScreen").then(m => ({ default: m.ChallengeDashboardScreen })));
 const LeaderboardScreen = lazy(() => import("./components/LeaderboardScreen").then(m => ({ default: m.LeaderboardScreen })));
+const DailyPassportScreen = lazy(() => import("./components/DailyPassportScreen").then(m => ({ default: m.DailyPassportScreen })));
 
 type Screen =
   | "splash"
@@ -51,7 +52,8 @@ type Screen =
   | "bmi"
   | "weight_guide"
   | "challenge_dashboard"
-  | "leaderboard";
+  | "leaderboard"
+  | "daily_passport";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
@@ -64,7 +66,7 @@ export default function App() {
     if (actionParam === 'login') return 'login';
     if (actionParam === 'explore') return 'home';
     if (screenParam === 'details' && gymParam) return 'details';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi', 'challenge_dashboard', 'leaderboard'].includes(screenParam)) {
+    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi', 'challenge_dashboard', 'leaderboard', 'daily_passport'].includes(screenParam)) {
       return screenParam;
     }
     return "splash";
@@ -257,6 +259,7 @@ export default function App() {
             onClearInitialSearch={() => setInitialSearch(null)}
             onChallengeDashboard={() => handleProtectedAction("challenge_dashboard")}
             onLeaderboard={() => setCurrentScreen("leaderboard")}
+            onDailyPassport={() => handleProtectedAction("daily_passport")}
           />
         );
 
@@ -439,6 +442,13 @@ export default function App() {
       case "leaderboard":
         return (
           <LeaderboardScreen
+            onBack={() => setCurrentScreen("home")}
+          />
+        );
+
+      case "daily_passport":
+        return (
+          <DailyPassportScreen
             onBack={() => setCurrentScreen("home")}
           />
         );

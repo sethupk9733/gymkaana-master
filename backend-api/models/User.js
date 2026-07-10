@@ -37,7 +37,11 @@ const userSchema = new mongoose.Schema({
     gender: String,
     age: Number,
     address: String,
-    occupation: String
+    occupation: String,
+    dailyCalorieTarget: {
+        type: Number,
+        default: 2000
+    }
 }, { timestamps: true });
 
 // Hash password before saving

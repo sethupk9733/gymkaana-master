@@ -183,6 +183,7 @@ app.use('/api/accounting', require('./routes/accountingRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/inquiry', require('./routes/inquiryRoutes'));
 app.use('/api/gamification', require('./routes/gamificationRoutes'));
+app.use('/api/workouts', require('./routes/workoutRoutes'));
 
 // ── Payment Routes ──────────────────────────────────────────────────────────
 // Mounting directly to avoid any router matching issues

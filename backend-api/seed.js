@@ -50,33 +50,46 @@ const seedData = async () => {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to MongoDB for seeding...');
 
-        // Clear existing data
-        await User.deleteMany({});
-        await Gym.deleteMany({});
-        await Plan.deleteMany({});
-        await Booking.deleteMany({});
+        // Intentionally not clearing existing data so we preserve partner gyms
 
-        console.log('Creating Test Accounts...');
-        await User.create({
-            name: 'Gymkaana Admin',
-            email: 'admin@gymkaana.com',
-            password: 'admin123',
-            role: 'admin'
-        });
+        const usersToCreate = [
+            {
+                name: 'Gymkaana Master',
+                email: 'master@gymkaana.com',
+                password: 'master123',
+                roles: ['admin'],
+                isVerified: true
+            },
+            {
+                name: 'Gymkaana Admin',
+                email: 'admin@gymkaana.com',
+                password: 'admin123',
+                roles: ['admin'],
+                isVerified: true
+            },
+            {
+                name: 'John Owner',
+                email: 'owner@gymkaana.com',
+                password: 'owner123',
+                roles: ['owner'],
+                isVerified: true
+            },
+            {
+                name: 'Sarah User',
+                email: 'user@gymkaana.com',
+                password: 'user123',
+                roles: ['user'],
+                isVerified: true
+            }
+        ];
 
-        await User.create({
-            name: 'John Owner',
-            email: 'owner@gymkaana.com',
-            password: 'owner123',
-            role: 'owner'
-        });
-
-        await User.create({
-            name: 'Sarah User',
-            email: 'user@gymkaana.com',
-            password: 'user123',
-            role: 'user'
-        });
+        for (const u of usersToCreate) {
+            const existing = await User.findOne({ email: u.email });
+            if (!existing) {
+                await User.create(u);
+                console.log(`Created test user: ${u.email}`);
+            }
+        }
 
         console.log('Database cleared! Only test users remain.');
 
@@ -84,6 +97,17 @@ const seedData = async () => {
         console.log('USER: user@gymkaana.com / user123');
         console.log('OWNER: owner@gymkaana.com / owner123');
         console.log('ADMIN: admin@gymkaana.com / admin123');
+
+        console.log('Inserting detailed mockup gyms...');
+        for (const gym of gymsData) {
+            const existingGym = await Gym.findOne({ name: gym.name });
+            if (!existingGym) {
+                await Gym.create(gym);
+                console.log(`Created gym: ${gym.name}`);
+            } else {
+                console.log(`Gym already exists: ${gym.name}`);
+            }
+        }
 
         process.exit();
     } catch (err) {

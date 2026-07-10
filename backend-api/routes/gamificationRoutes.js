@@ -10,6 +10,10 @@ router.get('/leaderboard', gamificationController.getLeaderboard); // Public or 
 router.get('/challenges', gamificationController.getActiveChallenges);
 router.post('/challenges/join', protect, gamificationController.joinChallenge);
 
+// Custom Challenge Routes
+router.post('/challenges/custom', protect, gamificationController.createCustomChallenge);
+router.get('/challenges/custom', protect, gamificationController.getUserCustomChallenges);
+
 // Admin Routes
 router.post('/admin/challenges', protect, admin, adminGamificationController.createChallenge);
 router.put('/admin/challenges/:id', protect, admin, adminGamificationController.updateChallenge);
