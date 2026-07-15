@@ -179,21 +179,75 @@ export function HomeScreen({
       className="w-full pb-12"
     >
       <SEO
-        title="Find Top Gyms & Studios"
-        description="Book memberships and classes at elite fitness venues near you. Your universal pass to the best gyms, yoga, and CrossFit studios."
+        title="Find Top Gyms & Fitness Studios Near You"
+        description="Book gym memberships, yoga studios, CrossFit, MMA and fitness classes near you. India's premier fitness marketplace — Gymkaana. One universal pass to elite venues."
+        keywords="gym near me, book gym online India, yoga studio near me, CrossFit Chennai, fitness classes near me, gym membership India, MMA studio, day pass gym, Gymkaana"
+        canonical="https://gymkaana.com"
+        schema={[
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://gymkaana.com"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Find Gyms Near You",
+                "item": "https://gymkaana.com?screen=home"
+              }
+            ]
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How do I find a gym near me on Gymkaana?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Open Gymkaana and allow location access. The app automatically shows elite gyms, yoga studios and fitness centres within your selected radius. Use filters to narrow by discipline."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is Gymkaana's Daily Passport?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Gymkaana's Daily Passport is a day-pass feature that lets you access any partner fitness venue for a single day without committing to a monthly membership."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which fitness disciplines are available on Gymkaana?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Gymkaana lists venues for Bodybuilding, CrossFit, Yoga, Zumba, MMA/Kickboxing, Pilates, Powerlifting, Aerobics, Calisthenics, Swimming, Cardio and Strength Training."
+                }
+              }
+            ]
+          }
+        ]}
       />
       {/* Hyper-Attractive Hero Section */}
-      <div className="mx-6 mt-8 mb-8 p-8 md:p-12 rounded-[40px] border border-secondary shadow-[0_32px_64px_-16px_rgba(30,41,59,0.4)] relative overflow-hidden bg-secondary">
+      <div className="mx-3 md:mx-6 mt-4 md:mt-8 mb-4 md:mb-8 p-4 md:p-12 rounded-[28px] md:rounded-[40px] border border-secondary shadow-[0_32px_64px_-16px_rgba(30,41,59,0.4)] relative overflow-hidden bg-secondary">
         {/* Dynamic Glow Elements */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 blur-[130px] rounded-full -mr-48 -mt-48 animate-pulse" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white/5 blur-[100px] rounded-full -ml-32 -mb-32" />
 
         <div className="relative z-10">
+          {/* Desktop-only: Big heading + subline */}
           <motion.div
             key={activeHero.subline}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
+            className="hidden md:block"
           >
             <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white italic mb-4 leading-none">
               {activeHero.heading}
@@ -203,8 +257,52 @@ export function HomeScreen({
             </p>
           </motion.div>
 
-          {/* Elevated Search Experience */}
-          <div className="flex flex-col md:flex-row gap-4 max-w-4xl relative">
+          {/* ── MOBILE: compact search bar with inline filter button ── */}
+          <div className="flex md:hidden items-center gap-2 mb-3">
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex-1 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl group focus-within:bg-white/20 transition-all"
+            >
+              <Search className="w-4 h-4 text-white/60 shrink-0 group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search gyms or areas..."
+                className="flex-1 bg-transparent outline-none text-sm font-bold text-white placeholder:text-white/30"
+              />
+            </motion.div>
+            {/* Mobile filter button — right of search bar */}
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl font-black shadow-xl transition-all ${
+                showFilters || selectedDisciplines.length > 0
+                  ? 'bg-primary text-secondary'
+                  : 'bg-white/10 border border-white/20 text-white'
+              }`}
+              aria-label="Toggle filters"
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </motion.button>
+          </div>
+
+          {/* Mobile: Daily Passport compact CTA */}
+          <div className="flex md:hidden mb-1">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onDailyPassport?.()}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl group transition-all hover:bg-white/10"
+            >
+              <Flame className="w-4 h-4 text-orange-400" />
+              <span className="text-xs font-black italic uppercase text-white group-hover:text-orange-400 transition-colors">Daily Passport</span>
+            </motion.button>
+          </div>
+
+          {/* ── DESKTOP: full search row (search + filter button) ── */}
+          <div className="hidden md:flex flex-row gap-4 max-w-4xl relative">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -228,37 +326,39 @@ export function HomeScreen({
               className={`flex items-center gap-3 px-8 rounded-[28px] font-black uppercase tracking-widest text-sm transition-all shadow-xl ${showFilters ? 'bg-primary text-secondary' : 'bg-white text-secondary hover:bg-primary'}`}
             >
               <SlidersHorizontal className="w-5 h-5" />
-              {showFilters ? 'Radius' : 'Radius'}
+              Radius
             </motion.button>
           </div>
 
+          {/* Filter panel — shared mobile + desktop */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
                 initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginTop: 20 }}
+                animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
                 exit={{ height: 0, opacity: 0, marginTop: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white rounded-3xl p-6 shadow-xl border border-border/60">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+                <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xl border border-border/60">
+                  {/* Radius row */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-6 mb-4 md:mb-6">
                     <div>
-                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Search Radius</h4>
-                      <p className="text-xl font-black text-secondary italic uppercase tracking-tighter">{maxDistance} KM</p>
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5">Search Radius</h4>
+                      <p className="text-lg font-black text-secondary italic uppercase tracking-tighter">{maxDistance} KM</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 md:gap-2">
                       {[5, 10, 15, 25, 50].map(d => (
                         <button
                           key={d}
                           onClick={() => setMaxDistance(d)}
-                          className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${maxDistance === d ? 'bg-secondary border-secondary text-white shadow-lg' : 'bg-muted border-border/40 text-muted-foreground hover:border-secondary hover:text-secondary'}`}
+                          className={`px-3 md:px-5 py-1.5 md:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${maxDistance === d ? 'bg-secondary border-secondary text-white shadow-lg' : 'bg-muted border-border/40 text-muted-foreground hover:border-secondary hover:text-secondary'}`}
                         >
                           {d} KM
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="relative h-1.5 w-full bg-slate-100 rounded-full">
+                  <div className="relative h-1.5 w-full bg-slate-100 rounded-full mb-4 md:mb-0">
                     <motion.div
                       className="absolute h-full bg-primary rounded-full transition-all duration-300"
                       initial={false}
@@ -275,12 +375,52 @@ export function HomeScreen({
                       title="Distance Radius Slider"
                     />
                   </div>
+
+                  {/* Specialized disciplines — inside filter panel on mobile */}
+                  <div className="mt-4 pt-4 border-t border-border/40">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Disciplines</h3>
+                      {selectedDisciplines.length > 0 && (
+                        <button
+                          onClick={() => setSelectedDisciplines([])}
+                          className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+                        >
+                          Clear ({selectedDisciplines.length})
+                        </button>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+                      <div className="flex gap-2 min-w-max">
+                        {SPECIALIZATIONS.map((discipline, index) => (
+                          <motion.button
+                            key={index}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => {
+                              setSelectedDisciplines(prev =>
+                                prev.includes(discipline)
+                                  ? prev.filter(d => d !== discipline)
+                                  : [...prev, discipline]
+                              );
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 transition-all ${
+                              selectedDisciplines.includes(discipline)
+                                ? 'bg-secondary border-secondary text-white shadow-xl'
+                                : 'bg-gray-50 border-border/80 text-muted-foreground hover:border-secondary hover:text-secondary'
+                            }`}
+                          >
+                            <span className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap">{discipline}</span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="mt-8 pt-8 border-t border-border/60">
+          {/* Desktop-only: disciplines row below search */}
+          <div className="hidden md:block mt-8 pt-8 border-t border-border/60">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Specialized Disciplines</h3>
               {selectedDisciplines.length > 0 && (
@@ -318,8 +458,8 @@ export function HomeScreen({
             </div>
           </div>
 
-          {/* New BMI Tool CTA */}
-          <div className="mt-12 flex flex-wrap gap-4">
+          {/* Desktop-only: BMI + Daily Passport CTAs */}
+          <div className="hidden md:flex mt-12 flex-wrap gap-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -349,8 +489,9 @@ export function HomeScreen({
               </div>
             </motion.button>
           </div>
-          {/* New Gamification CTA */}
-          <div className="mt-8">
+
+          {/* Desktop-only: Challenge Banner */}
+          <div className="hidden md:block mt-8">
             <ChallengeBanner 
               onDashboardClick={() => onChallengeDashboard?.()} 
               onLeaderboardClick={() => onLeaderboard?.()} 

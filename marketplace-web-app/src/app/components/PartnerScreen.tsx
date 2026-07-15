@@ -45,8 +45,24 @@ export function PartnerScreen({ onBack }: { onBack: () => void }) {
             className="w-full min-h-screen bg-white"
         >
             <SEO
-                title="Partner Alliance"
-                description="List your gym or fitness studio on Gymkaana. Access the Owner Portal to join our elite network and grow your business."
+                title="Partner Your Gym — List on Gymkaana & Get More Members"
+                description="Join Gymkaana's elite fitness network. List your gym, yoga studio or CrossFit box and get discovered by thousands of fitness seekers nearby. Free onboarding for gym owners in India."
+                keywords="list gym India, gym partner Gymkaana, gym owner platform, increase gym members, fitness marketplace partner, yoga studio listing India"
+                canonical="https://gymkaana.com?screen=partner"
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "WebPage",
+                  "name": "Partner Your Gym with Gymkaana",
+                  "description": "List your gym or fitness studio on Gymkaana and reach thousands of nearby fitness seekers. Free gym owner onboarding.",
+                  "url": "https://gymkaana.com?screen=partner",
+                  "breadcrumb": {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://gymkaana.com" },
+                      { "@type": "ListItem", "position": 2, "name": "Partner with Us", "item": "https://gymkaana.com?screen=partner" }
+                    ]
+                  }
+                }}
             />
             {/* Hero Section */}
             <div className="pt-32 pb-20 px-6 lg:px-12 bg-black text-white relative overflow-hidden">

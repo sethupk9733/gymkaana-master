@@ -1,0 +1,41 @@
+# Gymkaana Marketplace — robots.txt
+# Allow all crawlers, including AI bots, on the home / landing page.
+# The login page is restricted via <meta name="robots" content="noindex,nofollow">
+# injected dynamically by the app — robots.txt query-param disallows are not
+# reliably supported, so we use the meta tag approach instead.
+
+User-agent: *
+Allow: /
+
+# ── AI / LLM crawlers ──────────────────────────────────────────────────────────
+# These are explicitly allowed so AI assistants can surface Gymkaana content.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# ── Sitemap ────────────────────────────────────────────────────────────────────
+Sitemap: https://gymkaana.com/sitemap.xml

@@ -107,8 +107,34 @@ export function GymDetailsScreen({ gymId, onBack, onBookNow }: { gymId: string |
       className="w-full pb-20"
     >
       <SEO
-        title={gym.name || "Venue Details"}
-        description={`Experience elite training at ${gym.name || 'our venue'} in ${gym.location || 'your area'}. Specialized in ${gym.specializations?.join(', ') || 'fitness'}. Book your membership now on Gymkaana.`}
+        title={gym.name ? `${gym.name} — Book Membership` : 'Venue Details'}
+        description={`Book your membership at ${gym.name || 'this venue'} in ${gym.location || 'your area'}. Specialising in ${gym.specializations?.slice(0,3).join(', ') || 'fitness'}. Verified on Gymkaana — India's top fitness marketplace.`}
+        keywords={`${gym.name || ''}, gym ${gym.location || ''}, book ${gym.specializations?.[0] || 'gym'} membership, ${gym.specializations?.join(', ') || 'fitness'} near me`}
+        canonical={`https://gymkaana.com?screen=details&gym=${gym._id || gym.id || ''}`}
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "SportsActivityLocation",
+          "name": gym.name || 'Fitness Venue',
+          "description": `${gym.name} is a premium fitness venue in ${gym.location} listed on Gymkaana. Specialising in ${gym.specializations?.join(', ') || 'fitness'}.`,
+          "url": `https://gymkaana.com?screen=details&gym=${gym._id || gym.id || ''}`,
+          "image": gym.images?.[0] || 'https://gymkaana.com/og-image.jpg',
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": gym.location || 'Chennai',
+            "addressRegion": "Tamil Nadu",
+            "addressCountry": "IN"
+          },
+          "sport": gym.specializations || [],
+          "priceRange": "₹₹",
+          "currenciesAccepted": "INR",
+          "paymentAccepted": "Credit Card, UPI",
+          "aggregateRating": gym.rating ? {
+            "@type": "AggregateRating",
+            "ratingValue": gym.rating,
+            "bestRating": "5",
+            "ratingCount": gym.reviewCount || 10
+          } : undefined
+        }}
       />
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8 lg:gap-12 px-6 max-w-7xl mx-auto pt-8">
 

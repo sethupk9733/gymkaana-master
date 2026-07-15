@@ -1,11 +1,29 @@
 import { Mail, Lock, User, ArrowLeft, ShieldCheck, Building, Loader2, KeyRound } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { login, register, googleLogin, verifyOTP, resendOTP, forgotPassword, resetPassword } from "../lib/api";
 import { GoogleLogin } from '@react-oauth/google';
 import { OWNER_URL } from "../config/api";
+import { SEO } from "./SEO";
 
 export function LoginSignupScreen({ onLogin, onBack }: { onLogin: (isNew?: boolean) => void; onBack: () => void }) {
+  // ── Block AI bots & search crawlers from indexing the login page ──────────
+  useEffect(() => {
+    const ROBOTS_ID = 'gymkaana-robots-meta';
+    let tag = document.getElementById(ROBOTS_ID) as HTMLMetaElement | null;
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.id = ROBOTS_ID;
+      tag.name = 'robots';
+      document.head.appendChild(tag);
+    }
+    tag.content = 'noindex,nofollow';
+    // Clean up when the user navigates away from the login screen
+    return () => {
+      const existing = document.getElementById(ROBOTS_ID);
+      if (existing) existing.remove();
+    };
+  }, []);
   const [isLogin, setIsLogin] = useState(true);
   const [showOTP, setShowOTP] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);

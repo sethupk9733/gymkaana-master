@@ -11,8 +11,18 @@ export function AboutUsScreen({ onGoHome }: { onGoHome: () => void }) {
             className="w-full"
         >
             <SEO
-                title="About Us"
-                description="Learn about Gymkaana's mission to democratize elite wellness through universal access to the finest fitness venues."
+                title="About Gymkaana — India's Premier Fitness Marketplace"
+                description="Gymkaana is India's premier fitness marketplace on a mission to democratize elite wellness. Discover how we connect fitness seekers with top gyms, yoga studios and MMA centres across India."
+                keywords="about Gymkaana, fitness marketplace India, gym discovery platform, Gymkaana mission, elite fitness access India"
+                canonical="https://gymkaana.com?screen=about"
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "AboutPage",
+                  "name": "About Gymkaana",
+                  "description": "Gymkaana is India's premier fitness marketplace connecting users with elite gyms, yoga studios, CrossFit and MMA centres through a universal digital pass.",
+                  "url": "https://gymkaana.com?screen=about",
+                  "publisher": { "@id": "https://gymkaana.com/#organization" }
+                }}
             />
             {/* Hero Section */}
             <section className="relative h-[70vh] flex items-center justify-center overflow-hidden bg-black">

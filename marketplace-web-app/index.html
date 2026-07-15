@@ -1,24 +1,202 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gymkaana | Universal Access to the Finest Fitness Venues</title>
+
+  <!-- ══ PRIMARY SEO ══════════════════════════════════════════════════════ -->
+  <title>Gymkaana | Book Gyms, Yoga & Fitness Studios Near You — India</title>
   <meta name="description"
-    content="Discover and book the best gym memberships, yoga studios, and fitness classes near you. Elevate your lifestyle with Gymkaana's universal access." />
+    content="Gymkaana is India's premier fitness marketplace. Browse, compare and book memberships at top gyms, yoga studios, CrossFit boxes and MMA centres near you. One pass. Unlimited fitness." />
   <meta name="keywords"
-    content="gym, fitness, yoga, crossfit, bodybuilding, workout, gym membership, fitness class, studio, health, wellness" />
-  <meta property="og:title" content="Gymkaana | Universal Access to the Finest Fitness Venues" />
-  <meta property="og:description"
-    content="Discover and book the best gym memberships near you. Universal access to the finest fitness venues." />
+    content="gym near me, gym membership India, book gym online, yoga studio booking, CrossFit Chennai, fitness classes near me, gym pass India, online gym booking, fitness marketplace India, day pass gym, MMA studio booking, Gymkaana" />
+  <meta name="author" content="Gymkaana" />
+  <meta name="theme-color" content="#a3e635" />
+
+  <!-- ══ GEO — helps local & regional ranking ═════════════════════════════ -->
+  <meta name="geo.region" content="IN-TN" />
+  <meta name="geo.placename" content="Chennai, Tamil Nadu, India" />
+  <meta name="geo.position" content="13.0827;80.2707" />
+  <meta name="ICBM" content="13.0827, 80.2707" />
+  <meta name="language" content="en-IN" />
+
+  <!-- ══ OPEN GRAPH ════════════════════════════════════════════════════════ -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Gymkaana" />
+  <meta property="og:locale" content="en_IN" />
   <meta property="og:url" content="https://gymkaana.com" />
+  <meta property="og:title" content="Gymkaana — Book Gyms, Yoga & Fitness Studios Near You" />
+  <meta property="og:description"
+    content="India's premium fitness marketplace. Find and book the best gyms, yoga studios, CrossFit and MMA centres near you. One universal fitness pass." />
+  <meta property="og:image" content="https://gymkaana.com/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Gymkaana — Universal access to India's finest fitness venues" />
+
+  <!-- ══ TWITTER CARD ══════════════════════════════════════════════════════ -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Gymkaana | Universal Access to the Finest Fitness Venues" />
-  <meta name="twitter:description" content="Elevate your lifestyle with universal access to premium fitness venues." />
+  <meta name="twitter:site" content="@gymkaana" />
+  <meta name="twitter:creator" content="@gymkaana" />
+  <meta name="twitter:title" content="Gymkaana — Book Gyms & Fitness Studios Near You" />
+  <meta name="twitter:description"
+    content="India's premium fitness marketplace. Find and book the best gyms, yoga, CrossFit and MMA near you." />
+  <meta name="twitter:image" content="https://gymkaana.com/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Gymkaana fitness marketplace" />
+
+  <!-- ══ CANONICAL & ALTERNATES ════════════════════════════════════════════ -->
   <link rel="canonical" href="https://gymkaana.com" />
-  <!-- Meta Pixel Code -->
+  <link rel="alternate" hreflang="en-in" href="https://gymkaana.com" />
+  <link rel="alternate" hreflang="x-default" href="https://gymkaana.com" />
+
+  <!-- ══ SITEMAP & PRECONNECTS ═════════════════════════════════════════════ -->
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- ══ JSON-LD: Organization ═════════════════════════════════════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://gymkaana.com/#organization",
+    "name": "Gymkaana",
+    "url": "https://gymkaana.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://gymkaana.com/logo.png",
+      "width": 512,
+      "height": 512
+    },
+    "description": "India's premier fitness marketplace providing universal access to elite gyms, yoga studios, CrossFit boxes and MMA centres.",
+    "foundingDate": "2024",
+    "areaServed": {
+      "@type": "Country",
+      "name": "India"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "support@gymkaana.com",
+      "availableLanguage": ["English", "Tamil"]
+    },
+    "sameAs": [
+      "https://www.instagram.com/gymkaana",
+      "https://www.facebook.com/gymkaana"
+    ]
+  }
+  </script>
+
+  <!-- ══ JSON-LD: WebSite + SearchAction (Sitelinks Search Box) ══════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://gymkaana.com/#website",
+    "name": "Gymkaana",
+    "url": "https://gymkaana.com",
+    "description": "Book gyms, yoga studios and fitness classes near you across India.",
+    "publisher": { "@id": "https://gymkaana.com/#organization" },
+    "inLanguage": "en-IN",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://gymkaana.com?screen=home&q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <!-- ══ JSON-LD: SportsActivityLocation (Primary Service) ═══════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SportsActivityLocation",
+    "@id": "https://gymkaana.com/#sportsactivity",
+    "name": "Gymkaana Fitness Marketplace",
+    "description": "Universal access to the finest gyms, yoga studios, CrossFit boxes and MMA centres in India through a single pass.",
+    "url": "https://gymkaana.com",
+    "image": "https://gymkaana.com/og-image.jpg",
+    "priceRange": "₹₹",
+    "currenciesAccepted": "INR",
+    "paymentAccepted": "Credit Card, Debit Card, UPI",
+    "areaServed": {
+      "@type": "State",
+      "name": "Tamil Nadu"
+    },
+    "hasMap": "https://gymkaana.com?screen=home",
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
+      ],
+      "opens": "05:00",
+      "closes": "23:00"
+    }
+  }
+  </script>
+
+  <!-- ══ JSON-LD: FAQPage (AEO / AI Overview signals) ══════════════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Gymkaana?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Gymkaana is India's premium fitness marketplace that provides universal access to elite gyms, yoga studios, CrossFit boxes and MMA centres through a single unified platform. Users can browse, compare and book memberships at top fitness venues near them."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I book a gym on Gymkaana?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Browse featured venues on gymkaana.com, select a membership plan, and complete secure checkout via UPI or card. You'll receive a digital QR pass for instant venue entry."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which cities does Gymkaana operate in?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Gymkaana currently operates across Chennai and is rapidly expanding to other cities in Tamil Nadu and major metros across India including Bangalore and Mumbai."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What types of fitness venues are listed on Gymkaana?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Gymkaana lists gyms, yoga studios, CrossFit boxes, MMA/kickboxing centres, Pilates studios, Zumba classes, swimming pools, powerlifting gyms and more."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is payment on Gymkaana safe?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. All payments on Gymkaana are processed through AES-256 encrypted channels via Cashfree Payments. Gymkaana supports UPI, credit cards, debit cards and digital wallets."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I get a day pass for a gym on Gymkaana?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Gymkaana offers Daily Passport passes so you can access any partner gym for a single day without a long-term commitment."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- ══ Meta Pixel ══════════════════════════════════════════════════════ -->
   <script>
   !function(f,b,e,v,n,t,s)
   {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -31,7 +209,6 @@
   fbq('init', '1327130958900311');
   fbq('track', 'PageView');
   </script>
-  <!-- End Meta Pixel Code -->
 </head>
 
 <body>

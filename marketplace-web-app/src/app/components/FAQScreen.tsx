@@ -70,8 +70,24 @@ export function FAQScreen({ onBack, onContactSupport }: { onBack: () => void; on
             className="w-full min-h-screen bg-white"
         >
             <SEO
-                title="FAQs & Support"
-                description="Find answers to common questions about Gymkaana memberships, bookings, and security protocols."
+                title="FAQs — Gym Booking, Memberships & Support"
+                description="Answers to all your questions about Gymkaana — gym bookings, membership plans, QR pass access, payments, cancellations and security. India's top fitness marketplace."
+                keywords="Gymkaana FAQ, gym membership questions, how to book gym online, QR pass gym access, cancel gym membership, gym payment India"
+                canonical="https://gymkaana.com?screen=faq"
+                schema={{
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  "mainEntity": faqs.flatMap(category =>
+                    category.questions.map(item => ({
+                      "@type": "Question",
+                      "name": item.q,
+                      "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": item.a
+                      }
+                    }))
+                  )
+                }}
             />
             {/* Header */}
             <div className="pt-32 pb-20 px-6 lg:px-12 bg-black text-white relative overflow-hidden">
