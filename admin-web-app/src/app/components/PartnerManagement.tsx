@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-    fetchGyms, updateGymStatus, createGym, fetchBookingsByGym, 
+    fetchGyms, updateGymStatus, updateGymPremium, createGym, fetchBookingsByGym, 
     fetchPlansByGym, fetchAllPayouts, processPayout, fetchDeclarationByGymId, 
     downloadDeclarationPDF, deleteGym, updateGymFinancials
 } from '../lib/api';
@@ -58,6 +58,7 @@ interface GymDetail {
     cashfreeVendorId?: string;
     cashfreeVendorStatus?: string;
     commissionPercent?: number;
+    isPremium?: boolean;
 }
 
 export function PartnerManagement() {
@@ -139,7 +140,8 @@ export function PartnerManagement() {
             }
         };
         loadGymData();
-    }, [selectedGym]);
+    // Only re-run when a DIFFERENT gym is selected — NOT on every property change (e.g. isPremium)
+    }, [selectedGym?._id]);
 
     const financialHistory = gymBookings.slice(0, 5).map(b => ({
         id: b._id.slice(-6).toUpperCase(),
@@ -229,6 +231,42 @@ export function PartnerManagement() {
             console.error(err);
             alert('Failed to update hub status');
             setIsProcessing(false);
+        }
+    };
+
+
+    // Local map of gymId -> isPremium override (survives re-renders, never reverted by effects)
+    const [premiumMap, setPremiumMap] = useState<Record<string, boolean>>({});
+
+    const getIsPremium = (gym: GymDetail | null) => {
+        if (!gym) return false;
+        if (premiumMap.hasOwnProperty(gym._id)) return premiumMap[gym._id];
+        return gym.isPremium || false;
+    };
+
+    const handlePremiumToggle = async (id: string) => {
+        const currentValue = getIsPremium(selectedGym);
+        const newValue = !currentValue;
+        console.log('[Premium Toggle] Toggling', id, 'from', currentValue, 'to', newValue);
+
+        // Update local map & state optimistically
+        setPremiumMap(prev => ({ ...prev, [id]: newValue }));
+        setGyms(prev => prev.map(g => g._id === id ? { ...g, isPremium: newValue } : g));
+        setSelectedGym(prev => prev && prev._id === id ? { ...prev, isPremium: newValue } : prev);
+
+        try {
+            const updated = await updateGymPremium(id, newValue);
+            console.log('[Premium Toggle] Server confirmed isPremium:', updated.isPremium);
+            setPremiumMap(prev => ({ ...prev, [id]: updated.isPremium }));
+            setGyms(prev => prev.map(g => g._id === id ? { ...g, isPremium: updated.isPremium } : g));
+            setSelectedGym(prev => prev && prev._id === id ? { ...prev, isPremium: updated.isPremium } : prev);
+        } catch (err: any) {
+            console.error('[Premium Toggle] FAILED:', err.message);
+            // Revert on failure
+            setPremiumMap(prev => ({ ...prev, [id]: currentValue }));
+            setGyms(prev => prev.map(g => g._id === id ? { ...g, isPremium: currentValue } : g));
+            setSelectedGym(prev => prev && prev._id === id ? { ...prev, isPremium: currentValue } : prev);
+            alert('Failed to update premium status: ' + (err.message || 'Server error'));
         }
     };
 
@@ -518,6 +556,33 @@ export function PartnerManagement() {
                                                 <HubProp label="Platform ID" value={selectedGym._id.slice(-8).toUpperCase()} />
                                                 <HubProp label="Contract State" value={selectedGym.status.toUpperCase()} />
                                                 <HubProp label="Onboarded" value={new Date(selectedGym.createdAt).toLocaleDateString()} />
+                                                <div className={`mt-6 p-5 rounded-3xl border transition-all duration-300 flex items-center justify-between ${
+                                                    getIsPremium(selectedGym)
+                                                        ? 'bg-[#A3E635]/10 border-[#A3E635]/30 shadow-[0_0_30px_rgba(163,230,53,0.15)]' 
+                                                        : 'bg-white/5 border-white/10'
+                                                }`}>
+                                                    <div className="space-y-1">
+                                                        <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                                            <Star className={`w-4 h-4 ${getIsPremium(selectedGym) ? 'text-[#A3E635] fill-[#A3E635]' : 'text-gray-600'}`} />
+                                                            Premium Hub
+                                                        </span>
+                                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block">
+                                                            {getIsPremium(selectedGym) ? 'Elite Tier Active' : 'Standard Marketplace Listing'}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handlePremiumToggle(selectedGym._id)}
+                                                        className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none ${
+                                                            getIsPremium(selectedGym) ? 'bg-[#A3E635]' : 'bg-white/20'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${
+                                                                getIsPremium(selectedGym) ? 'translate-x-9 shadow-[0_0_15px_rgba(163,230,53,0.8)]' : 'translate-x-1'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 

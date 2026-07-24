@@ -34,8 +34,10 @@ export const logout = () => {
 };
 
 export const fetchGyms = async () => {
-    const response = await fetch(`${BASE_URL}/gyms`, {
-        headers: getAuthHeaders()
+    const timestamp = Date.now();
+    const response = await fetch(`${BASE_URL}/gyms?_t=${timestamp}`, {
+        headers: getAuthHeaders(),
+        cache: 'no-store'
     });
     if (!response.ok) throw new Error('Failed to fetch gyms');
     return await response.json();
@@ -51,6 +53,19 @@ export const updateGymStatus = async (id: string, status: string) => {
         body: JSON.stringify({ status })
     });
     if (!response.ok) throw new Error('Failed to update status');
+    return await response.json();
+};
+
+export const updateGymPremium = async (id: string, isPremium: boolean) => {
+    const response = await fetch(`${BASE_URL}/gyms/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify({ isPremium })
+    });
+    if (!response.ok) throw new Error('Failed to update premium status');
     return await response.json();
 };
 

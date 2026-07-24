@@ -145,7 +145,8 @@ export const checkSession = async () => {
 };
 
 export const fetchGyms = async () => {
-    const response = await fetch(`${BASE_URL}/gyms?status=active`, { cache: 'no-store' });
+    const timestamp = Date.now();
+    const response = await fetch(`${BASE_URL}/gyms?status=active&_t=${timestamp}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Failed to fetch gyms');
     return await response.json();
 };

@@ -13,6 +13,13 @@ console.log('=========================================');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use((req, res, next) => {
+    if (req.url.includes('/gyms')) {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    }
+    next();
+});
+
 // Middleware
 app.use(cookieParser());
 app.use(cors({

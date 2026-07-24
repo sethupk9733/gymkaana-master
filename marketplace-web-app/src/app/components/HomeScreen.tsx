@@ -38,7 +38,8 @@ export function HomeScreen({
   const [gyms, setGyms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [maxDistance, setMaxDistance] = useState(15);
+  const [showOnlyElite, setShowOnlyElite] = useState(false);
+  const [maxDistance, setMaxDistance] = useState<number>(15);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -150,15 +151,14 @@ export function HomeScreen({
           gymSpecs.some((spec: string) => spec.toLowerCase() === selected.toLowerCase())
         );
 
-      return matchesSearch && matchesDistance && matchesDisciplines;
+      const isEliteMatch = showOnlyElite ? gym.isPremium : true;
+      return matchesSearch && matchesDistance && matchesDisciplines && isEliteMatch;
     });
 
     return results;
-  }, [gyms, searchQuery, maxDistance, selectedDisciplines]);
+  }, [gyms, searchQuery, maxDistance, selectedDisciplines, showOnlyElite]);
 
   const nearbyGyms = useMemo(() => {
-    if (filteredGyms.length > 0) return [];
-
     return gyms.filter(gym => {
       const distance = getDistance(gym);
       const matchesDistance = distance <= maxDistance;
@@ -167,9 +167,14 @@ export function HomeScreen({
         selectedDisciplines.some(selected =>
           gymSpecs.some((spec: string) => spec.toLowerCase() === selected.toLowerCase())
         );
-      return matchesDistance && matchesDisciplines;
-    }).slice(0, 6);
-  }, [gyms, filteredGyms, maxDistance, selectedDisciplines]);
+      const isEliteMatch = showOnlyElite ? gym.isPremium : true;
+      return matchesDistance && matchesDisciplines && isEliteMatch;
+    }).slice(0, 12);
+  }, [gyms, maxDistance, selectedDisciplines, showOnlyElite]);
+
+  const premiumGyms = useMemo(() => {
+    return gyms.filter(gym => gym.isPremium);
+  }, [gyms]);
 
   return (
     <motion.div
@@ -500,6 +505,8 @@ export function HomeScreen({
         </div>
       </div>
 
+
+
       <div id="featured-venues" className="px-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-end mb-10 px-2">
           <div>
@@ -526,6 +533,16 @@ export function HomeScreen({
               <X className="w-3 h-3" />
             </button>
           )}
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Elite Tier</span>
+            <button
+              onClick={() => setShowOnlyElite(!showOnlyElite)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showOnlyElite ? 'bg-yellow-500' : 'bg-gray-200'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showOnlyElite ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
         </div>
 
         {loading ? (

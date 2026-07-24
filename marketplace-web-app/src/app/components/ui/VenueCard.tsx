@@ -2,6 +2,7 @@ import { MapPin, Star } from "lucide-react";
 import { motion } from "motion/react";
 import { Gym } from "../../types";
 import { ImageCarousel } from "./ImageCarousel";
+import { Crown } from "lucide-react";
 import { useState } from "react";
 
 interface VenueCardProps {
@@ -40,6 +41,12 @@ export function VenueCard({ gym, onClick }: VenueCardProps) {
             {/* Swiggy-inspired Image Section */}
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-3 shadow-sm transition-all">
                 <ImageCarousel images={displayImages} altPrefix={gym.name} externalHover={cardHover} />
+
+                {(gym as any).isPremium && (
+                    <div className="absolute top-3 right-3 z-30 bg-yellow-500/90 text-secondary backdrop-blur-md px-2 py-1 rounded-full border border-yellow-400 shadow-lg flex items-center justify-center">
+                        <Crown className="w-4 h-4 fill-secondary text-secondary" />
+                    </div>
+                )}
 
                 {/* Simplified Overlay Discount - Cleaner than Neon Box */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />

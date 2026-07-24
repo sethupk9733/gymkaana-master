@@ -10,6 +10,7 @@ const gymSchema = new mongoose.Schema({
     description: { type: String },
     phone: { type: String },
     email: { type: String },
+    isPremium: { type: Boolean, default: false }, // Premium gym badge
     timings: { type: String }, // Backward compatibility
     googleMapsLink: { type: String },
     coordinates: {
