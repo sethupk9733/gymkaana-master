@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { useState, useEffect } from "react";
 import { fetchGymById, updateGym } from "../lib/api";
+import { LOCATION_DATA, getStates, getCitiesForState, getAreasForCity } from "../lib/locationsData";
 
 interface EditGymProps {
   gymId: string;
@@ -34,6 +35,12 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
     description: '',
     baseDayPassPrice: 0,
     address: '',
+    state: 'Tamil Nadu',
+    city: 'Chennai',
+    area: 'Anna Nagar',
+    customState: '',
+    customCity: '',
+    customArea: '',
     location: '',
     phone: '',
     email: '',
@@ -117,6 +124,12 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
           description: data.description || '',
           baseDayPassPrice: data.baseDayPassPrice || 0,
           address: data.address || '',
+          state: data.state || 'Tamil Nadu',
+          city: data.city || 'Chennai',
+          area: data.area || data.location || 'Anna Nagar',
+          customState: '',
+          customCity: '',
+          customArea: '',
           location: data.location || '',
           phone: data.phone || '',
           email: data.email || '',
@@ -244,8 +257,17 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
       }
       const timingsString = `${monSatString} | ${sundayString}`;
 
+      const finalState = form.state === 'Other' ? form.customState : form.state;
+      const finalCity = (form.city === 'Other' || form.state === 'Other') ? form.customCity : form.city;
+      const finalArea = (form.area === 'Other' || form.city === 'Other' || form.state === 'Other') ? form.customArea : form.area;
+      const finalLocation = finalArea ? `${finalArea}, ${finalCity}` : finalCity;
+
       await updateGym(gymId, {
         ...form,
+        state: finalState,
+        city: finalCity,
+        area: finalArea,
+        location: finalLocation,
         images,
         operatingHours: payloadTimings,
         timings: timingsString,
@@ -306,9 +328,95 @@ export function EditGym({ gymId, onBack }: EditGymProps) {
               <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Full Address</label>
               <Textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} rows={2} className="resize-none" />
             </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Area / Locality</label>
-              <Input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g. Indiranagar" />
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">State *</label>
+                <select
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                  value={form.state}
+                  onChange={e => {
+                    const newState = e.target.value;
+                    const availableCities = getCitiesForState(newState);
+                    const defaultCity = availableCities.length > 0 ? availableCities[0] : 'Other';
+                    const availableAreas = getAreasForCity(newState, defaultCity);
+                    const defaultArea = availableAreas.length > 0 ? availableAreas[0] : 'Other';
+                    setForm({
+                      ...form,
+                      state: newState,
+                      city: defaultCity,
+                      area: defaultArea
+                    });
+                  }}
+                >
+                  {getStates().map(st => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                  <option value="Other">Other State...</option>
+                </select>
+                {form.state === 'Other' && (
+                  <Input
+                    placeholder="Enter State Name"
+                    value={form.customState}
+                    onChange={e => setForm({ ...form, customState: e.target.value })}
+                    className="mt-2 text-xs"
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">City *</label>
+                  <select
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                    value={form.city}
+                    onChange={e => {
+                      const newCity = e.target.value;
+                      const availableAreas = getAreasForCity(form.state, newCity);
+                      const defaultArea = availableAreas.length > 0 ? availableAreas[0] : 'Other';
+                      setForm({
+                        ...form,
+                        city: newCity,
+                        area: defaultArea
+                      });
+                    }}
+                  >
+                    {getCitiesForState(form.state).map(ct => (
+                      <option key={ct} value={ct}>{ct}</option>
+                    ))}
+                    <option value="Other">Other City...</option>
+                  </select>
+                  {(form.city === 'Other' || form.state === 'Other') && (
+                    <Input
+                      placeholder="Enter City Name"
+                      value={form.customCity}
+                      onChange={e => setForm({ ...form, customCity: e.target.value })}
+                      className="mt-2 text-xs"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Area / Locality *</label>
+                  <select
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                    value={form.area}
+                    onChange={e => setForm({ ...form, area: e.target.value })}
+                  >
+                    {getAreasForCity(form.state, form.city).map(ar => (
+                      <option key={ar} value={ar}>{ar}</option>
+                    ))}
+                    <option value="Other">Other Area...</option>
+                  </select>
+                  {(form.area === 'Other' || form.city === 'Other' || form.state === 'Other') && (
+                    <Input
+                      placeholder="Enter Area / Locality"
+                      value={form.customArea}
+                      onChange={e => setForm({ ...form, customArea: e.target.value })}
+                      className="mt-2 text-xs"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Description</label>

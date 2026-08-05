@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { useState } from "react";
 import * as api from "../lib/api";
+import { LOCATION_DATA, getStates, getCitiesForState, getAreasForCity } from "../lib/locationsData";
 
 interface AddGymProps {
     onBack: () => void;
@@ -41,7 +42,12 @@ export function AddGym({ onBack, onSuccess }: AddGymProps) {
         description: '',
         baseDayPassPrice: 0,
         address: '',
-        city: '',
+        state: 'Tamil Nadu',
+        city: 'Chennai',
+        area: 'Anna Nagar',
+        customState: '',
+        customCity: '',
+        customArea: '',
         zip: '',
         landmark: '',
         phone: '',
@@ -210,8 +216,17 @@ export function AddGym({ onBack, onSuccess }: AddGymProps) {
             }
             const timingsString = `${monSatString} | ${sundayString}`;
 
+            const finalState = form.state === 'Other' ? form.customState : form.state;
+            const finalCity = (form.city === 'Other' || form.state === 'Other') ? form.customCity : form.city;
+            const finalArea = (form.area === 'Other' || form.city === 'Other' || form.state === 'Other') ? form.customArea : form.area;
+            const finalLocation = finalArea ? `${finalArea}, ${finalCity}` : finalCity;
+
             const payload = {
                 ...form,
+                state: finalState,
+                city: finalCity,
+                area: finalArea,
+                location: finalLocation,
                 images,
                 operatingHours: payloadTimings,
                 timings: timingsString,
@@ -319,9 +334,104 @@ I agree to Gymkaana's Terms & Conditions and Gym Partner Agreement.`;
                                     <Input placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                                 </div>
                                 <Input placeholder="Full Address *" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Input placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} />
-                                    <Input placeholder="Zip Code" value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} />
+                                <div className="space-y-3">
+                                    {/* State & Zip Code Row */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1 block">State *</label>
+                                            <select
+                                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                                                value={form.state}
+                                                onChange={e => {
+                                                    const newState = e.target.value;
+                                                    const availableCities = getCitiesForState(newState);
+                                                    const defaultCity = availableCities.length > 0 ? availableCities[0] : 'Other';
+                                                    const availableAreas = getAreasForCity(newState, defaultCity);
+                                                    const defaultArea = availableAreas.length > 0 ? availableAreas[0] : 'Other';
+                                                    setForm({
+                                                        ...form,
+                                                        state: newState,
+                                                        city: defaultCity,
+                                                        area: defaultArea
+                                                    });
+                                                }}
+                                            >
+                                                {getStates().map(st => (
+                                                    <option key={st} value={st}>{st}</option>
+                                                ))}
+                                                <option value="Other">Other State...</option>
+                                            </select>
+                                            {form.state === 'Other' && (
+                                                <Input
+                                                    placeholder="Enter State Name"
+                                                    value={form.customState}
+                                                    onChange={e => setForm({ ...form, customState: e.target.value })}
+                                                    className="mt-2 text-xs"
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1 block">Zip Code</label>
+                                            <Input placeholder="Zip Code" value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} />
+                                        </div>
+                                    </div>
+
+                                    {/* City & Area Row */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1 block">City *</label>
+                                            <select
+                                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                                                value={form.city}
+                                                onChange={e => {
+                                                    const newCity = e.target.value;
+                                                    const availableAreas = getAreasForCity(form.state, newCity);
+                                                    const defaultArea = availableAreas.length > 0 ? availableAreas[0] : 'Other';
+                                                    setForm({
+                                                        ...form,
+                                                        city: newCity,
+                                                        area: defaultArea
+                                                    });
+                                                }}
+                                            >
+                                                {getCitiesForState(form.state).map(ct => (
+                                                    <option key={ct} value={ct}>{ct}</option>
+                                                ))}
+                                                <option value="Other">Other City...</option>
+                                            </select>
+                                            {(form.city === 'Other' || form.state === 'Other') && (
+                                                <Input
+                                                    placeholder="Enter City Name"
+                                                    value={form.customCity}
+                                                    onChange={e => setForm({ ...form, customCity: e.target.value })}
+                                                    className="mt-2 text-xs"
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1 block">Area / Locality *</label>
+                                            <select
+                                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-black transition-colors"
+                                                value={form.area}
+                                                onChange={e => setForm({ ...form, area: e.target.value })}
+                                            >
+                                                {getAreasForCity(form.state, form.city).map(ar => (
+                                                    <option key={ar} value={ar}>{ar}</option>
+                                                ))}
+                                                <option value="Other">Other Area...</option>
+                                            </select>
+                                            {(form.area === 'Other' || form.city === 'Other' || form.state === 'Other') && (
+                                                <Input
+                                                    placeholder="Enter Area / Locality"
+                                                    value={form.customArea}
+                                                    onChange={e => setForm({ ...form, customArea: e.target.value })}
+                                                    className="mt-2 text-xs"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div className="pt-2 border-t border-gray-100">

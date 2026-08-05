@@ -1,10 +1,11 @@
-import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X, Calculator, Flame } from "lucide-react";
+import { Search, Dumbbell, Users, Award, TrendingUp, SlidersHorizontal, ArrowRight, X, Calculator, Flame, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { VenueCard } from "./ui/VenueCard";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { fetchGyms } from "../lib/api";
 import { SEO } from "./SEO";
 import { ChallengeBanner } from "./ChallengeBanner";
+import { getSmartLocationSuggestions, SuggestionItem } from "../lib/locationSuggestions";
 
 const SPECIALIZATIONS = [
   "Bodybuilding", "CrossFit", "Yoga", "Zumba", "MMA/Kickboxing",
@@ -38,6 +39,8 @@ export function HomeScreen({
   const [gyms, setGyms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [showOnlyElite, setShowOnlyElite] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number>(15);
   const [showFilters, setShowFilters] = useState(false);
@@ -135,14 +138,28 @@ export function HomeScreen({
     return match ? parseFloat(match[1]) : 0;
   };
 
+  const smartSuggestions = useMemo(() => {
+    return getSmartLocationSuggestions(searchQuery, gyms);
+  }, [searchQuery, gyms]);
+
   const filteredGyms = useMemo(() => {
     const results = gyms.filter(gym => {
       const distance = getDistance(gym);
       const name = gym.name || "";
       const location = gym.location || "";
+      const address = gym.address || "";
+      const city = gym.city || "";
+      const state = gym.state || "";
+      const area = gym.area || "";
+
       const search = (searchQuery || "").toLowerCase();
-      const matchesSearch = name.toLowerCase().includes(search) ||
-        location.toLowerCase().includes(search);
+      const matchesSearch = !search ||
+        name.toLowerCase().includes(search) ||
+        location.toLowerCase().includes(search) ||
+        address.toLowerCase().includes(search) ||
+        city.toLowerCase().includes(search) ||
+        state.toLowerCase().includes(search) ||
+        area.toLowerCase().includes(search);
       const matchesDistance = distance <= maxDistance;
 
       const gymSpecs = Array.isArray(gym.specializations) ? gym.specializations : [];
@@ -263,7 +280,7 @@ export function HomeScreen({
           </motion.div>
 
           {/* ── MOBILE: compact search bar with inline filter button ── */}
-          <div className="flex md:hidden items-center gap-2 mb-3">
+          <div className="flex md:hidden items-center gap-2 mb-3 relative">
             <motion.div
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -274,10 +291,26 @@ export function HomeScreen({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
                 placeholder="Search gyms or areas..."
                 className="flex-1 bg-transparent outline-none text-sm font-bold text-white placeholder:text-white/30"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSuggestions(false);
+                  }}
+                  className="p-1 text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </motion.div>
             {/* Mobile filter button — right of search bar */}
             <motion.button
@@ -292,6 +325,51 @@ export function HomeScreen({
             >
               <SlidersHorizontal className="w-5 h-5" />
             </motion.button>
+
+            {/* Mobile Smart suggestions overlay */}
+            <AnimatePresence>
+              {showSuggestions && smartSuggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-2 shadow-2xl z-[100] max-h-64 overflow-y-auto"
+                >
+                  <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center justify-between border-b border-white/10 mb-1">
+                    <span>Smart Match</span>
+                    <span>{smartSuggestions.length} matches</span>
+                  </div>
+                  {smartSuggestions.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(s.searchValue);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl hover:bg-white/10 flex items-center justify-between transition-all group text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-xs shrink-0 group-hover:bg-primary group-hover:text-black transition-colors">
+                          {s.type === 'gym' ? '🏋️' : s.type === 'city' ? '🏙️' : '📍'}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-primary transition-colors leading-tight">
+                            {s.title}
+                          </p>
+                          <p className="text-[9px] font-semibold text-white/50 leading-tight">
+                            {s.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-bold uppercase text-white/30 group-hover:text-white transition-colors">
+                        Select →
+                      </span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Mobile: Daily Passport compact CTA */}
@@ -318,10 +396,26 @@ export function HomeScreen({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search venues, yoga or areas..."
+                onFocus={() => setShowSuggestions(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                placeholder="Search venues, yoga or areas (e.g. Udumalpet, Avinashi)..."
                 className="flex-1 bg-transparent outline-none text-base font-black text-white placeholder:text-white/30 placeholder:italic"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSuggestions(false);
+                  }}
+                  className="p-1 text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </motion.div>
 
             <motion.button
@@ -333,6 +427,51 @@ export function HomeScreen({
               <SlidersHorizontal className="w-5 h-5" />
               Radius
             </motion.button>
+
+            {/* Smart suggestions overlay */}
+            <AnimatePresence>
+              {showSuggestions && smartSuggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-2 shadow-2xl z-[100] max-h-72 overflow-y-auto"
+                >
+                  <div className="px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center justify-between border-b border-white/10 mb-1">
+                    <span>Smart Location & Venue Match</span>
+                    <span>{smartSuggestions.length} matches</span>
+                  </div>
+                  {smartSuggestions.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(s.searchValue);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl hover:bg-white/10 flex items-center justify-between transition-all group text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs shrink-0 group-hover:bg-primary group-hover:text-black transition-colors">
+                          {s.type === 'gym' ? '🏋️' : s.type === 'city' ? '🏙️' : '📍'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white group-hover:text-primary transition-colors leading-tight">
+                            {s.title}
+                          </p>
+                          <p className="text-[10px] font-semibold text-white/50 leading-tight">
+                            {s.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/30 group-hover:text-white transition-colors">
+                        Select →
+                      </span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Filter panel — shared mobile + desktop */}
