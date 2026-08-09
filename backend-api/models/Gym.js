@@ -4,9 +4,6 @@ const gymSchema = new mongoose.Schema({
     name: { type: String, required: true },
     address: { type: String, required: true },
     location: { type: String }, // specific area
-    state: { type: String },
-    city: { type: String },
-    area: { type: String },
     rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Active', 'Inactive'], default: 'Pending' },
