@@ -289,3 +289,53 @@ export const updateInquiryStatus = async (id: string, status: string) => {
     if (!response.ok) throw new Error('Failed to update enquiry status');
     return await response.json();
 };
+
+export const fetchAdminBlogs = async () => {
+    const response = await fetch(`${BASE_URL}/blogs/admin/all`, {
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch admin blogs');
+    return await response.json();
+};
+
+export const createBlog = async (blogData: any) => {
+    const response = await fetch(`${BASE_URL}/blogs`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify(blogData)
+    });
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to create blog');
+    }
+    return await response.json();
+};
+
+export const updateBlog = async (id: string, blogData: any) => {
+    const response = await fetch(`${BASE_URL}/blogs/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+        },
+        body: JSON.stringify(blogData)
+    });
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to update blog');
+    }
+    return await response.json();
+};
+
+export const deleteBlog = async (id: string) => {
+    const response = await fetch(`${BASE_URL}/blogs/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to delete blog');
+    return await response.json();
+};
+

@@ -11,7 +11,8 @@ export function Footer({
     onTermsClick,
     onPartnerClick,
     onRefundClick,
-    onBMIClick
+    onBMIClick,
+    onBlogClick
 }: {
     onDisciplineClick?: (discipline: string) => void;
     onAboutClick?: () => void;
@@ -24,6 +25,7 @@ export function Footer({
     onPartnerClick?: () => void;
     onRefundClick?: () => void;
     onBMIClick?: () => void;
+    onBlogClick?: () => void;
 }) {
     const cities = [
         { label: "Gyms in Bangalore", value: "Bangalore", href: "https://www.gymkaana.com/gyms-in-bangalore" },
@@ -49,6 +51,7 @@ export function Footer({
 
     const company = [
         { label: "About Us", href: "#" },
+        { label: "Blogs & Journal", href: "#" },
         { label: "Contact Us", href: "#" },
         { label: "Privacy Policy", href: "#" },
         { label: "Help & Support", href: "#" },
@@ -59,6 +62,7 @@ export function Footer({
         { label: "Careers", href: "#" },
         { label: "BMI Calculator", href: "#" }
     ];
+
 
     const handleDisciplineClick = (e: React.MouseEvent, value: string) => {
         e.preventDefault();
@@ -188,7 +192,11 @@ export function Footer({
                                                     if (link.label === "About Us" && onAboutClick) {
                                                         e.preventDefault();
                                                         onAboutClick();
+                                                    } else if (link.label === "Blogs & Journal" && onBlogClick) {
+                                                        e.preventDefault();
+                                                        onBlogClick();
                                                     } else if (link.label === "Contact Us" && onContactClick) {
+
                                                         e.preventDefault();
                                                         onContactClick();
                                                     } else if ((link.label === "Privacy Policy" || link.label === "Privacy & Security") && onPrivacyClick) {

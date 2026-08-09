@@ -29,6 +29,7 @@ const RefundScreen = lazy(() => import("./components/RefundScreen").then(m => ({
 const ChallengeDashboardScreen = lazy(() => import("./components/ChallengeDashboardScreen").then(m => ({ default: m.ChallengeDashboardScreen })));
 const LeaderboardScreen = lazy(() => import("./components/LeaderboardScreen").then(m => ({ default: m.LeaderboardScreen })));
 const DailyPassportScreen = lazy(() => import("./components/DailyPassportScreen").then(m => ({ default: m.DailyPassportScreen })));
+const BlogPage = lazy(() => import("./components/BlogPage").then(m => ({ default: m.BlogPage })));
 
 type Screen =
   | "splash"
@@ -53,7 +54,9 @@ type Screen =
   | "weight_guide"
   | "challenge_dashboard"
   | "leaderboard"
-  | "daily_passport";
+  | "daily_passport"
+  | "blogs";
+
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
@@ -66,9 +69,10 @@ export default function App() {
     if (actionParam === 'login') return 'login';
     if (actionParam === 'explore') return 'home';
     if (screenParam === 'details' && gymParam) return 'details';
-    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi', 'challenge_dashboard', 'leaderboard', 'daily_passport'].includes(screenParam)) {
+    if (screenParam && ['home', 'partner', 'about', 'privacy', 'faq', 'contact', 'careers', 'terms', 'refund', 'bmi', 'challenge_dashboard', 'leaderboard', 'daily_passport', 'blogs'].includes(screenParam)) {
       return screenParam;
     }
+
     return "splash";
   });
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
@@ -453,6 +457,10 @@ export default function App() {
           />
         );
 
+      case "blogs":
+        return <BlogPage />;
+
+
       default:
         return <SplashScreen onComplete={() => setCurrentScreen("home")} />;
     }
@@ -485,7 +493,15 @@ export default function App() {
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
+              <button
+                onClick={() => setCurrentScreen('home')}
+                className={`text-xs font-black uppercase tracking-widest transition-all ${currentScreen === 'home' ? 'text-[#A3E635]' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Explore Gyms
+              </button>
             </nav>
+
+
           </div>
 
           <div className="flex items-center gap-4">
@@ -566,7 +582,11 @@ export default function App() {
               onBMIClick={() => {
                 setCurrentScreen("bmi");
               }}
+              onBlogClick={() => {
+                setCurrentScreen("blogs");
+              }}
             />
+
           )}
         </Suspense>
       </main>

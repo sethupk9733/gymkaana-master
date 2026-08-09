@@ -445,3 +445,24 @@ export const updateVitals = async (vitalsData: { weight?: number, height?: numbe
     return data;
 };
 
+export const fetchPublishedBlogs = async (params: { category?: string; tag?: string; search?: string; page?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.category) query.append('category', params.category);
+    if (params.tag) query.append('tag', params.tag);
+    if (params.search) query.append('search', params.search);
+    if (params.page) query.append('page', params.page.toString());
+
+    const response = await fetch(`${BASE_URL}/blogs?${query.toString()}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch blogs');
+    return data;
+};
+
+export const fetchBlogBySlug = async (slug: string) => {
+    const response = await fetch(`${BASE_URL}/blogs/post/${slug}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Failed to fetch blog post');
+    return data.blog;
+};
+
+

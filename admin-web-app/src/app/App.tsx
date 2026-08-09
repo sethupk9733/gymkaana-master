@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star, MessageSquare, Trophy, BarChart3 } from 'lucide-react';
+import { Home, Building2, Users, DollarSign, LogOut, Settings as SettingsIcon, Megaphone, Calendar, MessageCircle, Star, MessageSquare, Trophy, BarChart3, FileText } from 'lucide-react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { PartnerManagement } from './components/PartnerManagement';
 import { UserManagement } from './components/UserManagement';
@@ -13,7 +13,9 @@ import { ReviewManagement } from './components/ReviewManagement';
 import { EnquiryManagement } from './components/EnquiryManagement';
 import { ChallengeManager } from './components/ChallengeManager';
 import { GamificationAnalytics } from './components/GamificationAnalytics';
+import { BlogManagement } from './components/BlogManagement';
 import { logout, getUnreadTicketCount } from './lib/api';
+
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -67,7 +69,9 @@ export default function App() {
       case 'enquiries': return <EnquiryManagement />;
       case 'challenges': return <ChallengeManager />;
       case 'gamification': return <GamificationAnalytics />;
+      case 'blogs': return <BlogManagement />;
       case 'settings': return <Settings />;
+
       default: return <AdminDashboard />;
     }
   };
@@ -113,7 +117,9 @@ export default function App() {
           />
           <NavItem icon={Trophy} label="Challenges" active={currentTab === 'challenges'} onClick={() => setCurrentTab('challenges')} />
           <NavItem icon={BarChart3} label="Gamification" active={currentTab === 'gamification'} onClick={() => setCurrentTab('gamification')} />
+          <NavItem icon={FileText} label="Blog Articles" active={currentTab === 'blogs'} onClick={() => setCurrentTab('blogs')} />
           <NavItem icon={SettingsIcon} label="Settings" active={currentTab === 'settings'} onClick={() => setCurrentTab('settings')} />
+
         </nav>
 
         <div className="p-4 border-t border-gray-800 space-y-2">
