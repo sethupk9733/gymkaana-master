@@ -173,29 +173,12 @@ exports.createOrder = async (req, res) => {
                 orderIdFromCf = apiRes.data.order_id || apiRes.data.orderId || orderId;
             }
         } catch (axiosError) {
-            console.log('[Cashfree REST 2023-08-01 failed, trying 2022-09-01 fallback...]');
-            try {
-                const apiRes = await axios.post(cfHost, requestPayload, {
-                    headers: {
-                        'x-client-id': (process.env.CASHFREE_APP_ID || '').trim(),
-                        'x-client-secret': (process.env.CASHFREE_SECRET_KEY || '').trim(),
-                        'x-api-version': '2022-09-01',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (apiRes.data) {
-                    paymentSessionId = apiRes.data.payment_session_id || apiRes.data.paymentSessionId;
-                    orderIdFromCf = apiRes.data.order_id || apiRes.data.orderId || orderId;
-                }
-            } catch (v2Error) {
-                const errResponse = axiosError.response?.data || v2Error.response?.data;
-                console.error('❌ [Cashfree REST Error]:', {
-                    status: axiosError.response?.status || v2Error.response?.status,
-                    data: errResponse,
-                    message: axiosError.message
-                });
-
+            const errResponse = axiosError.response?.data;
+            console.error('❌ [Cashfree REST Error]:', {
+                status: axiosError.response?.status,
+                data: errResponse,
+                message: axiosError.message
+            });
 
             // SDK Fallback if Direct REST API failed
             try {
@@ -243,6 +226,7 @@ exports.createOrder = async (req, res) => {
                 });
             }
         }
+
 
 
         if (!paymentSessionId) {
