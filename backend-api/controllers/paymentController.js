@@ -197,14 +197,27 @@ exports.createOrder = async (req, res) => {
                 }
             } catch (sdkError) {
                 const finalErrData = errResponse || sdkError.response?.data || sdkError.message;
+                const errMessage = errResponse?.message || sdkError.message || axiosError.message;
+
+                if (typeof errMessage === 'string' && errMessage.includes('transactions are not enabled')) {
+                    return res.status(400).json({
+                        message: 'Cashfree Account Activation Required',
+                        error: 'Transactions are not enabled for your Cashfree Production account.',
+                        actionRequired: 'Please complete Account Activation/KYC in Cashfree Merchant Dashboard (https://merchant.cashfree.com/) or switch CASHFREE_ENV=sandbox in backend .env to test using Sandbox credentials.',
+                        details: finalErrData,
+                        code: 'CASHFREE_ACCOUNT_NOT_ACTIVATED'
+                    });
+                }
+
                 return res.status(400).json({
                     message: 'Cashfree API Error',
-                    error: errResponse?.message || sdkError.message || axiosError.message,
+                    error: errMessage,
                     details: finalErrData,
                     code: errResponse?.code || 'CASHFREE_BAD_REQUEST'
                 });
             }
         }
+
 
         if (!paymentSessionId) {
             console.error('❌ No payment session ID retrieved from Cashfree');
