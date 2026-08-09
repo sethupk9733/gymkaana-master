@@ -120,8 +120,17 @@ exports.createOrder = async (req, res) => {
         const isSandbox = envVal === 'sandbox';
         const cfHost = isSandbox ? 'https://sandbox.cashfree.com/pg/orders' : 'https://api.cashfree.com/pg/orders';
 
-        const returnUrl = `${process.env.MARKETPLACE_URL || 'https://app.gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://');
-        const notifyUrl = `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://');
+        let returnUrl = `${process.env.MARKETPLACE_URL || 'https://app.gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://');
+        let notifyUrl = `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://');
+
+        if (!isSandbox) {
+            if (returnUrl.includes('localhost') || returnUrl.includes('127.0.0.1')) {
+                returnUrl = 'https://app.gymkaana.com/payment-result?order_id={order_id}';
+            }
+            if (notifyUrl.includes('localhost') || notifyUrl.includes('127.0.0.1')) {
+                notifyUrl = 'https://api.gymkaana.com/api/payments/webhook';
+            }
+        }
 
         const requestPayload = {
             order_id: orderId,
@@ -164,12 +173,29 @@ exports.createOrder = async (req, res) => {
                 orderIdFromCf = apiRes.data.order_id || apiRes.data.orderId || orderId;
             }
         } catch (axiosError) {
-            const errResponse = axiosError.response?.data;
-            console.error('❌ [Cashfree REST Error]:', {
-                status: axiosError.response?.status,
-                data: errResponse,
-                message: axiosError.message
-            });
+            console.log('[Cashfree REST 2023-08-01 failed, trying 2022-09-01 fallback...]');
+            try {
+                const apiRes = await axios.post(cfHost, requestPayload, {
+                    headers: {
+                        'x-client-id': (process.env.CASHFREE_APP_ID || '').trim(),
+                        'x-client-secret': (process.env.CASHFREE_SECRET_KEY || '').trim(),
+                        'x-api-version': '2022-09-01',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (apiRes.data) {
+                    paymentSessionId = apiRes.data.payment_session_id || apiRes.data.paymentSessionId;
+                    orderIdFromCf = apiRes.data.order_id || apiRes.data.orderId || orderId;
+                }
+            } catch (v2Error) {
+                const errResponse = axiosError.response?.data || v2Error.response?.data;
+                console.error('❌ [Cashfree REST Error]:', {
+                    status: axiosError.response?.status || v2Error.response?.status,
+                    data: errResponse,
+                    message: axiosError.message
+                });
+
 
             // SDK Fallback if Direct REST API failed
             try {
