@@ -23,21 +23,31 @@ app.use((req, res, next) => {
 // Middleware
 app.use(cookieParser());
 app.use(cors({
-    origin: [
-        'https://gymkaana.com',
-        'https://www.gymkaana.com',
-        'https://owner.gymkaana.com',
-        'https://admin.gymkaana.com',
-        'https://app.gymkaana.com',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:5176',
-        'http://localhost:3000',
-        'http://localhost:3001'
-    ],
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        const allowedOrigins = [
+            'https://gymkaana.com',
+            'https://www.gymkaana.com',
+            'https://owner.gymkaana.com',
+            'https://admin.gymkaana.com',
+            'https://app.gymkaana.com',
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
+            'http://localhost:5177',
+            'http://localhost:3000',
+            'http://localhost:3001'
+        ];
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.gymkaana.com') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
+
 
 // ── Payment Infrastructure ──────────────────────────────────────────────────
 // Webhook needs raw body for HMAC verification; others need standard JSON.

@@ -103,116 +103,114 @@ exports.createOrder = async (req, res) => {
         // ── Full amount to admin account (no split) ────────────────────────
         console.log(`[Cashfree] Creating order ${orderId}: ₹${amount} for booking ${booking._id}`);
 
-        // ── Build Cashfree request objects ──────────────────────────────────
-        const customerDetails = new CFCustomerDetails();
-        customerDetails.customerId = booking.userId?._id?.toString() || booking.userId?.toString();
-        customerDetails.customerName = booking.memberName;
-        customerDetails.customerEmail = booking.memberEmail || `user-${booking.userId}@gymkaana.local`;
-        customerDetails.customerPhone = booking.userId?.phone || '9999999999';
+        // ── 1. Clean & Sanitize Customer Data for Cashfree API ──────────────
+        let rawPhone = (booking.userId?.phone || booking.userId?.phoneNumber || booking.memberPhone || '').toString().replace(/[^\d]/g, '');
+        let customerPhone = rawPhone.length >= 10 ? rawPhone.slice(-10) : '9999999999';
+        if (!/^[6-9]\d{9}$/.test(customerPhone)) {
+            customerPhone = '9999999999'; // Cashfree requirement: 10-digit Indian number starting with 6-9
+        }
 
-        const cFOrderRequest = new CFOrderRequest();
-        
-        // Set properties using both camelCase and snake_case (SDK auto-generates from OpenAPI)
-        cFOrderRequest.orderAmount = amount;
-        cFOrderRequest.orderCurrency = 'INR';
-        cFOrderRequest.customerId = booking.userId?._id?.toString() || booking.userId?.toString();
-        cFOrderRequest.customerDetails = customerDetails;
-        cFOrderRequest.orderNote = `Gymkaana booking — ${gym?.name || 'Gym'}`;
-        cFOrderRequest.orderTags = {
-            booking_id: booking._id?.toString(),
-            gym_id: gym._id?.toString()
+        let rawCustomerId = (booking.userId?._id || booking.userId || 'user_guest').toString().replace(/[^a-zA-Z0-9_-]/g, '');
+        let customerId = rawCustomerId.length >= 3 ? rawCustomerId : `user_${rawCustomerId}_${Date.now()}`;
+
+        let customerEmail = booking.memberEmail || booking.userId?.email || `user-${customerId.slice(-6)}@gymkaana.com`;
+
+        // ── 2. Call Cashfree PG REST API (or SDK) ───────────────────────────
+        const envVal = (process.env.CASHFREE_ENV || 'sandbox').trim().toLowerCase();
+        const isSandbox = envVal === 'sandbox';
+        const cfHost = isSandbox ? 'https://sandbox.cashfree.com/pg/orders' : 'https://api.cashfree.com/pg/orders';
+
+        const returnUrl = `${process.env.MARKETPLACE_URL || 'https://app.gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://');
+        const notifyUrl = `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://');
+
+        const requestPayload = {
+            order_id: orderId,
+            order_amount: Number(amount),
+            order_currency: 'INR',
+            customer_details: {
+                customer_id: customerId,
+                customer_name: booking.memberName || 'Gymkaana Member',
+                customer_email: customerEmail,
+                customer_phone: customerPhone
+            },
+            order_meta: {
+                return_url: returnUrl,
+                notify_url: notifyUrl
+            },
+            order_note: `Gymkaana booking — ${gym?.name || 'Gym'}`
         };
 
-        // The SDK serializes to snake_case for the API, but we can also set them directly
-        cFOrderRequest['order_id'] = orderId;
-        cFOrderRequest['order_meta'] = {
-            return_url: `${process.env.MARKETPLACE_URL || 'https://gymkaana.com'}/payment-result?order_id={order_id}`.replace('http://', 'https://'),
-            notify_url: `${process.env.BACKEND_URL || 'https://api.gymkaana.com'}/api/payments/webhook`.replace('http://', 'https://')
-        };
+        console.log('[Cashfree REST] Sending order request to:', cfHost, JSON.stringify(requestPayload, null, 2));
 
-        console.log('[Cashfree] Order Request Properties:', {
-            orderId: cFOrderRequest['order_id'],
-            amount: cFOrderRequest.orderAmount,
-            currency: cFOrderRequest.orderCurrency,
-            customerId: customerDetails.customerId,
-            allKeys: Object.keys(cFOrderRequest)
-        });
+        let paymentSessionId = null;
+        let orderIdFromCf = orderId;
 
-        // ── Call Cashfree using official SDK ─────────────────────────────────
-        let cfOrderResponse;
+        const axios = require('axios');
         try {
-            const apiInstance = new CFPaymentGateway();
-            console.log('[Cashfree] Calling orderCreate with config:', {
-                env: process.env.CASHFREE_ENV,
-                hasAppId: !!process.env.CASHFREE_APP_ID,
-                hasSecret: !!process.env.CASHFREE_SECRET_KEY
+            const apiRes = await axios.post(cfHost, requestPayload, {
+                headers: {
+                    'x-client-id': (process.env.CASHFREE_APP_ID || '').trim(),
+                    'x-client-secret': (process.env.CASHFREE_SECRET_KEY || '').trim(),
+                    'x-api-version': '2023-08-01',
+                    'Content-Type': 'application/json'
+                }
             });
-            
-            cfOrderResponse = await apiInstance.orderCreate(cfConfig, cFOrderRequest);
-            
-            console.log('[Cashfree] Full SDK Response:', JSON.stringify(cfOrderResponse, null, 2));
-            if (cfOrderResponse?.cfOrder) {
-                console.log('[Cashfree] cfOrder keys:', Object.keys(cfOrderResponse.cfOrder));
-                // Try to extract session ID with various naming conventions
-                const possibleNames = [
-                    'paymentSessionId', 'payment_session_id',
-                    'sessionId', 'session_id', 
-                    'cf_payment_session_id', 'cfPaymentSessionId'
-                ];
-                console.log('[Cashfree] Checking for payment session ID:', possibleNames.map(name => ({
-                    name,
-                    value: cfOrderResponse.cfOrder[name]
-                })));
+
+            console.log('[Cashfree REST Response Status]:', apiRes.status);
+            console.log('[Cashfree REST Response Data]:', JSON.stringify(apiRes.data, null, 2));
+
+            if (apiRes.data) {
+                paymentSessionId = apiRes.data.payment_session_id || apiRes.data.paymentSessionId;
+                orderIdFromCf = apiRes.data.order_id || apiRes.data.orderId || orderId;
             }
-        } catch (sdkError) {
-            console.error('[Cashfree SDK Error]:', {
-                message: sdkError.message,
-                code: sdkError.code,
-                statusCode: sdkError.statusCode,
-                response: sdkError.response?.data || sdkError.response,
-                fullError: JSON.stringify(sdkError, null, 2)
+        } catch (axiosError) {
+            const errResponse = axiosError.response?.data;
+            console.error('❌ [Cashfree REST Error]:', {
+                status: axiosError.response?.status,
+                data: errResponse,
+                message: axiosError.message
             });
-            throw sdkError;
-        }
 
-        const cfOrder = cfOrderResponse?.cfOrder;
+            // SDK Fallback if Direct REST API failed
+            try {
+                console.log('[Cashfree] Falling back to official SDK...');
+                const customerDetails = new CFCustomerDetails();
+                customerDetails.customerId = customerId;
+                customerDetails.customerName = booking.memberName || 'Gymkaana Member';
+                customerDetails.customerEmail = customerEmail;
+                customerDetails.customerPhone = customerPhone;
 
-        if (!cfOrder) {
-            console.error('❌ No cfOrder in response. Full response:', cfOrderResponse);
-            return res.status(500).json({
-                message: 'Invalid response from Cashfree',
-                error: 'No order object in SDK response'
-            });
-        }
+                const cFOrderRequest = new CFOrderRequest();
+                cFOrderRequest.orderAmount = amount;
+                cFOrderRequest.orderCurrency = 'INR';
+                cFOrderRequest.customerId = customerId;
+                cFOrderRequest.customerDetails = customerDetails;
+                cFOrderRequest['order_id'] = orderId;
+                cFOrderRequest['order_meta'] = { return_url: returnUrl, notify_url: notifyUrl };
 
-        // Try to extract values with all possible naming conventions
-        let paymentSessionId = cfOrder.paymentSessionId || 
-                              cfOrder.payment_session_id || 
-                              cfOrder.cf_payment_session_id ||
-                              cfOrder.cfPaymentSessionId;
-        
-        let orderIdFromCf = cfOrder.orderId || cfOrder.order_id;
-        
-        console.log('[Cashfree] Extracted values:', {
-            paymentSessionId,
-            orderIdFromCf,
-            cfOrderKeys: Object.keys(cfOrder)
-        });
-
-        if (!orderIdFromCf) {
-            console.error('❌ No order ID in response');
-            return res.status(500).json({
-                message: 'Order creation failed',
-                availableFields: Object.keys(cfOrder)
-            });
+                const apiInstance = new CFPaymentGateway();
+                const cfOrderResponse = await apiInstance.orderCreate(cfConfig, cFOrderRequest);
+                const cfOrder = cfOrderResponse?.cfOrder;
+                if (cfOrder) {
+                    paymentSessionId = cfOrder.paymentSessionId || cfOrder.payment_session_id || cfOrder.cf_payment_session_id;
+                    orderIdFromCf = cfOrder.orderId || cfOrder.order_id || orderId;
+                }
+            } catch (sdkError) {
+                const finalErrData = errResponse || sdkError.response?.data || sdkError.message;
+                return res.status(400).json({
+                    message: 'Cashfree API Error',
+                    error: errResponse?.message || sdkError.message || axiosError.message,
+                    details: finalErrData,
+                    code: errResponse?.code || 'CASHFREE_BAD_REQUEST'
+                });
+            }
         }
 
         if (!paymentSessionId) {
-            console.error('❌ No payment session ID in response');
-            return res.status(500).json({
-                message: 'Payment session not created',
-                availableFields: Object.keys(cfOrder),
-                suggestion: 'Check Cashfree credentials in .env'
+            console.error('❌ No payment session ID retrieved from Cashfree');
+            return res.status(400).json({
+                message: 'Failed to create Cashfree payment session',
+                suggestion: 'Check Cashfree APP_ID and SECRET_KEY in backend environment'
             });
         }
 
@@ -246,23 +244,15 @@ exports.createOrder = async (req, res) => {
             timestamp: new Date().toISOString()
         });
 
-        // Handle Cashfree SDK errors
-        if (err.statusCode) {
-            return res.status(err.statusCode).json({
-                message: 'Cashfree API Error',
-                error: errorMessage,
-                code: errorCode
-            });
-        }
-
-        // Network or other error
-        return res.status(500).json({
-            message: 'Failed to create Cashfree order',
+        return res.status(400).json({
+            message: 'Cashfree API Error',
             error: errorMessage,
-            details: 'Please check backend logs for details'
+            code: errorCode,
+            details: err.response?.data || err.message
         });
     }
 };
+
 
 // ─── 2. Webhook Handler ───────────────────────────────────────────────────────
 /**

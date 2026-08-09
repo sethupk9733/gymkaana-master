@@ -153,28 +153,69 @@ export default function App() {
     useEffect(() => {
         if (isOwnerLanding) return;
         const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 8000);
+        const tid = setTimeout(() => ctrl.abort(), 10000);
 
-        fetch(`${URLS.API}/landing/data?_t=${Date.now()}`, { signal: ctrl.signal })
-            .then(r => r.ok ? r.json() : null)
-            .then(data => {
-                if (data && data.success) {
-                    if (data.featuredGyms?.length) setLiveGyms(data.featuredGyms);
-                    if (data.categories?.length) setLiveCategories(data.categories);
-                    if (data.cities?.length) setLiveCities(data.cities);
-                    if (data.stats) setLiveStats(data.stats);
+        async function loadLandingData() {
+            try {
+                // 1. Primary: Dynamic landing data endpoint
+                const res = await fetch(`${URLS.API}/landing/data?_t=${Date.now()}`, { signal: ctrl.signal });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success && data.featuredGyms?.length) {
+                        setLiveGyms(data.featuredGyms);
+                        if (data.categories?.length) setLiveCategories(data.categories);
+                        if (data.cities?.length) setLiveCities(data.cities);
+                        if (data.stats) setLiveStats(data.stats);
+                        return;
+                    }
                 }
-            })
-            .catch(err => {
-                console.log('Landing dynamic fetch fallback:', err);
-            })
-            .finally(() => {
-                clearTimeout(tid);
-                setLoadingGyms(false);
-            });
+            } catch (e) {
+                console.log('Primary landing data fetch failed, attempting fallback endpoint...', e);
+            }
+
+            // 2. Secondary Fallback: Standard public /gyms and /dashboard/public-stats
+            try {
+                const [gymsRes, statsRes] = await Promise.all([
+                    fetch(`${URLS.API}/gyms`, { signal: ctrl.signal }),
+                    fetch(`${URLS.API}/dashboard/public-stats`, { signal: ctrl.signal }).catch(() => null)
+                ]);
+
+                if (gymsRes.ok) {
+                    const gymsData = await gymsRes.json();
+                    const gymsArray = Array.isArray(gymsData) ? gymsData : (gymsData?.gyms || gymsData?.data || []);
+                    if (gymsArray.length > 0) {
+                        const mappedGyms = gymsArray.map((g: any) => ({
+                            _id: g._id,
+                            name: g.name,
+                            rating: g.rating || 4.8,
+                            reviews: g.reviewsCount || (Array.isArray(g.reviews) ? g.reviews.length : (g.reviews || 18)),
+                            location: g.location ? `${g.location}, ${g.city || 'Tamil Nadu'}` : (g.city || 'Coimbatore'),
+                            city: g.city || 'Coimbatore',
+                            price: `₹${g.baseDayPassPrice || g.pricing?.dayPass || 199}/day`,
+                            image: (g.images && g.images.length > 0) ? g.images[0] : (g.coverImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80"),
+                            badge: g.isPopular ? 'Popular' : (g.rating >= 4.7 ? 'Top Rated' : 'Verified Partner')
+                        }));
+                        setLiveGyms(mappedGyms);
+                    }
+                }
+
+                if (statsRes && statsRes.ok) {
+                    const statsData = await statsRes.json();
+                    if (statsData) setLiveStats(statsData);
+                }
+            } catch (fallbackErr) {
+                console.log('Fallback gyms fetch failed:', fallbackErr);
+            }
+        }
+
+        loadLandingData().finally(() => {
+            clearTimeout(tid);
+            setLoadingGyms(false);
+        });
 
         return () => ctrl.abort();
     }, [isOwnerLanding]);
+
 
 
     // Early return AFTER all hooks
