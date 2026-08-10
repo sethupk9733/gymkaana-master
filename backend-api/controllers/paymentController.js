@@ -208,20 +208,15 @@ exports.createOrder = async (req, res) => {
                 const finalErrData = errResponse || sdkError.response?.data || sdkError.message;
                 const errMessage = errResponse?.message || sdkError.message || axiosError.message;
 
-                if (typeof errMessage === 'string' && errMessage.includes('transactions are not enabled')) {
-                    console.warn('⚠️ [Cashfree Notice] Production account pending transaction activation on Cashfree Merchant Dashboard. Generating test payment session to allow production checkout testing.');
-                    paymentSessionId = `session_gk_test_${orderId}`;
-                    orderIdFromCf = orderId;
-                } else {
-                    return res.status(400).json({
-                        message: 'Cashfree API Error',
-                        error: errMessage,
-                        details: finalErrData,
-                        code: errResponse?.code || 'CASHFREE_BAD_REQUEST'
-                    });
-                }
+                return res.status(400).json({
+                    message: 'Cashfree API Error',
+                    error: errMessage,
+                    details: finalErrData,
+                    code: errResponse?.code || 'CASHFREE_BAD_REQUEST'
+                });
             }
         }
+
 
 
 
@@ -490,37 +485,11 @@ exports.getPaymentStatus = async (req, res) => {
         // If local status is PENDING, verify with Cashfree directly
         // to catch cancelled or failed payments
         if (booking.paymentStatus === 'PENDING') {
-            if (orderId.startsWith('GK-TEST-') || booking.paymentSessionId?.startsWith('session_gk_test_')) {
-                console.log(`✅ [StatusCheck] Auto-activating test session order ${orderId}...`);
-                booking.paymentStatus = 'SUCCESS';
-                booking.status        = 'upcoming';
-                booking.paidAt        = new Date();
-                await booking.save();
-
-                try {
-                    const populated = await Booking.findById(booking._id)
-                        .populate({ path: 'gymId', populate: { path: 'ownerId' } })
-                        .populate('planId')
-                        .populate('userId');
-
-                    const { sendBookingConfirmation } = require('../utils/emailService');
-                    sendBookingConfirmation(populated.memberEmail, populated).catch(e =>
-                        console.error('❌ Member email failed:', e.message)
-                    );
-                } catch (e) {}
-
-                return res.json({
-                    cashfreeOrderId: orderId,
-                    paymentStatus: 'SUCCESS',
-                    status: 'upcoming',
-                    booking
-                });
-            }
-
             console.log(`[StatusCheck] Verifying PENDING order ${orderId} with Cashfree API...`);
             try {
                 // Use direct API call instead of SDK method that may not exist
                 const axios = require('axios');
+
                 
                 // Auto-detect environment based on App ID prefix
                 const isSandbox = (process.env.CASHFREE_APP_ID || '').startsWith('TEST');
