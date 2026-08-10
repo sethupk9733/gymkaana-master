@@ -37,36 +37,26 @@ import { CASHFREE_APP_ID, CASHFREE_MODE } from '../config/api';
  * Documentation: https://docs.cashfree.com/docs/payment-gateway-api
  */
 
-let cashfreeInstance: any = null;
+let cashfreeInstances: Record<string, any> = {};
 
 /**
- * Lazy-loads and returns the Cashfree SDK instance
- * Auto-initializes in sandbox or production mode
+ * Lazy-loads and returns the Cashfree SDK instance for production or sandbox
  */
-const getCashfree = async () => {
-    if (!cashfreeInstance) {
-        if (!CASHFREE_APP_ID) {
-            throw new Error(
-                'Cashfree App ID not configured. ' +
-                'Set VITE_CASHFREE_APP_ID environment variable to enable payments.'
-            );
-        }
-
-        const mode = CASHFREE_MODE;
+const getCashfree = async (targetMode?: 'production' | 'sandbox') => {
+    const mode = targetMode || CASHFREE_MODE || 'production';
+    if (!cashfreeInstances[mode]) {
         console.log(`[Cashfree] Initializing Official SDK in ${mode} mode`);
-        console.log(`[Cashfree] App ID: ${CASHFREE_APP_ID.substring(0, 20)}...`);
-        
         try {
-            cashfreeInstance = await load({
+            cashfreeInstances[mode] = await load({
                 mode: mode as "sandbox" | "production"
             });
-            console.log('[Cashfree] SDK loaded successfully');
+            console.log(`[Cashfree] SDK (${mode}) loaded successfully`);
         } catch (error) {
-            console.error('[Cashfree] SDK initialization failed:', error);
+            console.error(`[Cashfree] SDK (${mode}) initialization failed:`, error);
             throw new Error(`Failed to load Cashfree SDK: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
-    return cashfreeInstance;
+    return cashfreeInstances[mode];
 };
 
 /**
@@ -97,8 +87,9 @@ export const initiateCheckout = async (paymentSessionId: string) => {
 
     console.log(`[Cashfree] Opening checkout modal for session: ${paymentSessionId.substring(0, 20)}...`);
 
-    
-    const cashfree = await getCashfree();
+    // Auto-detect mode from session ID if available, defaulting to CASHFREE_MODE (production)
+    const targetMode = paymentSessionId.includes('sandbox') ? 'sandbox' : CASHFREE_MODE;
+    const cashfree = await getCashfree(targetMode as 'sandbox' | 'production');
     
     const checkoutOptions = {
         paymentSessionId: paymentSessionId,
