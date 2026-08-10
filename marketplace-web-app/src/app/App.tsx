@@ -62,10 +62,12 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
     // Check for deep links immediately during state initialization
     const params = new URLSearchParams(window.location.search);
+    const pathname = window.location.pathname;
     const screenParam = params.get('screen') as Screen;
     const actionParam = params.get('action');
     const gymParam = params.get('gym');
 
+    if (pathname.startsWith('/blog/') || pathname === '/blog' || pathname === '/blogs' || params.has('article') || params.has('slug')) return 'blogs';
     if (actionParam === 'login') return 'login';
     if (actionParam === 'explore') return 'home';
     if (screenParam === 'details' && gymParam) return 'details';
@@ -75,6 +77,7 @@ export default function App() {
 
     return "splash";
   });
+
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [selectedGymId, setSelectedGymId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);

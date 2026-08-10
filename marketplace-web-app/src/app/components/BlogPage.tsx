@@ -71,6 +71,7 @@ export function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeArticle, setActiveArticle] = useState<BlogItem | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const categories = ['All', 'Fitness', 'Nutrition', 'Gym Owners', 'Workout Tips', 'News', 'Guides'];
 
@@ -93,6 +94,16 @@ export function BlogPage() {
         }
       });
       setBlogs(mergedBlogs);
+      
+      // Auto-open blog if specified in URL
+      const params = new URLSearchParams(window.location.search);
+      const targetSlug = params.get('article') || params.get('slug') || window.location.pathname.split('/blog/')[1];
+      if (targetSlug) {
+        const found = mergedBlogs.find(b => b.slug === targetSlug || b._id === targetSlug);
+        if (found) {
+          handleOpenArticle(found, false);
+        }
+      }
     } catch (err) {
       console.warn('Backend API offline or empty, showing curated articles:', err);
       setBlogs(FALLBACK_BLOGS);
@@ -101,16 +112,23 @@ export function BlogPage() {
     }
   };
 
-
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loadBlogs();
   };
 
-  const handleOpenArticle = async (blog: BlogItem) => {
+  const handleOpenArticle = async (blog: BlogItem, updateUrl = true) => {
     setActiveArticle(blog);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.title = `${blog.title} | Gymkaana Blog`;
+
+    if (updateUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('screen', 'blogs');
+      url.searchParams.set('article', blog.slug);
+      window.history.pushState({ article: blog.slug }, '', url.toString());
+    }
+
     try {
       const detailed = await fetchBlogBySlug(blog.slug);
       if (detailed) {
@@ -118,6 +136,26 @@ export function BlogPage() {
       }
     } catch (e) {
       console.log('Using active article cache:', e);
+    }
+  };
+
+  const handleBackToList = () => {
+    setActiveArticle(null);
+    document.title = 'Gymkaana Blog & Fitness Journal';
+    const url = new URL(window.location.href);
+    url.searchParams.set('screen', 'blogs');
+    url.searchParams.delete('article');
+    url.searchParams.delete('slug');
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleShareArticle = () => {
+    if (!activeArticle) return;
+    const shareUrl = `${window.location.origin}/?screen=blogs&article=${activeArticle.slug}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
@@ -135,13 +173,23 @@ export function BlogPage() {
       {/* Full-Screen Article Reader */}
       {activeArticle ? (
         <div className="max-w-4xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <button
-            onClick={() => setActiveArticle(null)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-sm font-semibold mb-6 border border-slate-800 transition-all shadow-md"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to All Articles
-          </button>
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={handleBackToList}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-sm font-semibold border border-slate-800 transition-all shadow-md"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to All Articles
+            </button>
+
+            <button
+              onClick={handleShareArticle}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#A3E635] hover:bg-[#8ece28] text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg active:scale-95"
+            >
+              <Share2 className="w-4 h-4" />
+              {copied ? 'Link Copied!' : 'Share Article URL'}
+            </button>
+          </div>
 
           <article className="bg-slate-900/90 rounded-3xl border border-slate-800/80 overflow-hidden shadow-2xl backdrop-blur-md">
             {activeArticle.coverImage && (
@@ -196,8 +244,16 @@ export function BlogPage() {
                     <Eye className="w-4 h-4 text-blue-400" />
                     {(activeArticle.views || 0).toLocaleString()} Views
                   </span>
+                  <button
+                    onClick={handleShareArticle}
+                    className="flex items-center gap-1 text-[#A3E635] hover:underline font-semibold"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    {copied ? 'Copied!' : 'Share'}
+                  </button>
                 </div>
               </div>
+
 
               {/* Excerpt */}
               {activeArticle.excerpt && (
