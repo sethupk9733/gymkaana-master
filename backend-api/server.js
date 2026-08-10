@@ -11,7 +11,7 @@ console.log('🚀 GYMKAANA BACKEND STARTING UP... (V2)');
 console.log('=========================================');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;// Server initialization timestamp: 2026-08-10T13:30:00Z
 
 app.use((req, res, next) => {
     if (req.url.includes('/gyms')) {
