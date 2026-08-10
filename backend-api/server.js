@@ -178,8 +178,11 @@ app.post('/api/bookings/create-direct', async (req, res) => {
 });
 
 // Routes
+app.get('/api/landing/data', seoController.getLandingData);
+app.use('/api/blogs', require('./routes/blogRoutes'));
 app.use('/api/gyms', require('./routes/gymRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
+
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));

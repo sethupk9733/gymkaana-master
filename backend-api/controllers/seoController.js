@@ -41,3 +41,21 @@ exports.getRobots = (req, res) => {
     res.header('Content-Type', 'text/plain');
     res.status(200).send(robots);
 };
+
+exports.getLandingData = async (req, res) => {
+    try {
+        const gyms = await Gym.find({ isPublished: true })
+            .select('name location rating reviewsCount images startingPrice category amenities area city state isPremium')
+            .limit(12);
+
+        res.status(200).json({
+            success: true,
+            count: gyms.length,
+            gyms
+        });
+    } catch (error) {
+        console.error('Landing Data Error:', error);
+        res.status(500).json({ success: false, message: 'Error fetching landing page data' });
+    }
+};
+
